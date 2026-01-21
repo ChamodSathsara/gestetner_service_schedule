@@ -9,9 +9,10 @@ interface Job {
   location: string
   description?: string
   customerName?: string
-  // daysLeft: number
+  daysLeft?: number
   status: string
   note?: string
+  expected_visit_no?: string
   customer_agreement?: string
 }
 
@@ -36,8 +37,13 @@ export function JobCard({ job, onClick, variant = "service" }: JobCardProps) {
             </p>
           </div>
           <span className="text-[10px] md:text-xs font-bold px-2 py-1 rounded bg-blue-100 text-blue-700 ml-2 whitespace-nowrap">
-            {variant === "breakdown" ? job.status.toUpperCase() : `${job.customer_agreement}d`}
+            {variant === "breakdown" ? job.status.toUpperCase() : job.status.toUpperCase()}
           </span>
+         {variant === "service" && (
+           <span className="text-[10px] md:text-xs font-bold px-2 py-1 rounded bg-blue-100 text-blue-700 ml-2 whitespace-nowrap">
+            {job.daysLeft} Days Left
+          </span>
+         )}
         </div>
         <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
           <MapPin className="w-3 h-3 flex-shrink-0" />
@@ -51,8 +57,13 @@ export function JobCard({ job, onClick, variant = "service" }: JobCardProps) {
                 {job.customer_agreement}
               </span>
             ) : (
-              "Scheduled service"
+              <span className="font-bold text-blue-600 flex items-center gap-1">
+                Visit No : {job.expected_visit_no}
+                
+              </span>
+              
             )}
+
           </div>
           <Button size="sm" className="h-7 text-xs bg-blue-600 hover:bg-blue-700">
             Start
