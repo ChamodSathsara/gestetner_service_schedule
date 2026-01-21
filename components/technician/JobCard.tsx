@@ -9,9 +9,10 @@ interface Job {
   location: string
   description?: string
   customerName?: string
-  daysLeft: number
+  // daysLeft: number
   status: string
   note?: string
+  customer_agreement?: string
 }
 
 interface JobCardProps {
@@ -35,7 +36,7 @@ export function JobCard({ job, onClick, variant = "service" }: JobCardProps) {
             </p>
           </div>
           <span className="text-[10px] md:text-xs font-bold px-2 py-1 rounded bg-blue-100 text-blue-700 ml-2 whitespace-nowrap">
-            {variant === "breakdown" ? job.status.toUpperCase() : `${job.daysLeft}d`}
+            {variant === "breakdown" ? job.status.toUpperCase() : `${job.customer_agreement}d`}
           </span>
         </div>
         <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
@@ -47,7 +48,7 @@ export function JobCard({ job, onClick, variant = "service" }: JobCardProps) {
             {variant === "breakdown" ? (
               <span className="font-bold text-blue-600 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                {job.daysLeft} day{job.daysLeft !== 1 ? "s" : ""} left
+                {job.customer_agreement}
               </span>
             ) : (
               "Scheduled service"

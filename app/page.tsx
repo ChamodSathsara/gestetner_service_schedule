@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Lock, User, Eye, EyeOff, ArrowRight } from "lucide-react"
 import { useRouter } from "next/navigation"
+  import { useAuth } from "@/context/AuthContext"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -17,34 +18,49 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
+
+  const { login } = useAuth()
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setIsLoading(true)
 
-    // Demo login - in production, this would call an API
-    if (username && password) {
-      // Store user session in localStorage (demo only)
-      const mockUser = {
-        username,
-        role: username === "admin" ? "admin" : username === "tech" ? "technician" : "manager",
-        loginTime: new Date().toISOString(),
-      }
-      localStorage.setItem("user", JSON.stringify(mockUser))
-
-      // Route based on role
-      setTimeout(() => {
-        if (mockUser.role === "technician") {
-          router.push("/technician-dashboard")
-        } else {
-          router.push("/dashboard")
-        }
-      }, 500)
-    } else {
+    if (!username || !password) {
       setError("Please enter username and password")
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}api/Auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tecH_CODE: username,
+          password: password,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        login(data) // Save user & token in context + localStorage
+        router.push("/technician-dashboard")
+      } else {
+        // API returned invalid credentials
+        setError(data || "Invalid Credentials")
+      }
+    } catch (err) {
+      console.error(err)
+      setError("Something went wrong. Please try again.")
+    } finally {
       setIsLoading(false)
     }
   }
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-sky-100 to-blue-100 flex items-center justify-center p-4 relative overflow-hidden">
@@ -87,12 +103,12 @@ export default function LoginPage() {
             <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                 <User className="w-4 h-4 text-blue-400" />
-                Username
+                Tech Code
               </label>
               <div className="relative">
                 <Input
                   type="text"
-                  placeholder="Enter your username"
+                  placeholder="Enter your tech code"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="h-12 pl-4 pr-4 bg-gray-50 border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"

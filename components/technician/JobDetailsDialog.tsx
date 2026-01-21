@@ -11,9 +11,10 @@ interface Job {
   location: string
   description?: string
   customerName?: string
-  daysLeft: number
+  // daysLeft: number
   status: string
   note?: string
+  customer_agreement?: string
 }
 
 interface JobDetailsDialogProps {
@@ -71,7 +72,7 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
               </div>
               <div>
                 <p className="text-xs text-gray-500 uppercase tracking-wide">Time Left</p>
-                <p className="font-bold text-red-600 mt-1">{job.daysLeft}d</p>
+                <p className="font-bold text-red-600 mt-1">{job.customer_agreement}d</p>
               </div>
             </div>
           </div>

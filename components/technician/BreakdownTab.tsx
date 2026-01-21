@@ -10,9 +10,10 @@ interface Job {
   location: string
   description?: string
   customerName?: string
-  daysLeft: number
+  // daysLeft: number
   status: string
   note?: string
+  customer_agreement?: string
 }
 
 interface BreakdownTabProps {
@@ -50,7 +51,7 @@ export function BreakdownTab({ breakdowns, onJobClick }: BreakdownTabProps) {
             <div className="flex items-center justify-between pt-3 border-t border-gray-100">
               <div className="text-sm font-bold text-blue-600 flex items-center gap-1">
                 <Clock className="w-4 h-4" />
-                {job.daysLeft} day{job.daysLeft !== 1 ? "s" : ""} left
+                {job.customer_agreement} 
               </div>
               <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
                 View Details

@@ -9,9 +9,10 @@ interface Job {
   location: string
   description?: string
   customerName?: string
-  daysLeft: number
+  // daysLeft: number
   status: string
   note?: string
+  customer_agreement?: string
 }
 
 interface DashboardOverviewProps {
@@ -21,6 +22,7 @@ interface DashboardOverviewProps {
 }
 
 export function DashboardOverview({ recentServices, recentBreakdowns, onJobClick }: DashboardOverviewProps) {
+  
   return (
     <div className="space-y-4 md:space-y-6">
       {/* KPI Cards */}
