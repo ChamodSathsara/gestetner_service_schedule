@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { MapPin, Clock } from "lucide-react"
+import { MapPin, Clock, Calendar, ChevronRight } from "lucide-react"
 
 interface Job {
   id: string
@@ -23,51 +23,64 @@ interface JobCardProps {
 }
 
 export function JobCard({ job, onClick, variant = "service" }: JobCardProps) {
+  const isBreakdown = variant === "breakdown"
+  
   return (
     <Card
-      className="bg-white border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-all cursor-pointer"
+      className="bg-white border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow transition-all cursor-pointer"
       onClick={onClick}
     >
-      <CardContent className="p-3 md:p-4">
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex-1">
-            <p className="font-bold text-sm md:text-base text-gray-900">{job.jobId}</p>
-            <p className="text-xs text-gray-500 mt-0.5">
+      <CardContent className="p-3">
+        {/* Header Row */}
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-sm text-gray-900 mb-0.5">
+              {job.jobId}
+            </h3>
+            <p className="text-xs text-gray-500 truncate">
               {job.customerName || job.description}
             </p>
           </div>
-          <span className="text-[10px] md:text-xs font-bold px-2 py-1 rounded bg-blue-100 text-blue-700 ml-2 whitespace-nowrap">
-            {variant === "breakdown" ? job.status.toUpperCase() : job.status.toUpperCase()}
-          </span>
-         {variant === "service" && (
-           <span className="text-[10px] md:text-xs font-bold px-2 py-1 rounded bg-blue-100 text-blue-700 ml-2 whitespace-nowrap">
-            {job.daysLeft} Days Left
-          </span>
-         )}
+          <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
         </div>
-        <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-          <MapPin className="w-3 h-3 flex-shrink-0" />
+
+        {/* Location */}
+        <div className="flex items-center gap-1.5 text-xs text-gray-600 mb-2">
+          <MapPin className="w-3.5 h-3.5 text-gray-400" />
           <span className="truncate">{job.location}</span>
         </div>
-        <div className="flex items-center justify-between">
-          <div className="text-xs text-gray-500">
-            {variant === "breakdown" ? (
-              <span className="font-bold text-blue-600 flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                {job.customer_agreement}
-              </span>
-            ) : (
-              <span className="font-bold text-blue-600 flex items-center gap-1">
-                Visit No : {job.expected_visit_no}
-                
-              </span>
-              
-            )}
 
-          </div>
-          <Button size="sm" className="h-7 text-xs bg-blue-600 hover:bg-blue-700">
-            Start
-          </Button>
+        {/* Footer Info */}
+        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+          {isBreakdown ? (
+            <div className="flex items-center gap-1.5 text-xs text-gray-700">
+              <Clock className="w-3.5 h-3.5 text-gray-400" />
+              <span>{job.customer_agreement}</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-xs text-gray-700">
+              <div className="flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                <span>Visit {job.expected_visit_no}</span>
+              </div>
+              {job.daysLeft !== undefined && (
+                <span className="text-gray-400">•</span>
+              )}
+              {job.daysLeft !== undefined && (
+                <span>{job.daysLeft} days left</span>
+              )}
+            </div>
+          )}
+          
+          <span className={`
+            text-[10px] font-medium px-2 py-1 rounded
+            ${isBreakdown 
+              ? 'bg-red-50 text-red-600' 
+              : 'bg-blue-50 text-blue-600'
+            }
+          `}>
+            {job.status}
+          </span>
         </div>
       </CardContent>
     </Card>

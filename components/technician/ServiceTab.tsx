@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { MapPin } from "lucide-react"
+import { Calendar, CheckCircle2 } from "lucide-react"
+import { JobCard } from "./JobCard"
 
 interface Job {
   id: string
@@ -22,39 +22,38 @@ interface ServiceTabProps {
 export function ServiceTab({ services, onJobClick }: ServiceTabProps) {
   return (
     <div className="space-y-3">
-      <div className="mb-4">
-        <h2 className="text-lg font-bold text-gray-900">Service Schedule</h2>
-        <p className="text-sm text-gray-500">{services.length} scheduled maintenance jobs</p>
+      {/* Header Banner */}
+      <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-3 md:p-4 shadow-md">
+        <div className="flex items-center gap-2 mb-1">
+          <Calendar className="w-5 h-5 text-white" />
+          <h2 className="text-sm md:text-base font-bold text-white">Service Schedule</h2>
+        </div>
+        <p className="text-xs md:text-sm text-blue-100 ml-7">
+          {services.length} scheduled maintenance {services.length === 1 ? 'job' : 'jobs'}
+        </p>
       </div>
-      {services.map((job) => (
-        <Card
-          key={job.id}
-          className="bg-white border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-all cursor-pointer"
-          onClick={() => onJobClick(job)}
-        >
-          <CardContent className="p-4">
-            <div className="flex justify-between items-start mb-3">
-              <div className="flex-1">
-                <p className="font-bold text-base md:text-lg text-gray-900">{job.jobId}</p>
-                <p className="text-sm text-gray-500 mt-1">{job.customerName}</p>
-              </div>
-              <span className="text-xs font-bold px-2.5 py-1 rounded bg-blue-100 text-blue-700 ml-2">
-                {job.daysLeft}d
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
-              <MapPin className="w-4 h-4 flex-shrink-0" />
-              <span className="truncate">{job.location}</span>
-            </div>
-            <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-              <div className="text-sm text-gray-500">Scheduled service</div>
-              <Button size="sm" variant="outline" className="border-blue-200 text-blue-700 hover:bg-blue-50">
-                View Details
-              </Button>
-            </div>
+
+      {/* Service Cards */}
+      {services.length > 0 ? (
+        <div className="space-y-2">
+          {services.map((job) => (
+            <JobCard 
+              key={job.id} 
+              job={job} 
+              onClick={() => onJobClick(job)} 
+              variant="service" 
+            />
+          ))}
+        </div>
+      ) : (
+        <Card className="bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-gray-200">
+          <CardContent className="p-6 md:p-8 text-center">
+            <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+            <p className="text-sm text-gray-700 font-bold">No Scheduled Services</p>
+            <p className="text-xs text-gray-600 mt-1">All maintenance up to date</p>
           </CardContent>
         </Card>
-      ))}
+      )}
     </div>
   )
 }
