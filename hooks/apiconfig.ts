@@ -100,12 +100,18 @@ const mapCustomerAgreement = (cusStatus: string): string => {
 }
 
 const mapJobStatus = (jobStatus: string): string => {
+    console.log("Mapping job status:", jobStatus);
   const statusMap: { [key: string]: string } = {
     'TECH ALLOCATED': 'pending',
     'STARTED': 'started',
     'COMPLET': 'completed'
+    
   }
-  return statusMap[jobStatus] || jobStatus.toLowerCase()
+  if(jobStatus === null || jobStatus === undefined){
+    return 'unknown';
+  }else{
+  return statusMap[jobStatus] || jobStatus.toLowerCase() 
+  }
 }
 
 const mapBreakdownToJob = (breakdown: ApiBreakdown): Job => {
@@ -224,6 +230,16 @@ export const useApiConfig = () => {
     // 4. Update Service Visit Status
     updateServiceVisitStatus: async (payload: ServiceUpdatePayload) => {
       return apiCall('api/Service/updateservicevisit', 'POST', payload)
+    },
+
+    getAllBreakdownsList: async (): Promise<Job[]> => {
+      const data = await apiCall(`api/Breakdown/totalbreakdownjobs?techCode=${user?.tecH_CODE}`)
+      return mapBreakdownsToJobs(data)
+    },
+
+    getAllServiceList : async (): Promise<ServiceVisit[]> => {
+      const data = await apiCall(`api/Service/totalservicevisits?techCode=${user?.tecH_CODE}`)
+      return mapServiceVisits(data)
     },
 
     // 5. Get Performance

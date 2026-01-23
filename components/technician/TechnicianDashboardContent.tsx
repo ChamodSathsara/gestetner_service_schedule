@@ -9,7 +9,7 @@ import { DashboardOverview } from "./DashboardOverview"
 import { BreakdownTab } from "./BreakdownTab"
 import { ServiceTab } from "./ServiceTab"
 import { PerformanceTab } from "./PerformanceTab"
-import { SettingsTab } from "./SettingsTab"
+import ServiceJobManagement from "./SettingsTab"
 import { JobDetailsDialog } from "./JobDetailsDialog"
 import { useApiConfig } from '@/hooks/apiconfig' 
 
@@ -274,7 +274,7 @@ export function TechnicianDashboardContent() {
         </TabsContent>
 
         <TabsContent value="settings" className="p-4 md:p-8 m-0 pb-20 md:pb-8">
-          <SettingsTab />
+          <ServiceJobManagement />
         </TabsContent>
       </Tabs>
 
