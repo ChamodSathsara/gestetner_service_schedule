@@ -3,6 +3,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MapPin, Phone, CheckCircle2 } from "lucide-react"
+import { useApiConfig } from "@/hooks/apiconfig"
+import { useAuth } from "@/context/AuthContext"
+import { toast } from "sonner"
 
 interface Job {
   id: string
@@ -11,9 +14,13 @@ interface Job {
   location: string
   description?: string
   customerName?: string
+  daysLeft?: number
   status: string
   note?: string
   customer_agreement?: string
+  machineRefNo?: string
+  serialNo?: string
+  expected_visit_no?: number
 }
 
 interface JobDetailsDialogProps {
@@ -22,35 +29,100 @@ interface JobDetailsDialogProps {
   onClose: () => void
   onComplete: () => void
   onInProgress: () => void
+  varient: "service" | "breakdown"
 }
 
-export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgress }: JobDetailsDialogProps) {
+export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgress, varient }: JobDetailsDialogProps) {
   const [jobNote, setJobNote] = useState("")
   const [solution, setSolution] = useState("")
   const [activeTab, setActiveTab] = useState("start")
   const [lastVisit] = useState("2024-01-12 by John Silva")
+  const [isLoading, setIsLoading] = useState(false)
+
+  const { updateBreakdownStatus, updateServiceVisitStatus } = useApiConfig()
+  const { user } = useAuth()
 
   if (!job) return null
 
   const handleStarted = async () => {
+    if (!user?.tecH_CODE) {
+      toast.error("User information not available")
+      return
+    }
+
+    setIsLoading(true)
     try {
-      const response = await fetch(`/api/updatejob/${job.jobId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          status: 'in-progress',
-          note: jobNote
+      if (varient === "breakdown") {
+        // Breakdown API call
+        await updateBreakdownStatus({
+          techCode: user.tecH_CODE,
+          jobId: parseInt(job.jobId),
+          machineRefNo: job.machineRefNo || "",
+          serialNo: job.serialNo || "",
+          jobStatus: "started",
+          note: jobNote || ""
         })
-      })
-      
-      if (response.ok) {
-        setActiveTab("complete")
-        onInProgress()
+      } else {
+        // Service API call
+        await updateServiceVisitStatus({
+          techCode: user.tecH_CODE,
+          visitNo: parseInt(job.jobId),
+          machineRefNo: job.machineRefNo || "",
+          jobStatus: "started"
+        })
       }
+
+      toast.success("Job started successfully")
+      onInProgress()
+      setJobNote("")
+      setActiveTab("complete")
     } catch (error) {
-      console.error('Error updating job:', error)
+      console.error("Error starting job:", error)
+      toast.error("Failed to start job. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleCompleted = async () => {
+    if (!user?.tecH_CODE) {
+      toast.error("User information not available")
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      if (varient === "breakdown") {
+        // Breakdown API call
+        await updateBreakdownStatus({
+          techCode: user.tecH_CODE,
+          jobId: parseInt(job.jobId),
+          machineRefNo: job.machineRefNo || "",
+          serialNo: job.serialNo || "",
+          jobStatus: "complete",
+          note: solution || ""
+        })
+      } else {
+        // Service API call
+        await updateServiceVisitStatus({
+          techCode: user.tecH_CODE,
+          visitNo: parseInt(job.jobId),
+          machineRefNo: job.machineRefNo || "",
+          jobStatus: "complete"
+        })
+      }
+
+      toast.success("Job completed successfully")
+      onComplete()
+      setSolution("")
+      setJobNote("")
+      setActiveTab("start")
+      onClose()
+    } catch (error) {
+      console.error("Error completing job:", error)
+      toast.error("Failed to complete job. Please try again.")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -89,7 +161,6 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
               </div>
             )}
             <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Location</p>
               <p className="font-medium flex items-center gap-2 text-gray-900 mt-1">
                 <MapPin className="w-4 h-4 text-blue-600" />
                 {job.location}
@@ -100,10 +171,27 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
                 <p className="text-xs text-gray-500 uppercase tracking-wide">Status</p>
                 <p className="font-bold capitalize text-gray-900 mt-1">{job.status}</p>
               </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wide">Time Left</p>
-                <p className="font-bold text-red-600 mt-1">{job.customer_agreement}</p>
-              </div>
+              {varient === "service" && (
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">
+                    Time Left
+                  </p>
+                  <p className="font-bold text-red-600 mt-1">
+                    {job.daysLeft}
+                  </p>
+                </div>
+              )}
+
+              {varient === "breakdown" && (
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">
+                    Agreement
+                  </p>
+                  <p className="font-bold text-red-600 mt-1">
+                    {job.customer_agreement}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -123,7 +211,7 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="start">Start Job</TabsTrigger>
-              <TabsTrigger value="complete" disabled={job.status == "pending"}>Complete Job</TabsTrigger>
+              <TabsTrigger value="complete" disabled={job.status === "pending"}>Complete Job</TabsTrigger>
             </TabsList>
 
             <TabsContent value="start" className="space-y-4 mt-4">
@@ -144,6 +232,7 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
                   placeholder="Enter work notes, observations, or updates..."
                   className="w-full p-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   rows={4}
+                  disabled={isLoading}
                 />
               </div>
 
@@ -153,14 +242,16 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
                   onClick={handleCancel}
                   variant="outline"
                   className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 font-semibold"
+                  disabled={isLoading}
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleStarted}
                   className="bg-blue-600 hover:bg-blue-700 text-white h-11 font-semibold"
+                  disabled={isLoading}
                 >
-                  Started
+                  {isLoading ? "Starting..." : "Started"}
                 </Button>
               </div>
             </TabsContent>
@@ -175,6 +266,7 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
                   placeholder="Enter the solution or work completed..."
                   className="w-full p-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   rows={4}
+                  disabled={isLoading}
                 />
               </div>
 
@@ -184,25 +276,21 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
                   onClick={onClose}
                   variant="outline"
                   className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 font-semibold"
+                  disabled={isLoading}
                 >
                   Cancel
                 </Button>
                 <Button
-                  onClick={() => {
-                    onComplete()
-                    setSolution("")
-                    setJobNote("")
-                  }}
+                  onClick={handleCompleted}
                   className="bg-green-600 hover:bg-green-700 text-white h-11 font-semibold"
+                  disabled={isLoading}
                 >
                   <CheckCircle2 className="w-4 h-4 mr-2" />
-                  Completed
+                  {isLoading ? "Completing..." : "Completed"}
                 </Button>
               </div>
             </TabsContent>
           </Tabs>
-
-          
         </div>
       </DialogContent>
     </Dialog>

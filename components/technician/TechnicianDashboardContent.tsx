@@ -13,7 +13,7 @@ import { SettingsTab } from "./SettingsTab"
 import { JobDetailsDialog } from "./JobDetailsDialog"
 import { useApiConfig } from '@/hooks/apiconfig' 
 
-const { technicianBreakdowns: recentBreakdowns, technicianServices: recentServices } = mockDataConfig
+const { technicianServices: recentServices } = mockDataConfig
 
 interface Job {
   id: string
@@ -27,6 +27,7 @@ interface Job {
   note?: string
   customer_agreement?: string
 }
+
 // Single visit item
 export interface ExpectedVisit {
   machineRefNo: string;
@@ -52,43 +53,71 @@ export interface ServiceResponse {
 
 
 export function TechnicianDashboardContent() {
-  const api = useApiConfig()
+  // const api = useApiConfig()
+  const { getAllBreakdowns,getMonthlyServiceVisits  } = useApiConfig()
   const [activeTab, setActiveTab] = useState("dashboard")
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [showNotifications, setShowNotifications] = useState(false)
-  // const [recentBreakdowns , setRecentBreakdowns] = useState<any[]>([]);
-  // const [recentServices, setRecentServices] = useState<any[]>([]);
-  useEffect(() => {
-    fetchAllData()
-  }, [])
-  const [pendingBreakdowns, setPendingBreakdowns] = useState([])
-  const [completedBreakdowns, setCompletedBreakdowns] = useState([])
-  const [services, setServices] = useState([])
-  const [performance, setPerformance] = useState(null)
+  const [recentBreakdowns , setRecentBreakdowns] = useState<any[]>([]);
+  const [recentServices, setRecentServices] = useState<any[]>([]);
+ 
+  // const [breakdowns, setBreakdowns] = useState<Job[]>([])
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-    const fetchAllData = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const [pending, completed, serviceVisits, perf] = await Promise.all([
-        api.getPendingBreakdowns(),
-        api.getCompletedBreakdowns(),
-        api.getMonthlyServiceVisits(),
-        api.getPerformance(),
-      ])
 
-      setPendingBreakdowns(pending)
-      setCompletedBreakdowns(completed)
-      setServices(serviceVisits)
-      setPerformance(perf)
-      console.log(pending, completed, serviceVisits, perf)
-    } catch (err: any) {
-      setError(err.message)
+
+   useEffect(() => {
+    fetchBreakdowns()
+    fetchServices()
+  }, [])
+  
+  const fetchBreakdowns = async () => {
+    try {
+      setLoading(true)
+      const mappedJobs = await getAllBreakdowns() // Already mapped!
+      setRecentBreakdowns(mappedJobs)
+      console.log("mappedJobs", mappedJobs)
+    } catch (error) {
+      console.error('Error fetching breakdowns:', error)
     } finally {
       setLoading(false)
     }
   }
+
+  const fetchServices = async () => {
+    try {
+      setLoading(true)
+      const mappedServices = await getMonthlyServiceVisits() 
+      setRecentServices(mappedServices)
+      console.log("mappedServices", mappedServices)
+    } catch (error) {
+      console.error('Error fetching services:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  // const fetchAllData = async () => {
+  //   setLoading(true)
+  //   setError(null)
+  //   try {
+  //     const [pending, completed, serviceVisits, perf] = await Promise.all([
+  //       api.getAllBreakdowns(),
+  //       api.getCompletedBreakdowns(),
+  //       api.getMonthlyServiceVisits(),
+  //       api.getPerformance(),
+  //     ])
+
+  //     setBreakdowns(pending)
+  //     setCompletedBreakdowns(completed)
+  //     setServices(serviceVisits)
+  //     setPerformance(perf)
+  //     console.log(pending, completed, serviceVisits, perf)
+  //   } catch (err: any) {
+  //     setError(err.message)
+  //   } finally {
+  //     setLoading(false)
+  //   }
+  // }
 
   const notifications = [
     { id: 1, type: "service", title: "New Service Job Assigned", message: "SVC-2025-012 - Routine maintenance at Oak Plaza", time: "5 min ago" },
@@ -251,6 +280,7 @@ export function TechnicianDashboardContent() {
 
       {/* Job Details Dialog */}
       <JobDetailsDialog
+        varient={selectedJob?.customer_agreement ? "breakdown" : "service"}
         job={selectedJob}
         isOpen={!!selectedJob}
         onClose={() => setSelectedJob(null)}

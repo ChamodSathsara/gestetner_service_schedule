@@ -12,6 +12,7 @@ interface Job {
   status: string
   note?: string
   customer_agreement?: string
+  phone_number?: number
 }
 
 interface BreakdownTabProps {
