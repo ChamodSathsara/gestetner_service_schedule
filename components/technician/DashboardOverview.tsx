@@ -12,6 +12,8 @@ interface Job {
   status: string
   note?: string
   customer_agreement?: string
+  machineRefNo?: string
+
 }
 
 interface DashboardOverviewProps {
@@ -97,7 +99,7 @@ export function DashboardOverview({ recentServices, recentBreakdowns, onJobClick
         <div className="space-y-2">
           {recentBreakdowns.length > 0 ? (
             recentBreakdowns.map((job) => (
-              <JobCard key={job.id} job={job} onClick={() => onJobClick(job)} variant="breakdown" />
+              <JobCard key={job.id} job={job} onClick={() => onJobClick(job)} variant="breakdown"  />
             ))
           ) : (
             <Card className="bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200">

@@ -19,6 +19,7 @@ export interface Job {
 }
 
 interface ApiBreakdown {
+  joB_STATUS: any
   dJ_ID: string
   seriaL_NO: string
   machinE_REF_NO: string
@@ -52,6 +53,7 @@ export interface ServiceVisit {
   phone_number: string
   expected_visit_no: number
   machineRefNo?: string
+  
 }
 
 interface ApiServiceVisit {
@@ -115,6 +117,7 @@ const mapJobStatus = (jobStatus: string): string => {
 }
 
 const mapBreakdownToJob = (breakdown: ApiBreakdown): Job => {
+    console.log("Mapping breakdown:", breakdown);
   return {
     id: breakdown.dJ_ID,
     jobId: breakdown.dJ_ID,
@@ -122,7 +125,8 @@ const mapBreakdownToJob = (breakdown: ApiBreakdown): Job => {
     location: breakdown.cuS_ADD1,
     description: breakdown.note,
     customerName: breakdown.cuS_NAME,
-    status: mapJobStatus(breakdown.jobStatus),
+    // status: mapJobStatus(breakdown.jobStatus),
+    status: breakdown.joB_STATUS.toLowerCase(),
     note: breakdown.note,
     customer_agreement: mapCustomerAgreement(breakdown.cuS_STATUS),
     phone_number: breakdown.cuS_TEL_NO,
@@ -194,16 +198,22 @@ export const useApiConfig = () => {
     }
 
     if (body && method === 'POST') {
+        console.log("API Call Body___________________________:", body);
       config.body = JSON.stringify(body)
     }
 
     const response = await fetch(`${BASE_URL}${endpoint}`, config)
-
-    if (!response.ok) {
+    console.log(response.status, "", response.statusText );
+    if (!response.ok ) {
       throw new Error(`API Error: ${response.status} ${response.statusText}`)
     }
 
-    return response.json()
+    return method === 'GET' ? await response.json() : response;
+
+    // console.log("API call successful:", endpoint);
+    // const res = await response.json();
+    // console.log("API call response data:", res);
+    // return res;
   }
 
   return {
@@ -246,5 +256,15 @@ export const useApiConfig = () => {
     getPerformance: async () => {
       return apiCall(`api/Breakdown/getperformance?techCode=${user?.tecH_CODE}`)
     },
+
+    // 6. Previous Service Lists
+    getPreviousServiceLists: async (machineRef: string): Promise<ServiceVisit[]> => {
+      const data = await apiCall(`api/Service/previousservicelists?techCode=${user?.tecH_CODE}&machineRefNo=${machineRef}`)
+      console.log("Previous Service Lists Datacaddsadasdsadadada===============++++++++++++:",machineRef, data);
+      return data;
+    }
+
+
+
   }
 }

@@ -1,6 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { MapPin, Clock, Calendar, ChevronRight } from "lucide-react"
+import { useApiConfig } from "@/hooks/apiconfig"
+import { useEffect } from "react"
 
 interface Job {
   id: string
@@ -14,6 +16,7 @@ interface Job {
   note?: string
   expected_visit_no?: string
   customer_agreement?: string
+  machineRefNo?: string
 }
 
 interface JobCardProps {
@@ -23,8 +26,21 @@ interface JobCardProps {
 }
 
 export function JobCard({ job, onClick, variant = "service" }: JobCardProps) {
+  // console.log("Rendering JobCard for job:", job.jobId, "with variant:", variant ,"__________ ",job);
+  const { getPreviousServiceLists } = useApiConfig()
   const isBreakdown = variant === "breakdown"
-  
+
+ 
+
+  const fetchPreviousServices = async () => {
+    try {
+      const previousServices = await getPreviousServiceLists(job.machineRefNo || "")  
+      console.log("Previous Services for job", job.jobId, ":", previousServices)
+    } catch (error) {
+      console.error("Error fetching previous services:", error)
+    }
+  }
+
   return (
     <Card
       className="bg-white border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow transition-all cursor-pointer"

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { use, useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -38,8 +38,9 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
   const [activeTab, setActiveTab] = useState("start")
   const [lastVisit] = useState("2024-01-12 by John Silva")
   const [isLoading, setIsLoading] = useState(false)
+  console.log(job, "__________ JobDetailsDialog Rendered");
 
-  const { updateBreakdownStatus, updateServiceVisitStatus } = useApiConfig()
+  const { updateBreakdownStatus, updateServiceVisitStatus ,getPreviousServiceLists } = useApiConfig()
   const { user } = useAuth()
 
   if (!job) return null
@@ -50,11 +51,14 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
       return
     }
 
+  
+
     setIsLoading(true)
     try {
       if (varient === "breakdown") {
+        console.log("Starting breakdown job with note:", jobNote)
         // Breakdown API call
-        await updateBreakdownStatus({
+        const breackdownUpdate = await updateBreakdownStatus({
           techCode: user.tecH_CODE,
           jobId: parseInt(job.jobId),
           machineRefNo: job.machineRefNo || "",
@@ -62,14 +66,17 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
           jobStatus: "started",
           note: jobNote || ""
         })
+        console.log("Breakdown update response:", breackdownUpdate)
       } else {
         // Service API call
-        await updateServiceVisitStatus({
+        const updateServiceresponse = await updateServiceVisitStatus({
           techCode: user.tecH_CODE,
           visitNo: parseInt(job.jobId),
           machineRefNo: job.machineRefNo || "",
           jobStatus: "started"
         })
+
+        console.log("Service visit update response:", updateServiceresponse)
       }
 
       toast.success("Job started successfully")
@@ -81,6 +88,17 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
       toast.error("Failed to start job. Please try again.")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  
+  
+  const fetchPreviousServices = async () => {
+    try {
+      const previousServices = await getPreviousServiceLists(job.machineRefNo || "")  
+      console.log("Previous Services for job", job.jobId, ":", previousServices)
+    } catch (error) {
+      console.error("Error fetching previous services:", error)
     }
   }
 
