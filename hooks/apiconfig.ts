@@ -225,9 +225,9 @@ export const useApiConfig = () => {
 
     // 2. Update Breakdown Status
     updateBreakdownStatus: async (payload: BreakdownUpdatePayload) => {
-        console.log("updateBreakdownStatus payload", payload);
+       
         const test = await apiCall('api/Breakdown/updatejobstatus', 'POST', payload);
-        console.log("updateBreakdownStatus response", test);
+        
       return test;
     },
 
@@ -239,6 +239,7 @@ export const useApiConfig = () => {
 
     // 4. Update Service Visit Status
     updateServiceVisitStatus: async (payload: ServiceUpdatePayload) => {
+        console.log("updateServiceVisitStatus payload", payload);
       return apiCall('api/Service/updateservicevisit', 'POST', payload)
     },
 

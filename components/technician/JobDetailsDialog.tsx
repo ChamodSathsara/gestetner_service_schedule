@@ -1,8 +1,7 @@
-import { use, useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { MapPin, Phone, CheckCircle2 } from "lucide-react"
+import { MapPin, Phone, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react"
 import { useApiConfig } from "@/hooks/apiconfig"
 import { useAuth } from "@/context/AuthContext"
 import { toast } from "sonner"
@@ -21,6 +20,7 @@ interface Job {
   machineRefNo?: string
   serialNo?: string
   expected_visit_no?: number
+  phone_number?: string
 }
 
 interface JobDetailsDialogProps {
@@ -32,18 +32,127 @@ interface JobDetailsDialogProps {
   varient: "service" | "breakdown"
 }
 
+interface PreviousServiceData {
+  exptsv1: string | null
+  exptsv2: string | null
+  exptsv3: string | null
+  exptsv4: string | null
+  exptsv5: string | null
+  exptsv6: string | null
+  sv1: string | null
+  sv2: string | null
+  sv3: string | null
+  sv4: string | null
+  sv5: string | null
+  sv6: string | null
+}
+
 export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgress, varient }: JobDetailsDialogProps) {
   const [jobNote, setJobNote] = useState("")
   const [solution, setSolution] = useState("")
-  const [activeTab, setActiveTab] = useState("start")
-  const [lastVisit] = useState("2024-01-12 by John Silva")
   const [isLoading, setIsLoading] = useState(false)
-  console.log(job, "__________ JobDetailsDialog Rendered");
+  const [showPreviousVisits, setShowPreviousVisits] = useState(false)
+  const [previousServices, setPreviousServices] = useState<PreviousServiceData | null |any>(null)
+  const [loadingPrevious, setLoadingPrevious] = useState(false)
 
-  const { updateBreakdownStatus, updateServiceVisitStatus ,getPreviousServiceLists } = useApiConfig()
+  const { updateBreakdownStatus, updateServiceVisitStatus, getPreviousServiceLists } = useApiConfig()
   const { user } = useAuth()
 
   if (!job) return null
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return null
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
+  }
+
+  const handleCall = () => {
+    if (job.phone_number) {
+      window.location.href = `tel:${job.phone_number}`
+    } else {
+      toast.error("Phone number not available")
+    }
+  }
+
+  const handleNavigate = () => {
+    if (job.location && job.location !== "Something") {
+      const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.location)}`
+      window.open(mapsUrl, '_blank')
+    } else {
+      toast.error("Location not available")
+    }
+  }
+
+  const fetchPreviousServices = async () => {
+    if (loadingPrevious || previousServices) return
+    
+    setLoadingPrevious(true)
+    try {
+      const data = await getPreviousServiceLists(job.machineRefNo || "")
+      setPreviousServices(data)
+      console.log("Previous Services for job", job.jobId, ":", data)
+    } catch (error) {
+      console.error("Error fetching previous services:", error)
+      toast.error("Failed to load previous visits")
+    } finally {
+      setLoadingPrevious(false)
+    }
+  }
+
+  const handleViewPreviousVisits = () => {
+    if (!showPreviousVisits && !previousServices) {
+      fetchPreviousServices()
+    }
+    setShowPreviousVisits(!showPreviousVisits)
+  }
+
+  const renderPreviousVisitsTable = () => {
+    if (!previousServices) return null
+
+    const rows = []
+    for (let i = 1; i <= 6; i++) {
+      const expected = previousServices[`exptsv${i}` as keyof PreviousServiceData]
+      const actual = previousServices[`sv${i}` as keyof PreviousServiceData]
+      
+      rows.push({
+        index: i,
+        expected: expected,
+        actual: actual
+      })
+    }
+
+    return (
+      <div className="mt-3 border border-gray-200 rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-100 border-b border-gray-200">
+              <tr>
+                <th className="px-3 py-2 text-left font-semibold text-gray-700">#</th>
+                <th className="px-3 py-2 text-left font-semibold text-gray-700">Expected</th>
+                <th className="px-3 py-2 text-left font-semibold text-gray-700">Actual</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr 
+                  key={row.index} 
+                  className={`border-b border-gray-100 ${row.actual ? 'bg-green-50' : 'bg-blue-50'}`}
+                >
+                  <td className="px-3 py-2 font-medium text-gray-900">{row.index}</td>
+                  <td className="px-3 py-2 text-gray-700">
+                    {row.expected ? formatDate(row.expected) : 'N/A'}
+                  </td>
+                  <td className={`px-3 py-2 font-medium ${row.actual ? 'text-green-700' : 'text-blue-600'}`}>
+                    {row.actual ? formatDate(row.actual) : 'N/A'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )
+  }
 
   const handleStarted = async () => {
     if (!user?.tecH_CODE) {
@@ -51,13 +160,9 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
       return
     }
 
-  
-
     setIsLoading(true)
     try {
       if (varient === "breakdown") {
-        console.log("Starting breakdown job with note:", jobNote)
-        // Breakdown API call
         const breackdownUpdate = await updateBreakdownStatus({
           techCode: user.tecH_CODE,
           jobId: parseInt(job.jobId),
@@ -68,37 +173,23 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
         })
         console.log("Breakdown update response:", breackdownUpdate)
       } else {
-        // Service API call
         const updateServiceresponse = await updateServiceVisitStatus({
           techCode: user.tecH_CODE,
           visitNo: parseInt(job.jobId),
           machineRefNo: job.machineRefNo || "",
           jobStatus: "started"
         })
-
         console.log("Service visit update response:", updateServiceresponse)
       }
 
       toast.success("Job started successfully")
       onInProgress()
       setJobNote("")
-      setActiveTab("complete")
     } catch (error) {
       console.error("Error starting job:", error)
       toast.error("Failed to start job. Please try again.")
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  
-  
-  const fetchPreviousServices = async () => {
-    try {
-      const previousServices = await getPreviousServiceLists(job.machineRefNo || "")  
-      console.log("Previous Services for job", job.jobId, ":", previousServices)
-    } catch (error) {
-      console.error("Error fetching previous services:", error)
     }
   }
 
@@ -111,7 +202,6 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
     setIsLoading(true)
     try {
       if (varient === "breakdown") {
-        // Breakdown API call
         await updateBreakdownStatus({
           techCode: user.tecH_CODE,
           jobId: parseInt(job.jobId),
@@ -121,7 +211,6 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
           note: solution || ""
         })
       } else {
-        // Service API call
         await updateServiceVisitStatus({
           techCode: user.tecH_CODE,
           visitNo: parseInt(job.jobId),
@@ -134,7 +223,6 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
       onComplete()
       setSolution("")
       setJobNote("")
-      setActiveTab("start")
       onClose()
     } catch (error) {
       console.error("Error completing job:", error)
@@ -147,170 +235,204 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
   const handleCancel = () => {
     setJobNote("")
     setSolution("")
-    setActiveTab("start")
+    setShowPreviousVisits(false)
+    setPreviousServices(null)
     onClose()
   }
 
+  const isPending = job.status === "pending"
+  const isStarted = job.status === "started"
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="bg-white border-gray-200 max-h-[90vh] overflow-y-auto max-w-[45vh]">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-gray-900">Job Details</DialogTitle>
-          <DialogDescription className="text-gray-500">Review and update job information</DialogDescription>
-        </DialogHeader>
+    <>
+      
+      
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent 
+          className="bg-white border-gray-200 max-h-[90vh] overflow-y-auto sm:max-w-[425px]"
+          data-mobile-bottom="true"
+        >
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900">Job Details</DialogTitle>
+            <DialogDescription className="text-gray-500">Review and update job information</DialogDescription>
+          </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Job Info */}
-          <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg space-y-3 border border-gray-200">
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Job ID</p>
-              <p className="font-bold text-lg text-gray-900 mt-1">{job.jobId}</p>
-            </div>
-            {job.description && (
+          <div className="space-y-4">
+            {/* Job Info */}
+            <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg space-y-3 border border-gray-200">
               <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wide">Description</p>
-                <p className="text-sm text-gray-700 mt-1">{job.description}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wide">Job ID</p>
+                <p className="font-bold text-lg text-gray-900 mt-1">{job.jobId}</p>
               </div>
-            )}
-            {job.customerName && (
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wide">Customer</p>
-                <p className="text-sm text-gray-700 mt-1">{job.customerName}</p>
-              </div>
-            )}
-            <div>
-              <p className="font-medium flex items-center gap-2 text-gray-900 mt-1">
-                <MapPin className="w-4 h-4 text-blue-600" />
-                {job.location}
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-200">
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wide">Status</p>
-                <p className="font-bold capitalize text-gray-900 mt-1">{job.status}</p>
-              </div>
-              {varient === "service" && (
+              {job.description && (
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">
-                    Time Left
-                  </p>
-                  <p className="font-bold text-red-600 mt-1">
-                    {job.daysLeft}
-                  </p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Description</p>
+                  <p className="text-sm text-gray-700 mt-1">{job.description}</p>
                 </div>
               )}
-
-              {varient === "breakdown" && (
+              {job.customerName && (
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">
-                    Agreement
-                  </p>
-                  <p className="font-bold text-red-600 mt-1">
-                    {job.customer_agreement}
-                  </p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Customer</p>
+                  <p className="text-sm text-gray-700 mt-1">{job.customerName}</p>
                 </div>
               )}
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="grid grid-cols-2 gap-3">
-            <Button variant="outline" className="border-blue-200 text-blue-700 hover:bg-blue-50 h-11">
-              <Phone className="w-4 h-4 mr-2" />
-              Call
-            </Button>
-            <Button variant="outline" className="border-green-200 text-green-700 hover:bg-green-50 h-11">
-              <MapPin className="w-4 h-4 mr-2" />
-              Navigate
-            </Button>
-          </div>
-
-          {/* Tabs Section */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="start">Start Job</TabsTrigger>
-              <TabsTrigger value="complete" disabled={job.status === "pending"}>Complete Job</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="start" className="space-y-4 mt-4">
-              {/* Last Visit */}
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2 text-sm">Last Visit</h4>
-                <div className="p-3 border border-gray-200 rounded-lg bg-gray-50">
-                  <p className="text-sm text-gray-700">{lastVisit}</p>
+                <p className="font-medium flex items-center gap-2 text-gray-900 mt-1">
+                  <MapPin className="w-4 h-4 text-blue-600" />
+                  {job.location}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-200">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Status</p>
+                  <p className="font-bold capitalize text-gray-900 mt-1">{job.status}</p>
                 </div>
+                {varient === "service" && (
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">Time Left</p>
+                    <p className="font-bold text-red-600 mt-1">{job.daysLeft}</p>
+                  </div>
+                )}
+                {varient === "breakdown" && (
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">Agreement</p>
+                    <p className="font-bold text-red-600 mt-1">{job.customer_agreement}</p>
+                  </div>
+                )}
               </div>
+            </div>
 
-              {/* Notes */}
+            {/* Quick Actions */}
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                onClick={handleCall}
+                variant="outline" 
+                className="border-blue-200 text-blue-700 hover:bg-blue-50 h-11"
+              >
+                <Phone className="w-4 h-4 mr-2" />
+                Call
+              </Button>
+              <Button 
+                onClick={handleNavigate}
+                variant="outline" 
+                className="border-green-200 text-green-700 hover:bg-green-50 h-11"
+              >
+                <MapPin className="w-4 h-4 mr-2" />
+                Navigate
+              </Button>
+            </div>
+
+            {/* Previous Visits - Only for breakdown variant */}
+            {varient === "service" && (
               <div>
-                <label className="text-sm font-semibold text-gray-900 block mb-2">Add Work Note</label>
-                <textarea
-                  value={jobNote}
-                  onChange={(e) => setJobNote(e.target.value)}
-                  placeholder="Enter work notes, observations, or updates..."
-                  className="w-full p-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  rows={4}
-                  disabled={isLoading}
-                />
-              </div>
-
-              {/* Actions */}
-              <div className="grid grid-cols-2 gap-3 pt-2">
                 <Button
-                  onClick={handleCancel}
+                  onClick={handleViewPreviousVisits}
                   variant="outline"
-                  className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 font-semibold"
-                  disabled={isLoading}
+                  className="w-full border-purple-200 text-purple-700 hover:bg-purple-50 h-11 font-semibold"
+                  disabled={loadingPrevious}
                 >
-                  Cancel
+                  {loadingPrevious ? "Loading..." : "View Previous Visits"}
+                  {showPreviousVisits ? (
+                    <ChevronUp className="w-4 h-4 ml-2" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 ml-2" />
+                  )}
                 </Button>
-                <Button
-                  onClick={handleStarted}
-                  className="bg-blue-600 hover:bg-blue-700 text-white h-11 font-semibold"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Starting..." : "Started"}
-                </Button>
+                
+                {showPreviousVisits && renderPreviousVisitsTable()}
               </div>
-            </TabsContent>
+            )}
 
-            <TabsContent value="complete" className="space-y-4 mt-4">
-              {/* Solution */}
-              <div>
-                <label className="text-sm font-semibold text-gray-900 block mb-2">Solution</label>
-                <textarea
-                  value={solution}
-                  onChange={(e) => setSolution(e.target.value)}
-                  placeholder="Enter the solution or work completed..."
-                  className="w-full p-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  rows={4}
-                  disabled={isLoading}
-                />
+            
+
+            {/* Start Job Section - Only show when pending */}
+            {isPending && (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-semibold text-gray-900 block mb-2">Add Work Note</label>
+                  <textarea
+                    value={jobNote}
+                    onChange={(e) => setJobNote(e.target.value)}
+                    placeholder="Enter work notes, observations, or updates..."
+                    className="w-full p-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    rows={4}
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <Button
+                    onClick={handleCancel}
+                    variant="outline"
+                    className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 font-semibold"
+                    disabled={isLoading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleStarted}
+                    className="bg-blue-600 hover:bg-blue-700 text-white h-11 font-semibold"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Starting..." : "Start Job"}
+                  </Button>
+                </div>
               </div>
+            )}
 
-              {/* Actions */}
-              <div className="grid grid-cols-2 gap-3 pt-2">
+            {/* Complete Job Section - Only show when started */}
+            {isStarted && (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-semibold text-gray-900 block mb-2">Solution</label>
+                  <textarea
+                    value={solution}
+                    onChange={(e) => setSolution(e.target.value)}
+                    placeholder="Enter the solution or work completed..."
+                    className="w-full p-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    rows={4}
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <Button
+                    onClick={onClose}
+                    variant="outline"
+                    className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 font-semibold"
+                    disabled={isLoading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleCompleted}
+                    className="bg-green-600 hover:bg-green-700 text-white h-11 font-semibold"
+                    disabled={isLoading}
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    {isLoading ? "Completing..." : "Complete Job"}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Completed Status - Show info only */}
+            {job.status === "completed" && (
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-center">
+                <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto mb-2" />
+                <p className="font-semibold text-green-800">This job has been completed</p>
                 <Button
                   onClick={onClose}
                   variant="outline"
-                  className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 font-semibold"
-                  disabled={isLoading}
+                  className="mt-4 border-gray-300 text-gray-700 hover:bg-gray-50"
                 >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleCompleted}
-                  className="bg-green-600 hover:bg-green-700 text-white h-11 font-semibold"
-                  disabled={isLoading}
-                >
-                  <CheckCircle2 className="w-4 h-4 mr-2" />
-                  {isLoading ? "Completing..." : "Completed"}
+                  Close
                 </Button>
               </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </DialogContent>
-    </Dialog>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
