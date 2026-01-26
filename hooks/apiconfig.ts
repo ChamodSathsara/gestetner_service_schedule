@@ -88,6 +88,7 @@ interface ServiceUpdatePayload {
   visitNo: number
   machineRefNo: string
   jobStatus: 'started' | 'complete'
+  meterReadingValue?: number
 }
 
 // Breakdown Mapping functions
@@ -125,8 +126,8 @@ const mapBreakdownToJob = (breakdown: ApiBreakdown): Job => {
     location: breakdown.cuS_ADD1,
     description: breakdown.note,
     customerName: breakdown.cuS_NAME,
-    // status: mapJobStatus(breakdown.jobStatus),
-    status: breakdown.joB_STATUS.toLowerCase(),
+    status: mapJobStatus(breakdown.joB_STATUS),
+    // status: breakdown.joB_STATUS.toLowerCase(),
     note: breakdown.note,
     customer_agreement: mapCustomerAgreement(breakdown.cuS_STATUS),
     phone_number: breakdown.cuS_TEL_NO,
@@ -240,7 +241,7 @@ export const useApiConfig = () => {
     // 4. Update Service Visit Status
     updateServiceVisitStatus: async (payload: ServiceUpdatePayload) => {
         console.log("updateServiceVisitStatus payload", payload);
-      return apiCall('api/Service/updateservicevisit', 'POST', payload)
+      return apiCall(`api/Service/updateservicevisit?techCode=${user?.tecH_CODE}&visitNo=${payload.visitNo}&machineRefNo=${payload.machineRefNo}&jobStatus=${payload.jobStatus}&meterReadingValue=${payload.meterReadingValue}`, 'POST')
     },
 
     getAllBreakdownsList: async (): Promise<Job[]> => {

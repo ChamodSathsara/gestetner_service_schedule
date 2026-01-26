@@ -50,13 +50,25 @@ interface PreviousServiceData {
 export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgress, varient }: JobDetailsDialogProps) {
   const [jobNote, setJobNote] = useState("")
   const [solution, setSolution] = useState("")
+  const [meterReadingValue, setMeterReadingValue] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [showPreviousVisits, setShowPreviousVisits] = useState(false)
-  const [previousServices, setPreviousServices] = useState<PreviousServiceData | null |any>(null)
+  const [previousServices, setPreviousServices] = useState<PreviousServiceData | null | any>(null)
   const [loadingPrevious, setLoadingPrevious] = useState(false)
 
   const { updateBreakdownStatus, updateServiceVisitStatus, getPreviousServiceLists } = useApiConfig()
   const { user } = useAuth()
+
+  // Reset states when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      setShowPreviousVisits(false)
+      setPreviousServices(null)
+      setJobNote("")
+      setSolution("")
+      setMeterReadingValue("")
+    }
+  }, [isOpen])
 
   if (!job) return null
 
@@ -155,6 +167,7 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
   }
 
   const handleStarted = async () => {
+    console.log(meterReadingValue ,"meterReadingValue meterReadingValue meterReadingValue");
     if (!user?.tecH_CODE) {
       toast.error("User information not available")
       return
@@ -173,11 +186,13 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
         })
         console.log("Breakdown update response:", breackdownUpdate)
       } else {
+        // Service API call with meter reading
         const updateServiceresponse = await updateServiceVisitStatus({
           techCode: user.tecH_CODE,
           visitNo: parseInt(job.jobId),
           machineRefNo: job.machineRefNo || "",
-          jobStatus: "started"
+          jobStatus: "started",
+          meterReadingValue: meterReadingValue ? parseInt(meterReadingValue) : undefined
         })
         console.log("Service visit update response:", updateServiceresponse)
       }
@@ -185,6 +200,7 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
       toast.success("Job started successfully")
       onInProgress()
       setJobNote("")
+      setMeterReadingValue("")
     } catch (error) {
       console.error("Error starting job:", error)
       toast.error("Failed to start job. Please try again.")
@@ -211,11 +227,13 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
           note: solution || ""
         })
       } else {
+        // Service API call with meter reading
         await updateServiceVisitStatus({
           techCode: user.tecH_CODE,
           visitNo: parseInt(job.jobId),
           machineRefNo: job.machineRefNo || "",
-          jobStatus: "complete"
+          jobStatus: "complete",
+          meterReadingValue: meterReadingValue ? parseInt(meterReadingValue) : undefined
         })
       }
 
@@ -223,6 +241,7 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
       onComplete()
       setSolution("")
       setJobNote("")
+      setMeterReadingValue("")
       onClose()
     } catch (error) {
       console.error("Error completing job:", error)
@@ -235,6 +254,7 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
   const handleCancel = () => {
     setJobNote("")
     setSolution("")
+    setMeterReadingValue("")
     setShowPreviousVisits(false)
     setPreviousServices(null)
     onClose()
@@ -245,8 +265,6 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
 
   return (
     <>
-      
-      
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent 
           className="bg-white border-gray-200 max-h-[90vh] overflow-y-auto sm:max-w-[425px]"
@@ -322,7 +340,7 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
               </Button>
             </div>
 
-            {/* Previous Visits - Only for breakdown variant */}
+            {/* Previous Visits - Only for service variant */}
             {varient === "service" && (
               <div>
                 <Button
@@ -343,22 +361,34 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
               </div>
             )}
 
-            
-
             {/* Start Job Section - Only show when pending */}
             {isPending && (
               <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-semibold text-gray-900 block mb-2">Add Work Note</label>
-                  <textarea
-                    value={jobNote}
-                    onChange={(e) => setJobNote(e.target.value)}
-                    placeholder="Enter work notes, observations, or updates..."
-                    className="w-full p-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    rows={4}
-                    disabled={isLoading}
-                  />
-                </div>
+                {varient === "breakdown" ? (
+                  <div>
+                    <label className="text-sm font-semibold text-gray-900 block mb-2">Add Work Note</label>
+                    <textarea
+                      value={jobNote}
+                      onChange={(e) => setJobNote(e.target.value)}
+                      placeholder="Enter work notes, observations, or updates..."
+                      className="w-full p-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      rows={4}
+                      disabled={isLoading}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="text-sm font-semibold text-gray-900 block mb-2">Meter Reading Value</label>
+                    <input
+                      type="number"
+                      value={meterReadingValue}
+                      onChange={(e) => setMeterReadingValue(e.target.value)}
+                      placeholder="Enter meter reading value..."
+                      className="w-full p-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      disabled={isLoading}
+                    />
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-3 pt-2">
                   <Button
@@ -383,17 +413,31 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
             {/* Complete Job Section - Only show when started */}
             {isStarted && (
               <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-semibold text-gray-900 block mb-2">Solution</label>
-                  <textarea
-                    value={solution}
-                    onChange={(e) => setSolution(e.target.value)}
-                    placeholder="Enter the solution or work completed..."
-                    className="w-full p-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    rows={4}
-                    disabled={isLoading}
-                  />
-                </div>
+                {varient === "breakdown" ? (
+                  <div>
+                    <label className="text-sm font-semibold text-gray-900 block mb-2">Solution</label>
+                    <textarea
+                      value={solution}
+                      onChange={(e) => setSolution(e.target.value)}
+                      placeholder="Enter the solution or work completed..."
+                      className="w-full p-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      rows={4}
+                      disabled={isLoading}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="text-sm font-semibold text-gray-900 block mb-2">Meter Reading Value</label>
+                    <input
+                      type="number"
+                      value={meterReadingValue}
+                      onChange={(e) => setMeterReadingValue(e.target.value)}
+                      placeholder="Enter meter reading value..."
+                      className="w-full p-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      disabled={isLoading}
+                    />
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-3 pt-2">
                   <Button

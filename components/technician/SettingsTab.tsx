@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Textarea } from "@/components/ui/textarea";
 import { MapPin, Clock, Calendar, ChevronRight, Phone, Hash, FileText, Bell } from "lucide-react";
 import { useApiConfig } from '@/hooks/apiconfig';
+import { Loading, LoadingDots, LoadingPulse } from './Loading'
 
 // Type Definitions
 interface Service {
@@ -514,6 +515,8 @@ export default function ServiceJobManagement() {
     }
   }
 
+
+
   const fetchServicesList = async () => {
     try {
       setLoading(true)
@@ -532,6 +535,8 @@ export default function ServiceJobManagement() {
     fetchServicesList();
   },[]);
 
+
+
   const handleViewDetails = (item: Service | Job, type: ItemType) => {
     setSelectedItem({ ...item, type });
     setDetailsOpen(true);
@@ -546,6 +551,10 @@ export default function ServiceJobManagement() {
     console.log('Recall submitted:', { item, reason });
     // Handle recall submission here
   };
+
+    if (loading) {
+  return <Loading fullScreen message="Loading dashboard data..." />
+}
 
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-4">
@@ -590,9 +599,9 @@ export default function ServiceJobManagement() {
       <div className="space-y-3">
         {activeTab === 'services' && (
           <>
-            {servicesList.map((service: Service) => (
+            {servicesList.map((service: Service, idx: number) => (
               <ServiceCard
-                key={service.id}
+                key={`${service.id}-${idx}`}
                 service={service}
                 onClick={() => handleViewDetails(service, 'service')}
               />
@@ -602,9 +611,9 @@ export default function ServiceJobManagement() {
 
         {activeTab === 'jobs' && (
           <>
-            {breakdownsList.map((job: Job) => (
+            {breakdownsList.map((job: Job, idx: number) => (
               <JobCard
-                key={job.id}
+                key={`${job.id}-${idx}`}
                 job={job}
                 onClick={() => handleViewDetails(job, 'job')}
               />
@@ -614,9 +623,9 @@ export default function ServiceJobManagement() {
 
         {activeTab === 'dues' && (
           <>
-            {mockDues.map((due) => (
+            {mockDues.map((due, idx: number) => (
               <DueCard
-                key={due.id}
+                key={`${due.id}-${idx}`}
                 due={due}
                 onRecall={handleRecallClick}
               />

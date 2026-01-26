@@ -12,6 +12,7 @@ import { PerformanceTab } from "./PerformanceTab"
 import ServiceJobManagement from "./SettingsTab"
 import { JobDetailsDialog } from "./JobDetailsDialog"
 import { useApiConfig } from '@/hooks/apiconfig' 
+import { Loading, LoadingDots, LoadingPulse } from './Loading'
 
 const { technicianServices: recentServices } = mockDataConfig
 
@@ -141,6 +142,10 @@ export function TechnicianDashboardContent() {
       alert(`Job ${selectedJob.jobId} marked as in progress!`)
       setSelectedJob(null)
     }
+  }
+
+   if (loading) {
+    return <Loading fullScreen message="Loading dashboard data..." />
   }
 
   return (

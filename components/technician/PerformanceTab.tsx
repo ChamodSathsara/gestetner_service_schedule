@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrendingUp, CheckCircle2, Clock } from "lucide-react"
 import { useApiConfig } from "@/hooks/apiconfig"
 import { useEffect, useState } from "react"
+import { Loading } from "./Loading";
 
 interface PerformanceData {
   completedJobs: number;
@@ -29,6 +30,8 @@ export function PerformanceTab() {
     }
   };
 
+
+
   useEffect(() => {
     fetchPerformance();
   }, []);
@@ -36,6 +39,11 @@ export function PerformanceTab() {
   const pendingJobs = performanceData 
     ? performanceData.totalJobs - performanceData.completedJobs 
     : 0;
+
+
+    if (loading) {
+    return <Loading fullScreen message="Loading dashboard data..." />
+  }
 
   if (loading) {
     return (
