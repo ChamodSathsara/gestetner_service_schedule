@@ -32,28 +32,28 @@ export function DashboardOverview({ recentServices, recentBreakdowns, onJobClick
           <CardContent className="p-2.5 md:p-3 text-center">
             <Calendar className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 text-white" />
             <p className="text-2xl md:text-3xl font-bold text-white">{recentServices.length}</p>
-            <p className="text-[9px] md:text-xs text-blue-100 font-semibold">Service</p>
+            <p className="text-[9px] md:text-xs text-blue-100 font-semibold">Monthly Pending Service</p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-red-500 to-red-600 border-none shadow-md hover:shadow-lg transition-all">
           <CardContent className="p-2.5 md:p-3 text-center">
             <AlertCircle className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 text-white" />
             <p className="text-2xl md:text-3xl font-bold text-white">{recentBreakdowns.length}</p>
-            <p className="text-[9px] md:text-xs text-red-100 font-semibold">Breakdown</p>
+            <p className="text-[9px] md:text-xs text-red-100 font-semibold">Today Pending Jobs</p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-green-500 to-green-600 border-none shadow-md hover:shadow-lg transition-all">
           <CardContent className="p-2.5 md:p-3 text-center">
             <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 text-white" />
             <p className="text-2xl md:text-3xl font-bold text-white">12</p>
-            <p className="text-[9px] md:text-xs text-green-100 font-semibold">Completed</p>
+            <p className="text-[9px] md:text-xs text-green-100 font-semibold">Monthly Completed Services</p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-purple-500 to-purple-600 border-none shadow-md hover:shadow-lg transition-all">
           <CardContent className="p-2.5 md:p-3 text-center">
-            <TrendingUp className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 text-white" />
-            <p className="text-2xl md:text-3xl font-bold text-white">94%</p>
-            <p className="text-[9px] md:text-xs text-purple-100 font-semibold">Performance</p>
+            <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 text-white" />
+            <p className="text-2xl md:text-3xl font-bold text-white">2</p>
+            <p className="text-[9px] md:text-xs text-purple-100 font-semibold">Today Completed Jobs</p>
           </CardContent>
         </Card>
       </div>
