@@ -86,6 +86,7 @@ interface BreakdownUpdatePayload {
 interface ServiceUpdatePayload {
   techCode: string
   visitNo: number
+  jobId: number
   machineRefNo: string
   jobStatus: 'started' | 'complete'
   meterReadingValue?: number
@@ -208,8 +209,9 @@ export const useApiConfig = () => {
     if (!response.ok ) {
       throw new Error(`API Error: ${response.status} ${response.statusText}`)
     }
-
-    return method === 'GET' ? await response.json() : response;
+    const res = method === 'GET' ? await response.json() : response;
+    console.log(res);
+    return res
 
     // console.log("API call successful:", endpoint);
     // const res = await response.json();
@@ -235,13 +237,14 @@ export const useApiConfig = () => {
     // 3. Recent Normal Services list (with mapping)
     getMonthlyServiceVisits: async (): Promise<ServiceVisit[]> => {
       const data = await apiCall(`api/Service/getmonthlyservicevisits?techCode=${user?.tecH_CODE}`)
+      console.log("raw",data);
       return mapServiceVisits(data)
     },
 
     // 4. Update Service Visit Status
     updateServiceVisitStatus: async (payload: ServiceUpdatePayload) => {
         console.log("updateServiceVisitStatus payload", payload);
-      return apiCall(`api/Service/updateservicevisit?techCode=${user?.tecH_CODE}&visitNo=${payload.visitNo}&machineRefNo=${payload.machineRefNo}&jobStatus=${payload.jobStatus}&meterReadingValue=${payload.meterReadingValue}`, 'POST')
+      return apiCall(`api/Service/updateservicevisit?jobId=${payload.jobId}&techCode=${user?.tecH_CODE}&visitNo=${payload.visitNo}&machineRefNo=${payload.machineRefNo}&jobStatus=${payload.jobStatus}&meterReadingValue=${payload.meterReadingValue}`, 'POST')
     },
 
     getAllBreakdownsList: async (): Promise<Job[]> => {
@@ -264,7 +267,7 @@ export const useApiConfig = () => {
     // 6. Previous Service Lists
     getPreviousServiceLists: async (machineRef: string): Promise<ServiceVisit[]> => {
       const data = await apiCall(`api/Service/previousservicelists?techCode=${user?.tecH_CODE}&machineRefNo=${machineRef}`)
-      console.log("Previous Service Lists Datacaddsadasdsadadada===============++++++++++++:",machineRef, data);
+      // console.log("Previous Service Lists Datacaddsadasdsadadada===============++++++++++++:",machineRef, data);
       return data[0];
     },
 

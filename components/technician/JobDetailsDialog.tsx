@@ -5,6 +5,9 @@ import { MapPin, Phone, CheckCircle2, ChevronDown, ChevronUp } from "lucide-reac
 import { useApiConfig } from "@/hooks/apiconfig"
 import { useAuth } from "@/context/AuthContext"
 import { toast } from "sonner"
+import QRCode from "react-qr-code"; // ← import this
+import {Copy, Share2 } from "lucide-react";
+
 
 interface Job {
   id: string
@@ -191,6 +194,7 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
         const updateServiceresponse = await updateServiceVisitStatus({
           techCode: user.tecH_CODE,
           visitNo:job.expected_visit_no || 1,
+          jobId: parseInt(job.jobId),
           machineRefNo: job.machineRefNo || "",
           jobStatus: "started",
           meterReadingValue: meterReadingValue ? parseInt(meterReadingValue) : undefined
@@ -231,6 +235,7 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
         // Service API call with meter reading
         await updateServiceVisitStatus({
           techCode: user.tecH_CODE,
+          jobId: parseInt(job.jobId),
           visitNo: job.expected_visit_no || 1,
           machineRefNo: job.machineRefNo || "",
           jobStatus: "complete",
@@ -462,19 +467,93 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
             )}
 
             {/* Completed Status - Show info only */}
-            {job.status === "completed" && (
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-center">
-                <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto mb-2" />
-                <p className="font-semibold text-green-800">This job has been completed</p>
+          {job.status === "completed" && (
+          <div className="p-6 bg-green-50 border border-green-200 rounded-lg text-center space-y-6">
+            <div>
+              <CheckCircle2 className="w-16 h-16 text-green-600 mx-auto mb-3" />
+              <p className="font-semibold text-xl text-green-800">
+                This job has been completed!
+              </p>
+              <p className="text-green-700 mt-1">
+                Thank you! Please ask the customer to leave a quick review.
+              </p>
+            </div>
+
+            {/* QR Code & Sharing Section */}
+            <div className="flex flex-col items-center gap-5 bg-white p-6 rounded-xl shadow-sm border">
+              <p className="font-medium text-gray-800">
+                Customer Review Link
+              </p>
+
+              {/* QR Code */}
+              <div className="p-4 bg-white rounded-lg border">
+                <QRCode
+                  value="https://servista.com/review/Q454546/1&techCode=0000"
+                  size={180}
+                  level="Q"
+                  fgColor="#111827"
+                  bgColor="#ffffff"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
+                {/* Copy Link Button */}
                 <Button
-                  onClick={onClose}
+                  onClick={() => {
+                    navigator.clipboard.writeText("https://servista.com/review/Q454546/1&techCode=0000");
+                    // Optional: show a small toast/feedback
+                    alert("Review link copied to clipboard!");
+                  }}
                   variant="outline"
-                  className="mt-4 border-gray-300 text-gray-700 hover:bg-gray-50"
+                  className="flex-1 flex items-center justify-center gap-2"
                 >
-                  Close
+                  <Copy className="w-4 h-4" />
+                  Copy Link
+                </Button>
+
+                {/* Native Share Button (works great on mobile) */}
+                <Button
+                  onClick={() => {
+                    if (navigator.share) {
+                      navigator.share({
+                        title: "Review Your Service",
+                        text: "We'd love your feedback!",
+                        url: "https://servista.com/review/Q454546/1&techCode=0000",
+                      }).catch(() => {
+                        // Fallback to copy if share fails
+                        navigator.clipboard.writeText("https://servista.com/review/Q454546/1&techCode=0000");
+                        alert("Link copied (sharing not available)");
+                      });
+                    } else {
+                      // Fallback for desktop/no share support
+                      navigator.clipboard.writeText("https://servista.com/review/Q454546/1&techCode=0000");
+                      alert("Review link copied to clipboard!");
+                    }
+                  }}
+                  variant="default"
+                  className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Share2 className="w-4 h-4" />
+                  Share with Customer
                 </Button>
               </div>
-            )}
+
+              {/* Optional: Display the link for reference */}
+              <p className="text-xs text-gray-500 break-all">
+                https://servista.com/review/Q454546/1&techCode=0000
+              </p>
+            </div>
+
+            <Button
+              onClick={onClose}
+              variant="outline"
+              className="border-gray-300 text-gray-700 hover:bg-gray-50"
+            >
+              Close
+            </Button>
+          </div>
+        )}
           </div>
         </DialogContent>
       </Dialog>

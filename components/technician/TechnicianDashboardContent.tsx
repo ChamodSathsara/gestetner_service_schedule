@@ -2,17 +2,19 @@
 
 import { useEffect, useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Bell, Users, AlertCircle, Calendar, TrendingUp, Settings } from "lucide-react"
+import { Bell, Users, AlertCircle, Calendar, TrendingUp, Settings ,ArrowDownRight } from "lucide-react"
 import { mockDataConfig } from "@/lib/data-config"
 import { NotificationsPanel } from "./NotificationsPanel"
 import { DashboardOverview } from "./DashboardOverview"
 import { BreakdownTab } from "./BreakdownTab"
 import { ServiceTab } from "./ServiceTab"
 import { PerformanceTab } from "./PerformanceTab"
-import ServiceJobManagement from "./SettingsTab"
+import ServiceJobManagement from "./ServiceJobManagement"
 import { JobDetailsDialog } from "./JobDetailsDialog"
 import { useApiConfig } from '@/hooks/apiconfig' 
 import { Loading, LoadingDots, LoadingPulse } from './Loading'
+import AccountSettingsPage from "./Settings"
+
 
 const { technicianServices: recentServices } = mockDataConfig
 
@@ -215,8 +217,11 @@ export function TechnicianDashboardContent() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        
         {/* Mobile Bottom Navigation */}
-        <TabsList className="md:hidden fixed bottom-0 left-0 right-0 grid w-full grid-cols-5 bg-white border-t border-gray-200 z-40 rounded-none h-16 shadow-lg">
+        <TabsList className="md:hidden fixed bottom-0 left-0 right-0 grid w-full grid-cols-6 bg-white border-t border-gray-200 z-40 rounded-none h-16 shadow-lg">
+          
+          {/* Dashboard */}
           <TabsTrigger
             value="dashboard"
             className="flex flex-col items-center justify-center gap-1 py-2 text-gray-500 data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50"
@@ -224,6 +229,8 @@ export function TechnicianDashboardContent() {
             <Users className="w-5 h-5" />
             <span className="text-[10px] font-medium">Home</span>
           </TabsTrigger>
+
+          {/* Breackdown */}
           <TabsTrigger
             value="breakdown"
             className="flex flex-col items-center justify-center gap-1 py-2 text-gray-500 data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50"
@@ -231,6 +238,8 @@ export function TechnicianDashboardContent() {
             <AlertCircle className="w-5 h-5" />
             <span className="text-[10px] font-medium">Breakdown</span>
           </TabsTrigger>
+
+          {/* Service */}
           <TabsTrigger
             value="service"
             className="flex flex-col items-center justify-center gap-1 py-2 text-gray-500 data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50"
@@ -238,6 +247,8 @@ export function TechnicianDashboardContent() {
             <Calendar className="w-5 h-5" />
             <span className="text-[10px] font-medium">Service</span>
           </TabsTrigger>
+
+          {/* Performance */}
           <TabsTrigger
             value="performance"
             className="flex flex-col items-center justify-center gap-1 py-2 text-gray-500 data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50"
@@ -245,6 +256,17 @@ export function TechnicianDashboardContent() {
             <TrendingUp className="w-5 h-5" />
             <span className="text-[10px] font-medium">Stats</span>
           </TabsTrigger>
+          
+          {/* All */}
+          <TabsTrigger
+            value="all"
+            className="flex flex-col items-center justify-center gap-1 py-2 text-gray-500 data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50"
+          >
+            <ArrowDownRight  className="w-5 h-5" />
+            <span className="text-[10px] font-medium">All</span>
+          </TabsTrigger>
+
+          {/* Settings */}
           <TabsTrigger
             value="settings"
             className="flex flex-col items-center justify-center gap-1 py-2 text-gray-500 data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50"
@@ -260,6 +282,7 @@ export function TechnicianDashboardContent() {
           <TabsTrigger value="breakdown">Breakdowns</TabsTrigger>
           <TabsTrigger value="service">Service Schedule</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="all">All Jobs</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -290,8 +313,12 @@ export function TechnicianDashboardContent() {
           <PerformanceTab />
         </TabsContent>
 
-        <TabsContent value="settings" className="p-4 md:p-8 m-0 pb-20 md:pb-8">
+        <TabsContent value="all" className="p-4 md:p-8 m-0 pb-20 md:pb-8">
           <ServiceJobManagement />
+        </TabsContent>
+
+        <TabsContent value="settings" className="p-4 md:p-8 m-0 pb-20 md:pb-8">
+          <AccountSettingsPage />
         </TabsContent>
       </Tabs>
 
