@@ -16,6 +16,18 @@ import { Loading, LoadingDots, LoadingPulse } from './Loading'
 
 const { technicianServices: recentServices } = mockDataConfig
 
+interface Service {
+  id: string
+  jobId: string
+  date: string
+  location: string
+  description?: string
+  customerName?: string
+  status: string
+  note?: string
+  customer_agreement?: string
+}
+
 interface Job {
   id: string
   jobId: string
@@ -23,7 +35,7 @@ interface Job {
   location: string
   description?: string
   customerName?: string
-  // daysLeft: number
+  expected_visit_no?: number
   status: string
   note?: string
   customer_agreement?: string
@@ -57,7 +69,7 @@ export function TechnicianDashboardContent() {
   // const api = useApiConfig()
   const { getAllBreakdowns,getMonthlyServiceVisits  } = useApiConfig()
   const [activeTab, setActiveTab] = useState("dashboard")
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+  const [selectedJob, setSelectedJob] = useState<Job | Service| null | any>(null)
   const [showNotifications, setShowNotifications] = useState(false)
   const [recentBreakdowns , setRecentBreakdowns] = useState<any[]>([]);
   const [recentServices, setRecentServices] = useState<any[]>([]);
@@ -126,7 +138,7 @@ export function TechnicianDashboardContent() {
     { id: 3, type: "update", title: "Job Update", message: "BRK-2025-007 parts have arrived", time: "1 hour ago" },
   ]
 
-  const handleJobAction = (job: Job) => {
+  const handleJobAction = (job: Job, expectedVisitNo?: number) => {
     setSelectedJob(job)
   }
 

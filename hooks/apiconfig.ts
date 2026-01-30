@@ -256,15 +256,23 @@ export const useApiConfig = () => {
 
     // 5. Get Performance
     getPerformance: async () => {
-      return apiCall(`api/Breakdown/getperformance?techCode=${user?.tecH_CODE}`)
+      const data =  apiCall(`api/Breakdown/getperformance?techCode=${user?.tecH_CODE}`)
+      console.log("Performance Data:", data);
+      return data;
     },
 
     // 6. Previous Service Lists
     getPreviousServiceLists: async (machineRef: string): Promise<ServiceVisit[]> => {
       const data = await apiCall(`api/Service/previousservicelists?techCode=${user?.tecH_CODE}&machineRefNo=${machineRef}`)
       console.log("Previous Service Lists Datacaddsadasdsadadada===============++++++++++++:",machineRef, data);
+      return data[0];
+    },
+
+    getDueJobs : async () => {
+      const data =  apiCall(`api/Service/alltimedueservices?techCode=${user?.tecH_CODE}`)
+      console.log("Due Jobs Data:", data);
       return data;
-    }
+    },
 
 
 

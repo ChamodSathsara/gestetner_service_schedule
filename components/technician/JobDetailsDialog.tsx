@@ -19,7 +19,7 @@ interface Job {
   customer_agreement?: string
   machineRefNo?: string
   serialNo?: string
-  expected_visit_no?: number
+  expected_visit_no : number
   phone_number?: string
 }
 
@@ -58,6 +58,7 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
 
   const { updateBreakdownStatus, updateServiceVisitStatus, getPreviousServiceLists } = useApiConfig()
   const { user } = useAuth()
+  console.log("JobDetailsDialog rendered with job:", job, "and varient:", varient);  
 
   // Reset states when dialog closes
   useEffect(() => {
@@ -189,7 +190,7 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
         // Service API call with meter reading
         const updateServiceresponse = await updateServiceVisitStatus({
           techCode: user.tecH_CODE,
-          visitNo: parseInt(job.jobId),
+          visitNo:job.expected_visit_no || 1,
           machineRefNo: job.machineRefNo || "",
           jobStatus: "started",
           meterReadingValue: meterReadingValue ? parseInt(meterReadingValue) : undefined
@@ -230,7 +231,7 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
         // Service API call with meter reading
         await updateServiceVisitStatus({
           techCode: user.tecH_CODE,
-          visitNo: parseInt(job.jobId),
+          visitNo: job.expected_visit_no || 1,
           machineRefNo: job.machineRefNo || "",
           jobStatus: "complete",
           meterReadingValue: meterReadingValue ? parseInt(meterReadingValue) : undefined

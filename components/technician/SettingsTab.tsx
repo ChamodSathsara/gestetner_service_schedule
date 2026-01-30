@@ -36,9 +36,25 @@ interface Job {
   status: 'pending' | 'completed' | 'in-progress';
 }
 
-interface Due extends Service {
-  status: 'overdue';
+interface Due {
+  machineRefNo: string;
+  expectedVisitNo: string;
+  expectedVisitDate: string; // ISO date string
+  expectedVisitCount: number;
+  visitStatus: string | null;
+
+  rowId: number;
+  customerID: string;
+  customerName: string;
+
+  contactPerson: string;
+  customerTelephone: string;
+
+  machineLocation01: string;
+  machineLocation02: string;
+  machineLocation03: string;
 }
+
 
 type ItemType = 'service' | 'job';
 
@@ -137,20 +153,6 @@ type TabType = 'services' | 'jobs' | 'dues';
 //   }
 // ];
 
-const mockDues: Due[] = [
-  {
-    id: "268012",
-    jobId: "268012",
-    customerName: "Saman Fernando",
-    phone_number: "0763456789",
-    location: "Kandy",
-    machineRefNo: "Q454548",
-    date: "2026-01-10T00:00:00",
-    daysLeft: -13,
-    expected_visit_no: 3,
-    status: "overdue"
-  }
-];
 
 // Service Card Component
 function ServiceCard({ service, onClick }: ServiceCardProps) {
@@ -233,7 +235,7 @@ function JobCard({ job, onClick }: JobCardProps) {
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Clock className="w-4 h-4 text-gray-400" />
-            <span>{job.customer_agreement}</span>
+            <span>{job?.customerName}</span>
           </div>
         </div>
 
@@ -258,6 +260,17 @@ function JobCard({ job, onClick }: JobCardProps) {
   );
 }
 
+const getOverdueDays = (date: string | Date): number => {
+  const dueDate = new Date(date).getTime();
+  const now = Date.now();
+
+  return Math.max(
+    0,
+    Math.ceil((now - dueDate) / (1000 * 60 * 60 * 24))
+  );
+};
+
+
 // Due Card Component
 function DueCard({ due, onRecall }: DueCardProps) {
   return (
@@ -266,7 +279,7 @@ function DueCard({ due, onRecall }: DueCardProps) {
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-base text-gray-900 mb-1">
-              {due.jobId}
+              {due.machineRefNo}
             </h3>
             <p className="text-sm text-gray-600 truncate">
               {due.customerName}
@@ -288,21 +301,21 @@ function DueCard({ due, onRecall }: DueCardProps) {
         <div className="space-y-2 mb-3">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <MapPin className="w-4 h-4 text-gray-400" />
-            <span className="truncate">{due.location}</span>
+            <span className="truncate">{due.machineLocation01}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Phone className="w-4 h-4 text-gray-400" />
-            <span>{due.phone_number}</span>
+            <span>{due.contactPerson}</span>
           </div>
         </div>
 
         <div className="flex items-center justify-between pt-3 border-t border-red-200">
           <div className="text-xs text-red-700 font-medium">
-            Overdue by {Math.abs(due.daysLeft)} days
+            Overdue by {getOverdueDays(due.expectedVisitDate)} days
           </div>
           
           <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-red-100 text-red-700">
-            {due.status}
+            Overdue
           </span>
         </div>
       </CardContent>
@@ -455,7 +468,7 @@ function RecallDialog({ item, isOpen, onClose, onSubmit }: RecallDialogProps) {
         
         <div className="space-y-4 py-4">
           <div>
-            <p className="text-sm text-gray-600 mb-1">Job ID: <span className="font-semibold text-gray-900">{item?.jobId}</span></p>
+            <p className="text-sm text-gray-600 mb-1">Job ID: <span className="font-semibold text-gray-900">{item?.machineRefNo}</span></p>
             <p className="text-sm text-gray-600">Customer: <span className="font-semibold text-gray-900">{item?.customerName}</span></p>
           </div>
 
@@ -497,12 +510,13 @@ export default function ServiceJobManagement() {
   const [detailsOpen, setDetailsOpen] = useState<boolean>(false);
   const [recallOpen, setRecallOpen] = useState<boolean>(false);
   const [recallItem, setRecallItem] = useState<Service | Job | Due | null>(null);
-  const { getAllBreakdownsList, getAllServiceList } = useApiConfig()
+  const { getAllBreakdownsList, getAllServiceList , getDueJobs } = useApiConfig()
   const [loading, setLoading] = useState<boolean>(false);
   const [breakdownsList, setBreakdownsList] = useState<Job[] | any >([]);
   const [servicesList, setServicesList] = useState<Service[] | any>([]);
+  const [duesList, setDuesList] = useState<Due[] | any>([]);
 
-   const fetchBreakdownsList = async () => {
+  const fetchBreakdownsList = async () => {
     try {
       setLoading(true)
       const mappedJobs = await getAllBreakdownsList() // Already mapped!
@@ -515,7 +529,18 @@ export default function ServiceJobManagement() {
     }
   }
 
-
+  const fetchDuesList = async () => {
+    try {
+      setLoading(true)
+      const data = await getDueJobs();
+      setDuesList(data)
+      console.log("Dues List", data)
+    } catch (error) {
+      console.error('Error fetching dues:', error)
+    }finally {
+      setLoading(false)
+    }
+  }
 
   const fetchServicesList = async () => {
     try {
@@ -533,6 +558,7 @@ export default function ServiceJobManagement() {
   useEffect(()=>{
     fetchBreakdownsList();
     fetchServicesList();
+    fetchDuesList();
   },[]);
 
 
@@ -623,7 +649,7 @@ export default function ServiceJobManagement() {
 
         {activeTab === 'dues' && (
           <>
-            {mockDues.map((due, idx: number) => (
+            {duesList.map((due:any, idx: number) => (
               <DueCard
                 key={`${due.id}-${idx}`}
                 due={due}

@@ -72,7 +72,7 @@ export function DashboardOverview({ recentServices, recentBreakdowns, onJobClick
         <div className="space-y-2">
           {recentServices.length > 0 ? (
             recentServices.map((job) => (
-              <JobCard key={job.id} job={job} onClick={() => onJobClick(job)} variant="service" />
+              <JobCard key={job.id} job={job} onClick={() => onJobClick(job )} variant="service"  />
             ))
           ) : (
             <Card className="bg-gradient-to-r from-gray-50 to-gray-100 border-dashed border-2 border-gray-300">

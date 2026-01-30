@@ -5,11 +5,20 @@ import { useEffect, useState } from "react"
 import { Loading } from "./Loading";
 
 interface PerformanceData {
-  completedJobs: number;
   totalJobs: number;
-  performancePercentage: number;
-  techCode: string | null;
-  weeklyCompleted: number;
+  completedJobs: number;
+  jobPerformancePercentage: number;
+
+  weeklyCompletedJobs: number;
+  lastWeekAllJobs: number;
+  lastWeekCompletedJobs: number;
+
+  totalServices: number;
+  completedServices: number;
+  servicesPerformancePercentage: number;
+
+  lastWeekAllServices: number;
+  lastWeekCompetedServices: number;
 }
 
 export function PerformanceTab() {
@@ -79,19 +88,19 @@ export function PerformanceTab() {
           <div className="flex justify-between mb-2">
             <span className="text-sm font-medium text-gray-700">Overall Performance</span>
             <span className="font-bold text-xl text-blue-600">
-              {performanceData?.performancePercentage.toFixed(1)}%
+              {performanceData?.servicesPerformancePercentage.toFixed(1)}%
             </span>
           </div>
           <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
             <div 
               className="h-full bg-blue-600 rounded-full transition-all duration-500" 
-              style={{ width: `${performanceData?.performancePercentage || 0}%` }} 
+              style={{ width: `${performanceData?.servicesPerformancePercentage || 0}%` }} 
             />
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            {performanceData && performanceData.performancePercentage >= 90 
+            {performanceData && performanceData.servicesPerformancePercentage >= 90 
               ? "Excellent performance! Keep it up." 
-              : performanceData && performanceData.performancePercentage >= 70
+              : performanceData && performanceData.servicesPerformancePercentage >= 70
               ? "Good performance! Room for improvement."
               : "Keep working hard to improve your performance."}
           </p>
@@ -102,7 +111,7 @@ export function PerformanceTab() {
             <CardContent className="pt-4 pb-3 text-center">
               <CheckCircle2 className="w-6 h-6 mx-auto mb-2 text-blue-600" />
               <p className="text-2xl font-bold text-blue-700">
-                {performanceData?.completedJobs || 0}
+                {performanceData?.completedServices || 0}
               </p>
               <p className="text-xs text-blue-600 font-medium">Completed</p>
             </CardContent>
@@ -111,7 +120,7 @@ export function PerformanceTab() {
             <CardContent className="pt-4 pb-3 text-center">
               <Clock className="w-6 h-6 mx-auto mb-2 text-blue-600" />
               <p className="text-2xl font-bold text-blue-700">
-                {pendingJobs}
+                {performanceData?.totalServices || 0}
               </p>
               <p className="text-xs text-blue-600 font-medium">Total Services</p>
             </CardContent>
@@ -126,7 +135,7 @@ export function PerformanceTab() {
             <div className="flex items-center gap-3 p-2 bg-blue-50 rounded-lg">
               <CheckCircle2 className="w-5 h-5 text-blue-600" />
               <span className="text-sm text-gray-700">
-                {performanceData?.weeklyCompleted || 0} Services completed this week
+                {performanceData?.lastWeekCompetedServices || 0} Services completed this week from {performanceData?.lastWeekAllServices || 0} total services
               </span>
             </div>
           </div>
@@ -149,19 +158,19 @@ export function PerformanceTab() {
           <div className="flex justify-between mb-2">
             <span className="text-sm font-medium text-gray-700">Overall Performance</span>
             <span className="font-bold text-xl text-blue-600">
-              {performanceData?.performancePercentage.toFixed(1)}%
+              {performanceData?.jobPerformancePercentage.toFixed(1)}%
             </span>
           </div>
           <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
             <div 
               className="h-full bg-blue-600 rounded-full transition-all duration-500" 
-              style={{ width: `${performanceData?.performancePercentage || 0}%` }} 
+              style={{ width: `${performanceData?.jobPerformancePercentage || 0}%` }} 
             />
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            {performanceData && performanceData.performancePercentage >= 90 
+            {performanceData && performanceData.jobPerformancePercentage >= 90 
               ? "Excellent performance! Keep it up." 
-              : performanceData && performanceData.performancePercentage >= 70
+              : performanceData && performanceData.jobPerformancePercentage >= 70
               ? "Good performance! Room for improvement."
               : "Keep working hard to improve your performance."}
           </p>
@@ -181,7 +190,7 @@ export function PerformanceTab() {
             <CardContent className="pt-4 pb-3 text-center">
               <Clock className="w-6 h-6 mx-auto mb-2 text-blue-600" />
               <p className="text-2xl font-bold text-blue-700">
-                {pendingJobs}
+                {performanceData?.totalJobs || 0}
               </p>
               <p className="text-xs text-blue-600 font-medium">Total Jobs</p>
             </CardContent>
@@ -196,7 +205,7 @@ export function PerformanceTab() {
             <div className="flex items-center gap-3 p-2 bg-blue-50 rounded-lg">
               <CheckCircle2 className="w-5 h-5 text-blue-600" />
               <span className="text-sm text-gray-700">
-                {performanceData?.weeklyCompleted || 0} jobs completed this week
+                {performanceData?.lastWeekCompletedJobs || 0} jobs completed this week from {performanceData?.lastWeekAllJobs || 0} total jobs
               </span>
             </div>
           </div>
