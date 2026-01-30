@@ -103,12 +103,12 @@ export default function LoginPage() {
             <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                 <User className="w-4 h-4 text-blue-400" />
-                Tech Code
+                Tech Code Or Mobile Number
               </label>
               <div className="relative">
                 <Input
                   type="text"
-                  placeholder="Enter your tech code"
+                  placeholder="Enter your tech code or mobile number"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="h-12 pl-4 pr-4 bg-gray-50 border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"
