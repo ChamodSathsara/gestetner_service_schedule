@@ -11,7 +11,7 @@ interface ReviewFormProps {
   item: ServiceOrJob;
   machine: Machine;
   onBack: () => void;
-  onSubmit: (reviewData: { rating: number; message: string }) => Promise<boolean>;
+  onSubmit: any;
   existingReviews: Review[];
 }
 
