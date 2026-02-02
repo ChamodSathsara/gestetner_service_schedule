@@ -1,140 +1,174 @@
-import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { MapPin, Phone, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react"
-import { useApiConfig } from "@/hooks/apiconfig"
-import { useAuth } from "@/context/AuthContext"
-import { toast } from "sonner"
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import {
+  MapPin,
+  Phone,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+import { useApiConfig } from "@/hooks/apiconfig";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 import QRCode from "react-qr-code"; // ← import this
-import {Copy, Share2 } from "lucide-react";
-
+import { Copy, Share2 } from "lucide-react";
 
 interface Job {
-  id: string
-  jobId: string
-  date: string
-  location: string
-  description?: string
-  customerName?: string
-  daysLeft?: number
-  status: string
-  note?: string
-  customer_agreement?: string
-  machineRefNo?: string
-  serialNo?: string
-  expected_visit_no : number
-  phone_number?: string
+  id: string;
+  jobId: string;
+  date: string;
+  location: string;
+  description?: string;
+  customerName?: string;
+  daysLeft?: number;
+  status: string;
+  note?: string;
+  customer_agreement?: string;
+  machineRefNo?: string;
+  serialNo?: string;
+  expected_visit_no: number;
+  phone_number?: string;
 }
 
 interface JobDetailsDialogProps {
-  job: Job | null
-  isOpen: boolean
-  onClose: () => void
-  onComplete: () => void
-  onInProgress: () => void
-  varient: "service" | "breakdown"
+  job: Job | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onComplete: () => void;
+  onInProgress: () => void;
+  varient: "service" | "breakdown";
 }
 
 interface PreviousServiceData {
-  exptsv1: string | null
-  exptsv2: string | null
-  exptsv3: string | null
-  exptsv4: string | null
-  exptsv5: string | null
-  exptsv6: string | null
-  sv1: string | null
-  sv2: string | null
-  sv3: string | null
-  sv4: string | null
-  sv5: string | null
-  sv6: string | null
+  exptsv1: string | null;
+  exptsv2: string | null;
+  exptsv3: string | null;
+  exptsv4: string | null;
+  exptsv5: string | null;
+  exptsv6: string | null;
+  sv1: string | null;
+  sv2: string | null;
+  sv3: string | null;
+  sv4: string | null;
+  sv5: string | null;
+  sv6: string | null;
 }
 
-export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgress, varient }: JobDetailsDialogProps) {
-  const [jobNote, setJobNote] = useState("")
-  const [solution, setSolution] = useState("")
-  const [meterReadingValue, setMeterReadingValue] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [showPreviousVisits, setShowPreviousVisits] = useState(false)
-  const [previousServices, setPreviousServices] = useState<PreviousServiceData | null | any>(null)
-  const [loadingPrevious, setLoadingPrevious] = useState(false)
+export function JobDetailsDialog({
+  job,
+  isOpen,
+  onClose,
+  onComplete,
+  onInProgress,
+  varient,
+}: JobDetailsDialogProps) {
+  const [jobNote, setJobNote] = useState("");
+  const [solution, setSolution] = useState("");
+  const [meterReadingValue, setMeterReadingValue] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPreviousVisits, setShowPreviousVisits] = useState(false);
+  const [previousServices, setPreviousServices] = useState<
+    PreviousServiceData | null | any
+  >(null);
+  const [loadingPrevious, setLoadingPrevious] = useState(false);
 
-  const { updateBreakdownStatus, updateServiceVisitStatus, getPreviousServiceLists } = useApiConfig()
-  const { user } = useAuth()
-  console.log("JobDetailsDialog rendered with job:", job, "and varient:", varient);  
+  const {
+    updateBreakdownStatus,
+    updateServiceVisitStatus,
+    getPreviousServiceLists,
+  } = useApiConfig();
+  const { user } = useAuth();
+  console.log(
+    "JobDetailsDialog rendered with job:",
+    job,
+    "and varient:",
+    varient,
+  );
 
   // Reset states when dialog closes
   useEffect(() => {
     if (!isOpen) {
-      setShowPreviousVisits(false)
-      setPreviousServices(null)
-      setJobNote("")
-      setSolution("")
-      setMeterReadingValue("")
+      setShowPreviousVisits(false);
+      setPreviousServices(null);
+      setJobNote("");
+      setSolution("");
+      setMeterReadingValue("");
     }
-  }, [isOpen])
+  }, [isOpen]);
 
-  if (!job) return null
+  if (!job) return null;
 
   const formatDate = (dateString: string | null) => {
-    if (!dateString) return null
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
-  }
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+    });
+  };
 
   const handleCall = () => {
     if (job.phone_number) {
-      window.location.href = `tel:${job.phone_number}`
+      window.location.href = `tel:${job.phone_number}`;
     } else {
-      toast.error("Phone number not available")
+      toast.error("Phone number not available");
     }
-  }
+  };
 
   const handleNavigate = () => {
     if (job.location && job.location !== "Something") {
-      const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.location)}`
-      window.open(mapsUrl, '_blank')
+      const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.location)}`;
+      window.open(mapsUrl, "_blank");
     } else {
-      toast.error("Location not available")
+      toast.error("Location not available");
     }
-  }
+  };
 
   const fetchPreviousServices = async () => {
-    if (loadingPrevious || previousServices) return
-    
-    setLoadingPrevious(true)
+    if (loadingPrevious || previousServices) return;
+
+    setLoadingPrevious(true);
     try {
-      const data = await getPreviousServiceLists(job.machineRefNo || "")
-      setPreviousServices(data)
-      console.log("Previous Services for job", job.jobId, ":", data)
+      const data = await getPreviousServiceLists(job.machineRefNo || "");
+      setPreviousServices(data);
+      console.log("Previous Services for job", job.jobId, ":", data);
     } catch (error) {
-      console.error("Error fetching previous services:", error)
-      toast.error("Failed to load previous visits")
+      console.error("Error fetching previous services:", error);
+      toast.error("Failed to load previous visits");
     } finally {
-      setLoadingPrevious(false)
+      setLoadingPrevious(false);
     }
-  }
+  };
 
   const handleViewPreviousVisits = () => {
     if (!showPreviousVisits && !previousServices) {
-      fetchPreviousServices()
+      fetchPreviousServices();
     }
-    setShowPreviousVisits(!showPreviousVisits)
-  }
+    setShowPreviousVisits(!showPreviousVisits);
+  };
 
   const renderPreviousVisitsTable = () => {
-    if (!previousServices) return null
+    if (!previousServices) return null;
 
-    const rows = []
+    const rows = [];
     for (let i = 1; i <= 6; i++) {
-      const expected = previousServices[`exptsv${i}` as keyof PreviousServiceData]
-      const actual = previousServices[`sv${i}` as keyof PreviousServiceData]
-      
+      const expected =
+        previousServices[`exptsv${i}` as keyof PreviousServiceData];
+      const actual = previousServices[`sv${i}` as keyof PreviousServiceData];
+
       rows.push({
         index: i,
         expected: expected,
-        actual: actual
-      })
+        actual: actual,
+      });
     }
 
     return (
@@ -143,23 +177,33 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
           <table className="w-full text-sm">
             <thead className="bg-gray-100 border-b border-gray-200">
               <tr>
-                <th className="px-3 py-2 text-left font-semibold text-gray-700">#</th>
-                <th className="px-3 py-2 text-left font-semibold text-gray-700">Expected</th>
-                <th className="px-3 py-2 text-left font-semibold text-gray-700">Actual</th>
+                <th className="px-3 py-2 text-left font-semibold text-gray-700">
+                  #
+                </th>
+                <th className="px-3 py-2 text-left font-semibold text-gray-700">
+                  Expected
+                </th>
+                <th className="px-3 py-2 text-left font-semibold text-gray-700">
+                  Actual
+                </th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => (
-                <tr 
-                  key={row.index} 
-                  className={`border-b border-gray-100 ${row.actual ? 'bg-green-50' : 'bg-blue-50'}`}
+                <tr
+                  key={row.index}
+                  className={`border-b border-gray-100 ${row.actual ? "bg-green-50" : "bg-blue-50"}`}
                 >
-                  <td className="px-3 py-2 font-medium text-gray-900">{row.index}</td>
-                  <td className="px-3 py-2 text-gray-700">
-                    {row.expected ? formatDate(row.expected) : 'N/A'}
+                  <td className="px-3 py-2 font-medium text-gray-900">
+                    {row.index}
                   </td>
-                  <td className={`px-3 py-2 font-medium ${row.actual ? 'text-green-700' : 'text-blue-600'}`}>
-                    {row.actual ? formatDate(row.actual) : 'N/A'}
+                  <td className="px-3 py-2 text-gray-700">
+                    {row.expected ? formatDate(row.expected) : "N/A"}
+                  </td>
+                  <td
+                    className={`px-3 py-2 font-medium ${row.actual ? "text-green-700" : "text-blue-600"}`}
+                  >
+                    {row.actual ? formatDate(row.actual) : "N/A"}
                   </td>
                 </tr>
               ))}
@@ -167,17 +211,20 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
           </table>
         </div>
       </div>
-    )
-  }
+    );
+  };
 
   const handleStarted = async () => {
-    console.log(meterReadingValue ,"meterReadingValue meterReadingValue meterReadingValue");
+    console.log(
+      meterReadingValue,
+      "meterReadingValue meterReadingValue meterReadingValue",
+    );
     if (!user?.tecH_CODE) {
-      toast.error("User information not available")
-      return
+      toast.error("User information not available");
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       if (varient === "breakdown") {
         const breackdownUpdate = await updateBreakdownStatus({
@@ -186,41 +233,43 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
           machineRefNo: job.machineRefNo || "",
           serialNo: job.serialNo || "",
           jobStatus: "started",
-          note: jobNote || ""
-        })
-        console.log("Breakdown update response:", breackdownUpdate)
+          note: jobNote || "",
+        });
+        console.log("Breakdown update response:", breackdownUpdate);
       } else {
         // Service API call with meter reading
         const updateServiceresponse = await updateServiceVisitStatus({
           techCode: user.tecH_CODE,
-          visitNo:job.expected_visit_no || 1,
+          visitNo: job.expected_visit_no || 1,
           jobId: parseInt(job.jobId),
           machineRefNo: job.machineRefNo || "",
           jobStatus: "started",
-          meterReadingValue: meterReadingValue ? parseInt(meterReadingValue) : undefined
-        })
-        console.log("Service visit update response:", updateServiceresponse)
+          meterReadingValue: meterReadingValue
+            ? parseInt(meterReadingValue)
+            : undefined,
+        });
+        console.log("Service visit update response:", updateServiceresponse);
       }
 
-      toast.success("Job started successfully")
-      onInProgress()
-      setJobNote("")
-      setMeterReadingValue("")
+      toast.success("Job started successfully");
+      onInProgress();
+      setJobNote("");
+      setMeterReadingValue("");
     } catch (error) {
-      console.error("Error starting job:", error)
-      toast.error("Failed to start job. Please try again.")
+      console.error("Error starting job:", error);
+      toast.error("Failed to start job. Please try again.");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleCompleted = async () => {
     if (!user?.tecH_CODE) {
-      toast.error("User information not available")
-      return
+      toast.error("User information not available");
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       if (varient === "breakdown") {
         await updateBreakdownStatus({
@@ -229,8 +278,8 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
           machineRefNo: job.machineRefNo || "",
           serialNo: job.serialNo || "",
           jobStatus: "complete",
-          note: solution || ""
-        })
+          note: solution || "",
+        });
       } else {
         // Service API call with meter reading
         await updateServiceVisitStatus({
@@ -239,65 +288,83 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
           visitNo: job.expected_visit_no || 1,
           machineRefNo: job.machineRefNo || "",
           jobStatus: "complete",
-          meterReadingValue: meterReadingValue ? parseInt(meterReadingValue) : undefined
-        })
+          meterReadingValue: meterReadingValue
+            ? parseInt(meterReadingValue)
+            : undefined,
+        });
       }
 
-      toast.success("Job completed successfully")
-      onComplete()
-      setSolution("")
-      setJobNote("")
-      setMeterReadingValue("")
-      onClose()
+      toast.success("Job completed successfully");
+      onComplete();
+      setSolution("");
+      setJobNote("");
+      setMeterReadingValue("");
+      onClose();
     } catch (error) {
-      console.error("Error completing job:", error)
-      toast.error("Failed to complete job. Please try again.")
+      console.error("Error completing job:", error);
+      toast.error("Failed to complete job. Please try again.");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleCancel = () => {
-    setJobNote("")
-    setSolution("")
-    setMeterReadingValue("")
-    setShowPreviousVisits(false)
-    setPreviousServices(null)
-    onClose()
-  }
+    setJobNote("");
+    setSolution("");
+    setMeterReadingValue("");
+    setShowPreviousVisits(false);
+    setPreviousServices(null);
+    onClose();
+  };
 
-  const isPending = job.status === "pending"
-  const isStarted = job.status === "started"
+  const isPending = job.status === "pending";
+  const isStarted = job.status === "started";
 
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent 
+        <DialogContent
           className="bg-white border-gray-200 max-h-[90vh] overflow-y-auto sm:max-w-[425px]"
           data-mobile-bottom="true"
         >
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-gray-900">Job Details</DialogTitle>
-            <DialogDescription className="text-gray-500">Review and update job information</DialogDescription>
+            <DialogTitle className="text-xl font-bold text-gray-900">
+              Job Details
+            </DialogTitle>
+            <DialogDescription className="text-gray-500">
+              Review and update job information
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             {/* Job Info */}
             <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg space-y-3 border border-gray-200">
               <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wide">Job ID</p>
-                <p className="font-bold text-lg text-gray-900 mt-1">{job.jobId}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wide">
+                  Job ID
+                </p>
+                <p className="font-bold text-lg text-gray-900 mt-1">
+                  {job.jobId}
+                </p>
               </div>
               {job.description && (
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">Description</p>
-                  <p className="text-sm text-gray-700 mt-1">{job.description}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">
+                    Description
+                  </p>
+                  <p className="text-sm text-gray-700 mt-1">
+                    {job.description}
+                  </p>
                 </div>
               )}
               {job.customerName && (
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">Customer</p>
-                  <p className="text-sm text-gray-700 mt-1">{job.customerName}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">
+                    Customer
+                  </p>
+                  <p className="text-sm text-gray-700 mt-1">
+                    {job.customerName}
+                  </p>
                 </div>
               )}
               <div>
@@ -308,19 +375,31 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
               </div>
               <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-200">
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">Status</p>
-                  <p className="font-bold capitalize text-gray-900 mt-1">{job.status}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">
+                    Status
+                  </p>
+                  <p className="font-bold capitalize text-gray-900 mt-1">
+                    {job.status}
+                  </p>
                 </div>
                 {varient === "service" && (
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Time Left</p>
-                    <p className="font-bold text-red-600 mt-1">{job.daysLeft}</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">
+                      Time Left
+                    </p>
+                    <p className="font-bold text-red-600 mt-1">
+                      {job.daysLeft}
+                    </p>
                   </div>
                 )}
                 {varient === "breakdown" && (
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Agreement</p>
-                    <p className="font-bold text-red-600 mt-1">{job.customer_agreement}</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">
+                      Agreement
+                    </p>
+                    <p className="font-bold text-red-600 mt-1">
+                      {job.customer_agreement}
+                    </p>
                   </div>
                 )}
               </div>
@@ -328,17 +407,17 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
 
             {/* Quick Actions */}
             <div className="grid grid-cols-2 gap-3">
-              <Button 
+              <Button
                 onClick={handleCall}
-                variant="outline" 
+                variant="outline"
                 className="border-blue-200 text-blue-700 hover:bg-blue-50 h-11"
               >
                 <Phone className="w-4 h-4 mr-2" />
                 Call
               </Button>
-              <Button 
+              <Button
                 onClick={handleNavigate}
-                variant="outline" 
+                variant="outline"
                 className="border-green-200 text-green-700 hover:bg-green-50 h-11"
               >
                 <MapPin className="w-4 h-4 mr-2" />
@@ -362,7 +441,7 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
                     <ChevronDown className="w-4 h-4 ml-2" />
                   )}
                 </Button>
-                
+
                 {showPreviousVisits && renderPreviousVisitsTable()}
               </div>
             )}
@@ -372,7 +451,9 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
               <div className="space-y-4">
                 {varient === "breakdown" ? (
                   <div>
-                    <label className="text-sm font-semibold text-gray-900 block mb-2">Add Work Note</label>
+                    <label className="text-sm font-semibold text-gray-900 block mb-2">
+                      Add Work Note
+                    </label>
                     <textarea
                       value={jobNote}
                       onChange={(e) => setJobNote(e.target.value)}
@@ -384,7 +465,9 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
                   </div>
                 ) : (
                   <div>
-                    <label className="text-sm font-semibold text-gray-900 block mb-2">Meter Reading Value</label>
+                    <label className="text-sm font-semibold text-gray-900 block mb-2">
+                      Meter Reading Value
+                    </label>
                     <input
                       type="number"
                       value={meterReadingValue}
@@ -421,7 +504,9 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
               <div className="space-y-4">
                 {varient === "breakdown" ? (
                   <div>
-                    <label className="text-sm font-semibold text-gray-900 block mb-2">Solution</label>
+                    <label className="text-sm font-semibold text-gray-900 block mb-2">
+                      Solution
+                    </label>
                     <textarea
                       value={solution}
                       onChange={(e) => setSolution(e.target.value)}
@@ -433,13 +518,15 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
                   </div>
                 ) : (
                   <div>
-                    <label className="text-sm font-semibold text-gray-900 block mb-2">Meter Reading Value</label>
-                    <input
-                      type="number"
-                      value={meterReadingValue}
-                      onChange={(e) => setMeterReadingValue(e.target.value)}
-                      placeholder="Enter meter reading value..."
+                    <label className="text-sm font-semibold text-gray-900 block mb-2">
+                      Solution
+                    </label>
+                    <textarea
+                      value={solution}
+                      onChange={(e) => setSolution(e.target.value)}
+                      placeholder="Enter the solution or work completed..."
                       className="w-full p-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      rows={4}
                       disabled={isLoading}
                     />
                   </div>
@@ -467,96 +554,104 @@ export function JobDetailsDialog({ job, isOpen, onClose, onComplete, onInProgres
             )}
 
             {/* Completed Status - Show info only */}
-          {job.status === "completed" && (
-          <div className="p-6 bg-green-50 border border-green-200 rounded-lg text-center space-y-6">
-            <div>
-              <CheckCircle2 className="w-16 h-16 text-green-600 mx-auto mb-3" />
-              <p className="font-semibold text-xl text-green-800">
-                This job has been completed!
-              </p>
-              <p className="text-green-700 mt-1">
-                Thank you! Please ask the customer to leave a quick review.
-              </p>
-            </div>
+            {job.status === "completed" && (
+              <div className="p-6 bg-green-50 border border-green-200 rounded-lg text-center space-y-6">
+                <div>
+                  <CheckCircle2 className="w-16 h-16 text-green-600 mx-auto mb-3" />
+                  <p className="font-semibold text-xl text-green-800">
+                    This job has been completed!
+                  </p>
+                  <p className="text-green-700 mt-1">
+                    Thank you! Please ask the customer to leave a quick review.
+                  </p>
+                </div>
 
-            {/* QR Code & Sharing Section */}
-            <div className="flex flex-col items-center gap-5 bg-white p-6 rounded-xl shadow-sm border">
-              <p className="font-medium text-gray-800">
-                Customer Review Link
-              </p>
+                {/* QR Code & Sharing Section */}
+                <div className="flex flex-col items-center gap-5 bg-white p-6 rounded-xl shadow-sm border">
+                  <p className="font-medium text-gray-800">
+                    Customer Review Link
+                  </p>
 
-              {/* QR Code */}
-              <div className="p-4 bg-white rounded-lg border">
-                <QRCode
-                  value="https://servista.com/review/Q454546/1&techCode=0000"
-                  size={180}
-                  level="Q"
-                  fgColor="#111827"
-                  bgColor="#ffffff"
-                />
-              </div>
+                  {/* QR Code */}
+                  <div className="p-4 bg-white rounded-lg border">
+                    <QRCode
+                      value="https://servista.com/review/Q454546/1&techCode=0000"
+                      size={180}
+                      level="Q"
+                      fgColor="#111827"
+                      bgColor="#ffffff"
+                    />
+                  </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
-                {/* Copy Link Button */}
+                  {/* Action Buttons */}
+                  <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
+                    {/* Copy Link Button */}
+                    <Button
+                      onClick={() => {
+                        navigator.clipboard.writeText(
+                          "https://servista.com/review/Q454546/1&techCode=0000",
+                        );
+                        // Optional: show a small toast/feedback
+                        alert("Review link copied to clipboard!");
+                      }}
+                      variant="outline"
+                      className="flex-1 flex items-center justify-center gap-2"
+                    >
+                      <Copy className="w-4 h-4" />
+                      Copy Link
+                    </Button>
+
+                    {/* Native Share Button (works great on mobile) */}
+                    <Button
+                      onClick={() => {
+                        if (navigator.share) {
+                          navigator
+                            .share({
+                              title: "Review Your Service",
+                              text: "We'd love your feedback!",
+                              url: "https://servista.com/review/Q454546/1&techCode=0000",
+                            })
+                            .catch(() => {
+                              // Fallback to copy if share fails
+                              navigator.clipboard.writeText(
+                                "https://servista.com/review/Q454546/1&techCode=0000",
+                              );
+                              alert("Link copied (sharing not available)");
+                            });
+                        } else {
+                          // Fallback for desktop/no share support
+                          navigator.clipboard.writeText(
+                            "https://servista.com/review/Q454546/1&techCode=0000",
+                          );
+                          alert("Review link copied to clipboard!");
+                        }
+                      }}
+                      variant="default"
+                      className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      Share with Customer
+                    </Button>
+                  </div>
+
+                  {/* Optional: Display the link for reference */}
+                  <p className="text-xs text-gray-500 break-all">
+                    https://servista.com/review/Q454546/1&techCode=0000
+                  </p>
+                </div>
+
                 <Button
-                  onClick={() => {
-                    navigator.clipboard.writeText("https://servista.com/review/Q454546/1&techCode=0000");
-                    // Optional: show a small toast/feedback
-                    alert("Review link copied to clipboard!");
-                  }}
+                  onClick={onClose}
                   variant="outline"
-                  className="flex-1 flex items-center justify-center gap-2"
+                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
                 >
-                  <Copy className="w-4 h-4" />
-                  Copy Link
-                </Button>
-
-                {/* Native Share Button (works great on mobile) */}
-                <Button
-                  onClick={() => {
-                    if (navigator.share) {
-                      navigator.share({
-                        title: "Review Your Service",
-                        text: "We'd love your feedback!",
-                        url: "https://servista.com/review/Q454546/1&techCode=0000",
-                      }).catch(() => {
-                        // Fallback to copy if share fails
-                        navigator.clipboard.writeText("https://servista.com/review/Q454546/1&techCode=0000");
-                        alert("Link copied (sharing not available)");
-                      });
-                    } else {
-                      // Fallback for desktop/no share support
-                      navigator.clipboard.writeText("https://servista.com/review/Q454546/1&techCode=0000");
-                      alert("Review link copied to clipboard!");
-                    }
-                  }}
-                  variant="default"
-                  className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <Share2 className="w-4 h-4" />
-                  Share with Customer
+                  Close
                 </Button>
               </div>
-
-              {/* Optional: Display the link for reference */}
-              <p className="text-xs text-gray-500 break-all">
-                https://servista.com/review/Q454546/1&techCode=0000
-              </p>
-            </div>
-
-            <Button
-              onClick={onClose}
-              variant="outline"
-              className="border-gray-300 text-gray-700 hover:bg-gray-50"
-            >
-              Close
-            </Button>
-          </div>
-        )}
+            )}
           </div>
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }
