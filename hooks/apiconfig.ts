@@ -112,7 +112,7 @@ const mapJobStatus = (jobStatus: string): string => {
     
   }
   if(jobStatus === null || jobStatus === undefined){
-    return 'unknown';
+    return 'pending';
   }else{
   return statusMap[jobStatus] || jobStatus.toLowerCase() 
   }
@@ -172,7 +172,8 @@ const mapServiceVisit = (visit: ApiServiceVisit): ServiceVisit => {
     date: visit.expectedVisitDate,
     location: visit.machineLocation01,
     daysLeft: calculateDaysLeft(visit.expectedVisitDate),
-    status: visit.visitStatus.toLowerCase(),
+    // status: visit.visitStatus.toLowerCase(),
+    status: mapJobStatus(visit.visitStatus),
     phone_number: visit.customerTelephone,
     expected_visit_no: mapExpectedVisitNo(visit.expectedVisitNo),
     machineRefNo: visit.machineRefNo
@@ -180,6 +181,7 @@ const mapServiceVisit = (visit: ApiServiceVisit): ServiceVisit => {
 }
 
 const mapServiceVisits = (visits: ApiServiceVisit[]): ServiceVisit[] => {
+  console.log("Mapping service visits:", visits);;
   return visits.map(mapServiceVisit)
 }
 
