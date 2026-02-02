@@ -20,6 +20,7 @@ interface DashboardOverviewProps {
   recentServices: Job[]
   recentBreakdowns: Job[]
   onJobClick: (job: Job) => void
+  
 }
 
 export function DashboardOverview({ recentServices, recentBreakdowns, onJobClick }: DashboardOverviewProps) {
@@ -28,6 +29,8 @@ export function DashboardOverview({ recentServices, recentBreakdowns, onJobClick
     <div className="space-y-3 md:space-y-5">
       {/* Colorful KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+        
+        {/* Monthly Pending Service */}
         <Card className="bg-gradient-to-br from-blue-500 to-blue-600 border-none shadow-md hover:shadow-lg transition-all">
           <CardContent className="p-2.5 md:p-3 text-center">
             <Calendar className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 text-white" />
@@ -35,6 +38,8 @@ export function DashboardOverview({ recentServices, recentBreakdowns, onJobClick
             <p className="text-[9px] md:text-xs text-blue-100 font-semibold">Monthly Pending Service</p>
           </CardContent>
         </Card>
+
+        {/* Today Pending Breakdowns */}
         <Card className="bg-gradient-to-br from-red-500 to-red-600 border-none shadow-md hover:shadow-lg transition-all">
           <CardContent className="p-2.5 md:p-3 text-center">
             <AlertCircle className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 text-white" />
@@ -42,6 +47,8 @@ export function DashboardOverview({ recentServices, recentBreakdowns, onJobClick
             <p className="text-[9px] md:text-xs text-red-100 font-semibold">Today Pending Jobs</p>
           </CardContent>
         </Card>
+
+        {/* Monthly Completed Services  */}
         <Card className="bg-gradient-to-br from-green-500 to-green-600 border-none shadow-md hover:shadow-lg transition-all">
           <CardContent className="p-2.5 md:p-3 text-center">
             <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 text-white" />
@@ -49,6 +56,8 @@ export function DashboardOverview({ recentServices, recentBreakdowns, onJobClick
             <p className="text-[9px] md:text-xs text-green-100 font-semibold">Monthly Completed Services</p>
           </CardContent>
         </Card>
+
+        {/* Today Completed Jobs */}
         <Card className="bg-gradient-to-br from-purple-500 to-purple-600 border-none shadow-md hover:shadow-lg transition-all">
           <CardContent className="p-2.5 md:p-3 text-center">
             <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 text-white" />
@@ -63,7 +72,7 @@ export function DashboardOverview({ recentServices, recentBreakdowns, onJobClick
         <div className="flex items-center justify-between mb-2 px-0.5">
           <h2 className="text-sm md:text-base font-bold text-gray-900 flex items-center gap-1.5">
             <div className="w-1 h-5 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
-            <span>Service Jobs</span>
+            <span>All Monthly Services</span>
           </h2>
           <span className="text-[10px] md:text-xs text-white bg-gradient-to-r from-blue-500 to-blue-600 px-2.5 py-1 rounded-full font-semibold shadow-sm">
             {recentServices.length}
@@ -90,7 +99,7 @@ export function DashboardOverview({ recentServices, recentBreakdowns, onJobClick
         <div className="flex items-center justify-between mb-2 px-0.5">
           <h2 className="text-sm md:text-base font-bold text-gray-900 flex items-center gap-1.5">
             <div className="w-1 h-5 bg-gradient-to-b from-red-500 to-red-600 rounded-full"></div>
-            <span>Breakdowns</span>
+            <span>All Jobs</span>
           </h2>
           <span className="text-[10px] md:text-xs text-white bg-gradient-to-r from-red-500 to-red-600 px-2.5 py-1 rounded-full font-semibold shadow-sm">
             {recentBreakdowns.length}

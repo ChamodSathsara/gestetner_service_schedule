@@ -89,7 +89,8 @@ interface RecallDialogProps {
   item: Service | Job | Due | null;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (item: Service | Job | Due, reason: string) => void;
+  onSubmit: (item: Service | Job | Due, reason: string , isOnSite: boolean) => void;
+  isOnSite: boolean;
 }
 
 type TabType = 'services' | 'jobs' | 'dues';
@@ -450,11 +451,13 @@ function DetailsDialog({ item, type, isOpen, onClose, onRecall }: DetailsDialogP
 // Recall Dialog Component
 function RecallDialog({ item, isOpen, onClose, onSubmit }: RecallDialogProps) {
   const [reason, setReason] = useState<string>('');
+  const [isOnSite, setIsOnSite] = useState<boolean>(false);
 
   const handleSubmit = () => {
     if (reason.trim() && item) {
-      onSubmit(item, reason);
+      onSubmit(item, reason, isOnSite); // include isOnSite in submission
       setReason('');
+      setIsOnSite(false);
       onClose();
     }
   };
@@ -465,11 +468,43 @@ function RecallDialog({ item, isOpen, onClose, onSubmit }: RecallDialogProps) {
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">Recall Job</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4 py-4">
           <div>
-            <p className="text-sm text-gray-600 mb-1">Job ID: <span className="font-semibold text-gray-900">{item?.machineRefNo}</span></p>
-            <p className="text-sm text-gray-600">Customer: <span className="font-semibold text-gray-900">{item?.customerName}</span></p>
+            <p className="text-sm text-gray-600 mb-1">
+              Job ID: <span className="font-semibold text-gray-900">{item?.machineRefNo}</span>
+            </p>
+            <p className="text-sm text-gray-600">
+              Customer: <span className="font-semibold text-gray-900">{item?.customerName}</span>
+            </p>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">
+              Are you on site?
+            </label>
+            <div className="flex flex-col gap-2">
+              <label className="inline-flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="onSite"
+                  value="yes"
+                  checked={isOnSite === true}
+                  onChange={() => setIsOnSite(true)}
+                />
+                Yes
+              </label>
+              <label className="inline-flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="onSite"
+                  value="no"
+                  checked={isOnSite === false}
+                  onChange={() => setIsOnSite(false)}
+                />
+                No
+              </label>
+            </div>
           </div>
 
           <div>
@@ -489,9 +524,9 @@ function RecallDialog({ item, isOpen, onClose, onSubmit }: RecallDialogProps) {
           <Button onClick={onClose} variant="outline" className="flex-1">
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={handleSubmit}
-            disabled={!reason.trim()}
+            disabled={!reason.trim() || !isOnSite}
             className="flex-1 bg-red-600 hover:bg-red-700 text-white"
           >
             <Bell className="w-4 h-4 mr-2" />
@@ -502,6 +537,7 @@ function RecallDialog({ item, isOpen, onClose, onSubmit }: RecallDialogProps) {
     </Dialog>
   );
 }
+
 
 // Main Component
 export default function ServiceJobManagement() {
@@ -679,6 +715,7 @@ export default function ServiceJobManagement() {
           setRecallOpen(false);
           setRecallItem(null);
         }}
+        isOnSite={false}
         onSubmit={handleRecallSubmit}
       />
     </div>

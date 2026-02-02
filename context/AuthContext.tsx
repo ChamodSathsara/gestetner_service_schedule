@@ -17,17 +17,22 @@ interface AuthContextType {
   user: User | null
   login: (userData: User) => void
   logout: () => void
+  isLoading: boolean // Add loading state
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true) // Add loading state
 
   // Load user from localStorage on mount
   useEffect(() => {
     const storedUser = localStorage.getItem("user")
-    if (storedUser) setUser(JSON.parse(storedUser))
+    if (storedUser) {
+      setUser(JSON.parse(storedUser))
+    }
+    setIsLoading(false) // Mark as loaded
   }, [])
 
   const login = (userData: User) => {
@@ -42,13 +47,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   )
 }
 
-// Custom hook to use auth context
 export const useAuth = () => {
   const context = useContext(AuthContext)
   if (!context) throw new Error("useAuth must be used within AuthProvider")

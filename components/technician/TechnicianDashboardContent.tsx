@@ -14,6 +14,7 @@ import { JobDetailsDialog } from "./JobDetailsDialog"
 import { useApiConfig } from '@/hooks/apiconfig' 
 import { Loading, LoadingDots, LoadingPulse } from './Loading'
 import AccountSettingsPage from "./Settings"
+import { useAuth } from "@/context/AuthContext"
 
 
 const { technicianServices: recentServices } = mockDataConfig
@@ -68,6 +69,7 @@ export interface ServiceResponse {
 
 
 export function TechnicianDashboardContent() {
+  
   // const api = useApiConfig()
   const { getAllBreakdowns,getMonthlyServiceVisits  } = useApiConfig()
   const [activeTab, setActiveTab] = useState("dashboard")
@@ -75,15 +77,19 @@ export function TechnicianDashboardContent() {
   const [showNotifications, setShowNotifications] = useState(false)
   const [recentBreakdowns , setRecentBreakdowns] = useState<any[]>([]);
   const [recentServices, setRecentServices] = useState<any[]>([]);
+  const { isLoading: authLoading } = useAuth() // Get loading state
  
   // const [breakdowns, setBreakdowns] = useState<Job[]>([])
   const [loading, setLoading] = useState(false)
 
 
    useEffect(() => {
-    fetchBreakdowns()
-    fetchServices()
-  }, [])
+    if (!authLoading) { // Only fetch when auth is loaded
+      console.log("Refreshing dashboard data...++++++++++++++++++++++++++++++++++++++")
+      fetchBreakdowns()
+      fetchServices()
+    }
+  }, [authLoading])
   
   const fetchBreakdowns = async () => {
     try {
@@ -110,29 +116,7 @@ export function TechnicianDashboardContent() {
       setLoading(false)
     }
   }
-  
-  // const fetchAllData = async () => {
-  //   setLoading(true)
-  //   setError(null)
-  //   try {
-  //     const [pending, completed, serviceVisits, perf] = await Promise.all([
-  //       api.getAllBreakdowns(),
-  //       api.getCompletedBreakdowns(),
-  //       api.getMonthlyServiceVisits(),
-  //       api.getPerformance(),
-  //     ])
 
-  //     setBreakdowns(pending)
-  //     setCompletedBreakdowns(completed)
-  //     setServices(serviceVisits)
-  //     setPerformance(perf)
-  //     console.log(pending, completed, serviceVisits, perf)
-  //   } catch (err: any) {
-  //     setError(err.message)
-  //   } finally {
-  //     setLoading(false)
-  //   }
-  // }
 
   const notifications = [
     { id: 1, type: "service", title: "New Service Job Assigned", message: "SVC-2025-012 - Routine maintenance at Oak Plaza", time: "5 min ago" },
@@ -156,6 +140,15 @@ export function TechnicianDashboardContent() {
       alert(`Job ${selectedJob.jobId} marked as in progress!`)
       setSelectedJob(null)
     }
+  }
+
+  const clickedJob = (job: Job) => {
+    return (
+      <ServiceTab 
+            services={recentServices}
+            onJobClick={handleJobAction} 
+          />
+    )
   }
 
    if (loading) {
@@ -236,7 +229,7 @@ export function TechnicianDashboardContent() {
             className="flex flex-col items-center justify-center gap-1 py-2 text-gray-500 data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50"
           >
             <AlertCircle className="w-5 h-5" />
-            <span className="text-[10px] font-medium">Breakdown</span>
+            <span className="text-[10px] font-medium">Jobs</span>
           </TabsTrigger>
 
           {/* Service */}
