@@ -288,6 +288,7 @@ export function JobDetailsDialog({
           visitNo: job.expected_visit_no || 1,
           machineRefNo: job.machineRefNo || "",
           jobStatus: "complete",
+          solution: solution || "",
           meterReadingValue: meterReadingValue
             ? parseInt(meterReadingValue)
             : undefined,
