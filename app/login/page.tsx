@@ -1,67 +1,76 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Lock, User, Eye, EyeOff, ArrowRight } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/context/AuthContext"
+import type React from "react";
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Lock, User, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
-  const router = useRouter()
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
+  const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const { login } = useAuth()
+  const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setIsLoading(true)
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
 
     if (!username || !password) {
-      setError("Please enter username and password")
-      setIsLoading(false)
-      return
+      setError("Please enter username and password");
+      setIsLoading(false);
+      return;
     }
 
     try {
       if (username === "customer" && password === "abc@123") {
-        router.push("/customer-dashboard")
+        router.push("/customer-feedback-machines");
       } else {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}api/Auth/login`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}api/Auth/login`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              tecH_CODE: username,
+              password: password,
+            }),
           },
-          body: JSON.stringify({
-            tecH_CODE: username,
-            password: password,
-          }),
-        })
+        );
 
-        const data = await response.json()
+        const data = await response.json();
 
         if (response.ok) {
-          login(data) // Save user & token in context + localStorage
-          router.push("/technician-dashboard")
+          login(data); // Save user & token in context + localStorage
+          router.push("/technician-dashboard");
         } else {
           // API returned invalid credentials
-          setError(data || "Invalid Credentials")
+          setError(data || "Invalid Credentials");
         }
       }
     } catch (err) {
-      console.error(err)
-      setError("Something went wrong. Please try again.")
+      console.error(err);
+      setError("Something went wrong. Please try again.");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-sky-100 to-blue-100 flex items-center justify-center p-4 relative overflow-hidden">
@@ -78,15 +87,15 @@ export default function LoginPage() {
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-sky-500 rounded-2xl blur-lg opacity-30"></div>
               <div className="relative bg-white rounded-2xl p-4 shadow-lg">
-                <img 
-                  src="https://www.gestetner.lk/wp-content/uploads/2023/11/footer-logo.jpg" 
+                <img
+                  src="https://www.gestetner.lk/wp-content/uploads/2023/11/footer-logo.jpg"
                   alt="Gestetner Logo"
                   className="w-32 h-auto"
                 />
               </div>
             </div>
           </div>
-          
+
           <div className="text-center space-y-2">
             <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-sky-500 bg-clip-text text-transparent">
               Welcome Back
@@ -94,7 +103,9 @@ export default function LoginPage() {
             <CardDescription className="text-base text-gray-600">
               Service Management System
             </CardDescription>
-            <p className="text-sm font-medium text-gray-500">Gestetner of Ceylon PLC</p>
+            <p className="text-sm font-medium text-gray-500">
+              Gestetner of Ceylon PLC
+            </p>
           </div>
         </CardHeader>
 
@@ -136,7 +147,11 @@ export default function LoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -187,5 +202,5 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
