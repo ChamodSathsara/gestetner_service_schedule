@@ -78,7 +78,7 @@ interface BreakdownUpdatePayload {
   jobId: number
   machineRefNo: string
   serialNo: string
-  jobStatus: 'started' | 'complete'
+  jobStatus: 'started' | 'COMPLETED'
   note: string
 }
 

@@ -277,7 +277,7 @@ export function JobDetailsDialog({
           jobId: parseInt(job.jobId),
           machineRefNo: job.machineRefNo || "",
           serialNo: job.serialNo || "",
-          jobStatus: "complete",
+          jobStatus: "COMPLETED",
           note: solution || "",
         });
       } else {
