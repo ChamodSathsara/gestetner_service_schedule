@@ -246,7 +246,7 @@ export function JobDetailsDialog({
           jobStatus: "started",
           meterReadingValue: meterReadingValue
             ? parseInt(meterReadingValue)
-            : undefined,
+            : 10,
         });
         console.log("Service visit update response:", updateServiceresponse);
       }
@@ -287,11 +287,11 @@ export function JobDetailsDialog({
           jobId: parseInt(job.jobId),
           visitNo: job.expected_visit_no || 1,
           machineRefNo: job.machineRefNo || "",
-          jobStatus: "complete",
+          jobStatus: "COMPLETED",
           solution: solution || "",
           meterReadingValue: meterReadingValue
             ? parseInt(meterReadingValue)
-            : undefined,
+            : 3,
         });
       }
 

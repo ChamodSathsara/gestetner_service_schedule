@@ -88,8 +88,8 @@ interface ServiceUpdatePayload {
   visitNo: number
   jobId: number
   machineRefNo: string
-  jobStatus: 'started' | 'complete'
-  meterReadingValue?: number
+  jobStatus: 'started' | 'COMPLETED' 
+  meterReadingValue: number
   solution?: string
 }
 
@@ -110,6 +110,7 @@ const mapJobStatus = (jobStatus: string): string => {
     'TECH ALLOCATED': 'pending',
     'STARTED': 'started',
     'COMPLET': 'completed'
+    
     
   }
   if(jobStatus === null || jobStatus === undefined){
