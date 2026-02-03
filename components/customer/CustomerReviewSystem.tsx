@@ -1,248 +1,426 @@
-"use client"
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import MachineList from './MachineList';
-import ServiceJobView from './ServiceJobView';
-import ReviewForm from './ReviewForm';
-import type { Machine, ServiceOrJob, Review } from './types';
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 
-const CustomerReviewSystem: React.FC = () => {
-  const [selectedMachine, setSelectedMachine] = useState<Machine | null>(null);
-  const [selectedItem, setSelectedItem] = useState<ServiceOrJob | null>(null);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [machines, setMachines] = useState<Machine[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface Service {
+  contactPerson: string | null;
+  customerID: string;
+  customerName: string;
+  customerTelephone: string;
+  expectedVisitCount: number;
+  expectedVisitDate: string;
+  expectedVisitNo: string;
+  machineLocation01: string;
+  machineLocation02: string;
+  machineLocation03: string;
+  machineRefNo: string;
+  rowId: number;
+  visitStatus: string;
+  technicianName: string;
+}
 
-  // Fetch machines data
-  useEffect(() => {
-    fetchMachines();
-  }, []);
+interface Job {
+  id: string;
+  jobId: string;
+  date: string;
+  location: string;
+  description?: string;
+  customerName?: string;
+  status: string;
+  note?: string;
+  customer_agreement?: string;
+  machineRefNo?: string;
+  technicianName?: string;
+}
 
-  const fetchMachines = async () => {
-    setIsLoading(true);
-    try {
-      // TODO: Replace with your actual API endpoint
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}api/Customer/machines`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setMachines(data);
-      } else {
-        // Fallback to mock data for development
-        setMachines(getMockMachines());
-      }
-    } catch (error) {
-      console.error('Error fetching machines:', error);
-      // Fallback to mock data
-      setMachines(getMockMachines());
-    } finally {
-      setIsLoading(false);
+interface CustomerReviewSystemProps {
+  services: Service[];
+  jobs: Job[];
+  serialNo: string;
+}
+
+const CustomerReviewSystem: React.FC<CustomerReviewSystemProps> = ({
+  services,
+  jobs,
+  serialNo,
+}) => {
+  const [activeTab, setActiveTab] = useState<"jobs" | "services">("jobs");
+  const router = useRouter();
+
+  const handleServiceClick = (service: Service) => {
+    const visitNo = service.expectedVisitCount;
+    router.push(
+      `/customer-feedback-machines/${serialNo}/service/${service.machineRefNo}?visitNo=${visitNo}`,
+    );
+  };
+
+  const handleJobClick = (job: Job) => {
+    router.push(`/customer-feedback-machines/${serialNo}/job/${job.jobId}`);
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const getStatusColor = (status: string) => {
+    const statusUpper = status.toUpperCase();
+    switch (statusUpper) {
+      case "COMPLETED":
+        return "bg-green-100 text-green-800";
+      case "PENDING":
+        return "bg-yellow-100 text-yellow-800";
+      case "IN_PROGRESS":
+        return "bg-blue-100 text-blue-800";
+      case "CANCELLED":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
-  const handleMachineSelect = (machine: Machine) => {
-    setSelectedMachine(machine);
-    setSelectedItem(null);
+  const getLocation = (service: Service) => {
+    const locations = [
+      service.machineLocation01,
+      service.machineLocation02,
+      service.machineLocation03,
+    ]
+      .filter(Boolean)
+      .join(", ");
+    return locations || "No location specified";
   };
 
-  const handleItemSelect = (item: ServiceOrJob) => {
-    setSelectedItem(item);
-  };
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-4 md:p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center text-blue-600 hover:text-blue-800 mb-4 transition-colors"
+          >
+            <svg
+              className="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Back to List
+          </button>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+            Leave a Review
+          </h1>
+          <p className="text-gray-600 mt-2">
+            Share your experience with this service
+          </p>
+        </div>
 
-  const handleBackToMachines = () => {
-    setSelectedMachine(null);
-    setSelectedItem(null);
-  };
+        {/* Tabs */}
+        <div className="bg-white rounded-lg shadow-md mb-6 overflow-hidden">
+          <div className="flex border-b">
+            <button
+              onClick={() => setActiveTab("jobs")}
+              className={`flex-1 py-4 px-6 text-center font-semibold transition-all ${
+                activeTab === "jobs"
+                  ? "bg-blue-500 text-white border-b-4 border-blue-700"
+                  : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              Jobs ({jobs.length})
+            </button>
+            <button
+              onClick={() => setActiveTab("services")}
+              className={`flex-1 py-4 px-6 text-center font-semibold transition-all ${
+                activeTab === "services"
+                  ? "bg-blue-500 text-white border-b-4 border-blue-700"
+                  : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              Services ({services.length})
+            </button>
+          </div>
+        </div>
 
-  const handleBackToList = () => {
-    setSelectedItem(null);
-  };
+        {/* Content */}
+        <div className="space-y-4">
+          {activeTab === "jobs" && (
+            <>
+              {jobs.length === 0 ? (
+                <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                  <p className="text-gray-500">No jobs available</p>
+                </div>
+              ) : (
+                jobs.map((job) => (
+                  <div
+                    key={job.id}
+                    onClick={() => handleJobClick(job)}
+                    className="bg-white rounded-lg shadow-md hover:shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 duration-200"
+                  >
+                    <div className="p-5 md:p-6">
+                      <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-4">
+                        <div className="mb-3 md:mb-0">
+                          <h3 className="text-xl font-bold text-gray-800 mb-1">
+                            {job.jobId}
+                          </h3>
+                          <span
+                            className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
+                              job.status,
+                            )}`}
+                          >
+                            {job.status}
+                          </span>
+                        </div>
+                      </div>
 
-  const handleSubmitReview = async (reviewData: { rating: number; message: string }) => {
-    if (!selectedItem) return;
+                      {job.description && (
+                        <p className="text-gray-600 mb-4 line-clamp-2">
+                          {job.description}
+                        </p>
+                      )}
 
-    try {
-      const newReview: Review = {
-        id: Date.now().toString(),
-        itemId: selectedItem.id,
-        itemType: selectedMachine?.services.includes(selectedItem) ? 'service' : 'job',
-        rating: reviewData.rating,
-        message: reviewData.message,
-        createdAt: new Date().toISOString(),
-      };
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
+                        <div className="flex items-center text-gray-700">
+                          <svg
+                            className="w-5 h-5 mr-2 text-blue-500 flex-shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                          <div>
+                            <p className="text-xs text-gray-500">Date</p>
+                            <p className="font-medium">
+                              {formatDate(job.date)}
+                            </p>
+                          </div>
+                        </div>
 
-      // TODO: Replace with your actual API endpoint
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}api/Customer/reviews`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(newReview),
-      });
+                        <div className="flex items-center text-gray-700">
+                          <svg
+                            className="w-5 h-5 mr-2 text-blue-500 flex-shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                          </svg>
+                          <div>
+                            <p className="text-xs text-gray-500">Location</p>
+                            <p className="font-medium truncate">
+                              {job.location}
+                            </p>
+                          </div>
+                        </div>
 
-      if (response.ok) {
-        setReviews([...reviews, newReview]);
-        setSelectedItem(null);
-        return true;
-      } else {
-        throw new Error('Failed to submit review');
-      }
-    } catch (error) {
-      console.error('Error submitting review:', error);
-      return false;
-    }
-  };
+                        {job.technicianName && (
+                          <div className="flex items-center text-gray-700">
+                            <svg
+                              className="w-5 h-5 mr-2 text-blue-500 flex-shrink-0"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                              />
+                            </svg>
+                            <div>
+                              <p className="text-xs text-gray-500">
+                                Technician
+                              </p>
+                              <p className="font-medium truncate">
+                                {job.technicianName}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading your machines...</p>
+                      {job.machineRefNo && (
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <p className="text-sm text-gray-600">
+                            <span className="font-semibold">Machine Ref:</span>{" "}
+                            {job.machineRefNo}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </>
+          )}
+
+          {activeTab === "services" && (
+            <>
+              {services.length === 0 ? (
+                <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                  <p className="text-gray-500">No services available</p>
+                </div>
+              ) : (
+                services.map((service) => (
+                  <div
+                    key={service.rowId}
+                    onClick={() => handleServiceClick(service)}
+                    className="bg-white rounded-lg shadow-md hover:shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 duration-200"
+                  >
+                    <div className="p-5 md:p-6">
+                      <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-4">
+                        <div className="mb-3 md:mb-0">
+                          <h3 className="text-xl font-bold text-gray-800 mb-1">
+                            {service.expectedVisitNo}
+                          </h3>
+                          <p className="text-gray-600 text-sm mb-2">
+                            {service.customerName}
+                          </p>
+                          <span
+                            className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
+                              service.visitStatus,
+                            )}`}
+                          >
+                            {service.visitStatus}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
+                        <div className="flex items-center text-gray-700">
+                          <svg
+                            className="w-5 h-5 mr-2 text-blue-500 flex-shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                          <div>
+                            <p className="text-xs text-gray-500">Date</p>
+                            <p className="font-medium">
+                              {formatDate(service.expectedVisitDate)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center text-gray-700">
+                          <svg
+                            className="w-5 h-5 mr-2 text-blue-500 flex-shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                          </svg>
+                          <div>
+                            <p className="text-xs text-gray-500">Location</p>
+                            <p className="font-medium truncate">
+                              {getLocation(service)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center text-gray-700">
+                          <svg
+                            className="w-5 h-5 mr-2 text-blue-500 flex-shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
+                          </svg>
+                          <div>
+                            <p className="text-xs text-gray-500">Technician</p>
+                            <p className="font-medium truncate">
+                              {service.technicianName}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-200">
+                        <div>
+                          <p className="text-sm text-gray-600">
+                            <span className="font-semibold">Machine Ref:</span>{" "}
+                            {service.machineRefNo}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">
+                            <span className="font-semibold">Customer ID:</span>{" "}
+                            {service.customerID}
+                          </p>
+                        </div>
+                        {service.customerTelephone && (
+                          <div>
+                            <p className="text-sm text-gray-600">
+                              <span className="font-semibold">Phone:</span>{" "}
+                              {service.customerTelephone}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </>
+          )}
         </div>
       </div>
-    );
-  }
-
-  // Review Form View
-  if (selectedItem && selectedMachine) {
-    return (
-      <ReviewForm
-        item={selectedItem}
-        machine={selectedMachine}
-        onBack={handleBackToList}
-        onSubmit={handleSubmitReview}
-        existingReviews={reviews}
-      />
-    );
-  }
-
-  // Service/Job List View
-  if (selectedMachine) {
-    return (
-      <ServiceJobView
-        machine={selectedMachine}
-        onBack={handleBackToMachines}
-        onItemSelect={handleItemSelect}
-        reviews={reviews}
-      />
-    );
-  }
-
-  // Machine List View (Default)
-  return (
-    <MachineList
-      machines={machines}
-      onMachineSelect={handleMachineSelect}
-    />
+    </div>
   );
-};
-
-// Mock data for development/testing
-const getMockMachines = (): Machine[] => {
-  return [
-    {
-      id: '1',
-      machineNumber: 'MCH-001',
-      machineName: 'CNC Machine A',
-      model: 'Model X-2000',
-      services: [
-        {
-          id: 's1',
-          jobId: 'SRV-001',
-          date: '2024-01-15',
-          location: 'Building A - Floor 2',
-          description: 'Regular maintenance and inspection',
-          customerName: 'John Doe',
-          status: 'Completed',
-          machineRefNo: 'MCH-001',
-          technician_name: 'Mike Smith'
-        },
-        {
-          id: 's2',
-          jobId: 'SRV-002',
-          date: '2024-01-20',
-          location: 'Building A - Floor 2',
-          description: 'Oil change and calibration',
-          customerName: 'John Doe',
-          status: 'Completed',
-          machineRefNo: 'MCH-001',
-          technician_name: 'Sarah Johnson'
-        }
-      ],
-      jobs: [
-        {
-          id: 'j1',
-          jobId: 'JOB-001',
-          date: '2024-01-10',
-          location: 'Building A - Floor 2',
-          description: 'Belt replacement and motor check',
-          customerName: 'John Doe',
-          status: 'In Progress',
-          note: 'Waiting for replacement parts',
-          machineRefNo: 'MCH-001',
-          technician_name: 'Mike Smith'
-        }
-      ]
-    },
-    {
-      id: '2',
-      machineNumber: 'MCH-002',
-      machineName: 'Lathe Machine B',
-      model: 'Model L-500',
-      services: [
-        {
-          id: 's3',
-          jobId: 'SRV-003',
-          date: '2024-01-18',
-          location: 'Building B - Floor 1',
-          description: 'Precision calibration service',
-          customerName: 'John Doe',
-          status: 'Completed',
-          machineRefNo: 'MCH-002',
-          technician_name: 'Tom Wilson'
-        }
-      ],
-      jobs: [
-        {
-          id: 'j2',
-          jobId: 'JOB-002',
-          date: '2024-01-22',
-          location: 'Building B - Floor 1',
-          description: 'Chuck replacement',
-          customerName: 'John Doe',
-          status: 'Pending',
-          machineRefNo: 'MCH-002',
-          technician_name: 'Tom Wilson'
-        }
-      ]
-    },
-    {
-      id: '3',
-      machineNumber: 'MCH-003',
-      machineName: 'Milling Machine C',
-      model: 'Model M-300',
-      services: [],
-      jobs: [
-        {
-          id: 'j3',
-          jobId: 'JOB-003',
-          date: '2024-01-25',
-          location: 'Building C - Floor 3',
-          description: 'Spindle bearing replacement',
-          customerName: 'John Doe',
-          status: 'Completed',
-          machineRefNo: 'MCH-003',
-          technician_name: 'David Lee'
-        }
-      ]
-    }
-  ];
 };
 
 export default CustomerReviewSystem;
