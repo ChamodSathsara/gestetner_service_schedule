@@ -100,7 +100,7 @@ const CustomerReviewSystem: React.FC<CustomerReviewSystemProps> = ({
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <button
+          {/* <button
             onClick={() => router.back()}
             className="flex items-center text-blue-600 hover:text-blue-800 mb-4 transition-colors"
           >
@@ -118,7 +118,7 @@ const CustomerReviewSystem: React.FC<CustomerReviewSystemProps> = ({
               />
             </svg>
             Back to List
-          </button>
+          </button> */}
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
             Leave a Review
           </h1>

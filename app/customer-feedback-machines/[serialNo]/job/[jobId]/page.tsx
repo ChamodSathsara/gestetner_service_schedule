@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function JobReviewPage() {
   const params = useParams();
@@ -11,8 +11,10 @@ export default function JobReviewPage() {
 
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
-  const [review, setReview] = useState('');
+  const [review, setReview] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customerName, setCustomerName] = useState("");
+  const [mobileNumber, setMobileNumber] = useState("");
 
   // Fetch job details - replace with your actual API call
   // const { data: jobDetails } = useSWR(`/api/jobs/${jobId}`, fetcher);
@@ -20,35 +22,32 @@ export default function JobReviewPage() {
   const handleSubmit = async () => {
     if (rating === 0) return;
 
+    if (!customerName.trim() || !mobileNumber.trim()) {
+      alert("Please enter customer name and mobile number");
+      return;
+    }
+
     setIsSubmitting(true);
 
     const reviewData = {
       serialNo,
       jobId,
+      customerName,
+      mobileNumber,
       rating,
       review,
-      type: 'job',
+      type: "job",
     };
 
     try {
-      // Replace with your actual API endpoint
-      // const response = await fetch('/api/reviews', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(reviewData),
-      // });
-      
-      console.log('Submitting review:', reviewData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Show success message or redirect
-      alert('Review submitted successfully!');
+      console.log("Submitting review:", reviewData);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      alert("Review submitted successfully!");
       router.push(`/customer-feedback-machines/${serialNo}`);
     } catch (error) {
-      console.error('Error submitting review:', error);
-      alert('Failed to submit review. Please try again.');
+      console.error("Error submitting review:", error);
+      alert("Failed to submit review. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -174,6 +173,37 @@ export default function JobReviewPage() {
             How would you rate this service?
           </h3>
 
+          {/* Customer Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Enter Your Name
+              </label>
+              <input
+                type="text"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Enter customer name"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Mobile Number
+              </label>
+              <input
+                type="tel"
+                value={mobileNumber}
+                onChange={(e) => setMobileNumber(e.target.value)}
+                placeholder="07XXXXXXXX"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                disabled={isSubmitting}
+              />
+            </div>
+          </div>
+
           {/* Star Rating */}
           <div className="flex justify-center gap-2 mb-6">
             {[1, 2, 3, 4, 5].map((star) => (
@@ -188,8 +218,8 @@ export default function JobReviewPage() {
                 <svg
                   className={`w-12 h-12 md:w-14 md:h-14 ${
                     star <= (hoveredRating || rating)
-                      ? 'text-yellow-400 fill-current'
-                      : 'text-gray-300'
+                      ? "text-yellow-400 fill-current"
+                      : "text-gray-300"
                   }`}
                   fill="none"
                   stroke="currentColor"
@@ -230,11 +260,11 @@ export default function JobReviewPage() {
             disabled={rating === 0 || isSubmitting}
             className={`w-full py-4 rounded-lg font-semibold text-white transition-all ${
               rating === 0 || isSubmitting
-                ? 'bg-blue-300 cursor-not-allowed'
-                : 'bg-blue-500 hover:bg-blue-600 active:scale-95'
+                ? "bg-blue-300 cursor-not-allowed"
+                : "bg-blue-500 hover:bg-blue-600 active:scale-95"
             }`}
           >
-            {isSubmitting ? 'Submitting...' : 'Submit Review'}
+            {isSubmitting ? "Submitting..." : "Submit Review"}
           </button>
         </div>
       </div>
