@@ -76,7 +76,7 @@ export interface ServiceResponse {
 
 export function TechnicianDashboardContent() {
   // const api = useApiConfig()
-  const { getAllBreakdowns, getMonthlyServiceVisits } = useApiConfig();
+  const { getAllBreakdowns, getMonthlyServiceVisits , allTimeDueJobs } = useApiConfig();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedJob, setSelectedJob] = useState<Job | Service | null | any>(
     null,
@@ -84,6 +84,7 @@ export function TechnicianDashboardContent() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [recentBreakdowns, setRecentBreakdowns] = useState<any[]>([]);
   const [recentServices, setRecentServices] = useState<any[]>([]);
+  const [dueJobs , setDueJobs] = useState<any[]>([])
   const { isLoading: authLoading } = useAuth(); // Get loading state
 
   // const [breakdowns, setBreakdowns] = useState<Job[]>([])
@@ -95,8 +96,10 @@ export function TechnicianDashboardContent() {
       console.log(
         "Refreshing dashboard data...++++++++++++++++++++++++++++++++++++++",
       );
+      
       fetchBreakdowns();
       fetchServices();
+      fetchAllDueJobs();
     }
   }, [authLoading]);
 
@@ -106,6 +109,19 @@ export function TechnicianDashboardContent() {
       const mappedJobs = await getAllBreakdowns(); // Already mapped!
       setRecentBreakdowns(mappedJobs);
       console.log("mappedJobs", mappedJobs);
+    } catch (error) {
+      console.error("Error fetching breakdowns:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+   const fetchAllDueJobs = async () => {
+    try {
+      setLoading(true);
+      const dueJobs = await allTimeDueJobs(); // Already mapped!
+      setDueJobs(dueJobs);
+      console.log("mappedJobs", dueJobs);
     } catch (error) {
       console.error("Error fetching breakdowns:", error);
     } finally {
@@ -319,6 +335,7 @@ export function TechnicianDashboardContent() {
 
         <TabsContent value="breakdown" className="p-4 md:p-8 m-0 pb-20 md:pb-8">
           <BreakdownTab
+            dueJobs = {dueJobs}
             breakdowns={recentBreakdowns}
             onJobClick={handleJobAction}
           />

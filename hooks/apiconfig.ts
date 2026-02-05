@@ -449,6 +449,11 @@ export const useApiConfig = () => {
       const test = await apiCall('api/ScheduleRecall/recallPreviousSchedule', 'POST', payload); 
       return test;    
     },
+
+    allTimeDueJobs: async (): Promise<Job[]> => {
+      const data = await apiCall(`api/jobRecall/getAllLastYearsJobs?techCode=${user?.tecH_CODE}`)
+      return mapBreakdownsToJobs(data)
+    },
   }
 }
 
