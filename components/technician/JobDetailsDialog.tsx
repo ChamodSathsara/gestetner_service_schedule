@@ -21,6 +21,8 @@ import QRCode from "react-qr-code"; // ← import this
 import { Copy, Share2 } from "lucide-react";
 
 interface Job {
+  visitNo: any;
+  rowId: any;
   id: string;
   jobId: string;
   date: string;
@@ -131,6 +133,8 @@ export function JobDetailsDialog({
       toast.error("Location not available");
     }
   };
+
+  console.log(process.env.NEXT_FRONTEND_URL);
 
   const fetchPreviousServices = async () => {
     if (loadingPrevious || previousServices) return;
@@ -555,7 +559,7 @@ export function JobDetailsDialog({
             )}
 
             {/* Completed Status - Show info only */}
-            {job.status === "completed" && (
+            {(job.status === "completed" || job.status === "complete") && (
               <div className="p-6 bg-green-50 border border-green-200 rounded-lg text-center space-y-6">
                 <div>
                   <CheckCircle2 className="w-16 h-16 text-green-600 mx-auto mb-3" />
@@ -576,7 +580,11 @@ export function JobDetailsDialog({
                   {/* QR Code */}
                   <div className="p-4 bg-white rounded-lg border">
                     <QRCode
-                      value={`http://localhost:3000/customer-feedback-machines/${job.serialNo}/job/${job.jobId}`}
+                      value={
+                        varient === "service"
+                          ? `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/service/${job.jobId}?visitNo=${job.expected_visit_no - 1}`
+                          : `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/job/${job.jobId}`
+                      }
                       size={180}
                       level="Q"
                       fgColor="#111827"
@@ -589,10 +597,12 @@ export function JobDetailsDialog({
                     {/* Copy Link Button */}
                     <Button
                       onClick={() => {
-                        navigator.clipboard.writeText(
-                          `http://localhost:3000/customer-feedback-machines/${job.serialNo}/job/${job.jobId}`,
-                        );
-                        // Optional: show a small toast/feedback
+                        const link =
+                          varient === "service"
+                            ? `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/service/${job.jobId}?visitNo=${job.expected_visit_no - 1}`
+                            : `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/job/${job.jobId}`;
+
+                        navigator.clipboard.writeText(link);
                         alert("Review link copied to clipboard!");
                       }}
                       variant="outline"
@@ -605,25 +615,24 @@ export function JobDetailsDialog({
                     {/* Native Share Button (works great on mobile) */}
                     <Button
                       onClick={() => {
+                        const link =
+                          varient === "service"
+                            ? `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/service/${job.jobId}?visitNo=${job.expected_visit_no - 1}`
+                            : `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/job/${job.jobId}`;
+
                         if (navigator.share) {
                           navigator
                             .share({
                               title: "Review Your Service",
                               text: "We'd love your feedback!",
-                              url: `http://localhost:3000/customer-feedback-machines/${job.serialNo}/job/${job.jobId}`,
+                              url: link,
                             })
                             .catch(() => {
-                              // Fallback to copy if share fails
-                              navigator.clipboard.writeText(
-                                `http://localhost:3000/customer-feedback-machines/${job.serialNo}/job/${job.jobId}`,
-                              );
+                              navigator.clipboard.writeText(link);
                               alert("Link copied (sharing not available)");
                             });
                         } else {
-                          // Fallback for desktop/no share support
-                          navigator.clipboard.writeText(
-                            `http://localhost:3000/customer-feedback-machines/${job.serialNo}/job/${job.jobId}`,
-                          );
+                          navigator.clipboard.writeText(link);
                           alert("Review link copied to clipboard!");
                         }
                       }}
@@ -637,7 +646,9 @@ export function JobDetailsDialog({
 
                   {/* Optional: Display the link for reference */}
                   <p className="text-xs text-gray-500 break-all">
-                    {`http://localhost:3000/customer-feedback-machines/${job.serialNo}/job/${job.jobId}`}
+                    {varient === "service"
+                      ? `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/service/${job.jobId}?visitNo=${job.expected_visit_no - 1}`
+                      : `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/job/${job.jobId}`}
                   </p>
                 </div>
 

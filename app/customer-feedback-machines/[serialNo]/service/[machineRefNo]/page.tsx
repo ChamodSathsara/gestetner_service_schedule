@@ -25,6 +25,7 @@ export default function ServiceReviewPage() {
   // Fetch service details - replace with your actual API call
   // const { data: serviceDetails } = useSWR(`/api/services/${machineRefNo}?visitNo=${visitNo}`, fetcher);
   useEffect(() => {
+    console.log(serialNo, machineRefNo, visitNo);
     fetchServiceDetails();
   }, []);
 
@@ -76,6 +77,26 @@ export default function ServiceReviewPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const getLocation = (
+    machineLocation01: any,
+    machineLocation02: any,
+    machineLocation03: any,
+  ) => {
+    const locations = [machineLocation01, machineLocation02, machineLocation03]
+      .filter(Boolean)
+      .join(", ");
+    return locations || "No location specified";
   };
 
   return (
@@ -141,7 +162,9 @@ export default function ServiceReviewPage() {
               </svg>
               <div>
                 <p className="text-xs text-gray-500">Date</p>
-                <p className="font-medium">{serviceDetails?.visitDate}</p>
+                <p className="font-medium">
+                  {formatDate(serviceDetails?.expectedVisitDate)}
+                </p>
               </div>
             </div>
 
@@ -167,7 +190,13 @@ export default function ServiceReviewPage() {
               </svg>
               <div>
                 <p className="text-xs text-gray-500">Location</p>
-                <p className="font-medium">{serviceDetails?.location}</p>
+                <p className="font-medium">
+                  {getLocation(
+                    serviceDetails?.machineLocation01,
+                    serviceDetails?.machineLocation02,
+                    serviceDetails?.machineLocation03,
+                  )}
+                </p>
               </div>
             </div>
 
@@ -188,7 +217,7 @@ export default function ServiceReviewPage() {
               <div>
                 <p className="text-xs text-gray-500">Technician</p>
                 <p className="font-medium">
-                  {serviceDetails?.technicianName || "Not Assigned"}
+                  {serviceDetails?.techName || "Not Assigned"}
                 </p>
               </div>
             </div>
@@ -209,13 +238,13 @@ export default function ServiceReviewPage() {
             <div>
               <p className="text-sm text-gray-600">
                 <span className="font-semibold">Customer ID:</span>{" "}
-                {serviceDetails?.customerId}
+                {serviceDetails?.customerID}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-600">
                 <span className="font-semibold">Phone:</span>{" "}
-                {serviceDetails?.customerPhone || "0713304911"}
+                {serviceDetails?.customerTelephone || " "}
               </p>
             </div>
           </div>

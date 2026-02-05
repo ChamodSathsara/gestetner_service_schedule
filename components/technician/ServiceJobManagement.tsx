@@ -1,11 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { MapPin, Clock, Calendar, ChevronRight, Phone, Hash, FileText, Bell } from "lucide-react";
-import { useApiConfig } from '@/hooks/apiconfig';
-import { Loading, LoadingDots, LoadingPulse } from './Loading'
+import {
+  MapPin,
+  Clock,
+  Calendar,
+  ChevronRight,
+  Phone,
+  Hash,
+  FileText,
+  Bell,
+} from "lucide-react";
+import { useApiConfig } from "@/hooks/apiconfig";
+import { Loading, LoadingDots, LoadingPulse } from "./Loading";
 
 // Type Definitions
 interface Service {
@@ -18,7 +33,7 @@ interface Service {
   date: string;
   daysLeft: number;
   expected_visit_no: number;
-  status: 'completed' | 'pending' | 'overdue';
+  status: "completed" | "pending" | "overdue";
 }
 
 interface Job {
@@ -33,7 +48,7 @@ interface Job {
   date: string;
   description: string;
   note: string;
-  status: 'pending' | 'completed' | 'in-progress';
+  status: "pending" | "completed" | "in-progress";
 }
 
 interface Due {
@@ -55,8 +70,7 @@ interface Due {
   machineLocation03: string;
 }
 
-
-type ItemType = 'service' | 'job';
+type ItemType = "service" | "job";
 
 interface SelectedItem extends Partial<Service & Job> {
   type: ItemType;
@@ -89,73 +103,19 @@ interface RecallDialogProps {
   item: Service | Job | Due | null;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (item: Service | Job | Due, reason: string , isOnSite: boolean) => void;
+  onSubmit: (
+    rowID: number,
+    recallReason: string,
+    recallDate: string,
+    visitNo: number,
+    isRecall: boolean,
+    OnSite: boolean,
+  ) => void;
   isOnSite: boolean;
 }
 
-type TabType = 'services' | 'jobs' | 'dues';
+type TabType = "services" | "jobs" | "dues";
 
-// Mock data
-// const mockServices: Service[] = [
-//   {
-//     id: "268010",
-//     jobId: "268010",
-//     customerName: "Pamuditha Tillekeratne",
-//     phone_number: "0713304911",
-//     location: "Wadduwa",
-//     machineRefNo: "Q454545",
-//     date: "2026-01-16T00:00:00",
-//     daysLeft: 7,
-//     expected_visit_no: 1,
-//     status: "completed"
-//   },
-//   {
-//     id: "268011",
-//     jobId: "268011",
-//     customerName: "Nimal Perera",
-//     phone_number: "0771234567",
-//     location: "Colombo",
-//     machineRefNo: "Q454546",
-//     date: "2026-01-20T00:00:00",
-//     daysLeft: 3,
-//     expected_visit_no: 2,
-//     status: "pending"
-//   }
-// ];
-
-// const mockJobs: Job[] = [
-//   {
-//     id: "208299",
-//     jobId: "208299",
-//     customerName: "Pamuditha Tillekeratne",
-//     phone_number: "713304911",
-//     location: "Wadduwa",
-//     machineRefNo: "Q454545",
-//     serialNo: "DE1000",
-//     customer_agreement: "Free Service",
-//     date: "2026-01-23T00:00:00",
-//     description: "FS-Q454545-",
-//     note: "FS-Q454545-",
-//     status: "pending"
-//   },
-//   {
-//     id: "208300",
-//     jobId: "208300",
-//     customerName: "Kamal Silva",
-//     phone_number: "0779876543",
-//     location: "Galle",
-//     machineRefNo: "Q454547",
-//     serialNo: "DE1001",
-//     customer_agreement: "Warranty",
-//     date: "2026-01-25T00:00:00",
-//     description: "Repair work needed",
-//     note: "Urgent repair",
-//     status: "pending"
-//   }
-// ];
-
-
-// Service Card Component
 function ServiceCard({ service, onClick }: ServiceCardProps) {
   return (
     <Card
@@ -193,14 +153,17 @@ function ServiceCard({ service, onClick }: ServiceCardProps) {
             <span className="text-gray-400">•</span>
             <span>{service.daysLeft} days left</span>
           </div>
-          
-          <span className={`
+
+          <span
+            className={`
             text-xs font-medium px-2.5 py-1 rounded-full
-            ${service.status === 'completed' 
-              ? 'bg-green-50 text-green-700' 
-              : 'bg-blue-50 text-blue-700'
+            ${
+              service.status === "completed"
+                ? "bg-green-50 text-green-700"
+                : "bg-blue-50 text-blue-700"
             }
-          `}>
+          `}
+          >
             {service.status}
           </span>
         </div>
@@ -222,9 +185,7 @@ function JobCard({ job, onClick }: JobCardProps) {
             <h3 className="font-semibold text-base text-gray-900 mb-1">
               {job.jobId}
             </h3>
-            <p className="text-sm text-gray-600 truncate">
-              {job.customerName}
-            </p>
+            <p className="text-sm text-gray-600 truncate">{job.customerName}</p>
           </div>
           <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
         </div>
@@ -245,14 +206,17 @@ function JobCard({ job, onClick }: JobCardProps) {
             <FileText className="w-4 h-4 text-gray-400" />
             <span className="truncate max-w-[150px]">{job.description}</span>
           </div>
-          
-          <span className={`
+
+          <span
+            className={`
             text-xs font-medium px-2.5 py-1 rounded-full
-            ${job.status === 'pending' 
-              ? 'bg-orange-50 text-orange-700' 
-              : 'bg-gray-50 text-gray-700'
+            ${
+              job.status === "pending"
+                ? "bg-orange-50 text-orange-700"
+                : "bg-gray-50 text-gray-700"
             }
-          `}>
+          `}
+          >
             {job.status}
           </span>
         </div>
@@ -265,12 +229,8 @@ const getOverdueDays = (date: string | Date): number => {
   const dueDate = new Date(date).getTime();
   const now = Date.now();
 
-  return Math.max(
-    0,
-    Math.ceil((now - dueDate) / (1000 * 60 * 60 * 24))
-  );
+  return Math.max(0, Math.ceil((now - dueDate) / (1000 * 60 * 60 * 24)));
 };
-
 
 // Due Card Component
 function DueCard({ due, onRecall }: DueCardProps) {
@@ -282,9 +242,7 @@ function DueCard({ due, onRecall }: DueCardProps) {
             <h3 className="font-semibold text-base text-gray-900 mb-1">
               {due.machineRefNo}
             </h3>
-            <p className="text-sm text-gray-600 truncate">
-              {due.customerName}
-            </p>
+            <p className="text-sm text-gray-600 truncate">{due.customerName}</p>
           </div>
           <Button
             onClick={(e) => {
@@ -314,7 +272,7 @@ function DueCard({ due, onRecall }: DueCardProps) {
           <div className="text-xs text-red-700 font-medium">
             Overdue by {getOverdueDays(due.expectedVisitDate)} days
           </div>
-          
+
           <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-red-100 text-red-700">
             Overdue
           </span>
@@ -325,9 +283,15 @@ function DueCard({ due, onRecall }: DueCardProps) {
 }
 
 // Details Dialog Component
-function DetailsDialog({ item, type, isOpen, onClose, onRecall }: DetailsDialogProps) {
+function DetailsDialog({
+  item,
+  type,
+  isOpen,
+  onClose,
+  onRecall,
+}: DetailsDialogProps) {
   const isOverdue = item?.daysLeft !== undefined && item.daysLeft < 0;
-  const showRecall = item?.status === 'pending' && isOverdue;
+  const showRecall = item?.status === "pending" && isOverdue;
 
   if (!item) return null;
 
@@ -336,10 +300,10 @@ function DetailsDialog({ item, type, isOpen, onClose, onRecall }: DetailsDialogP
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
-            {type === 'service' ? 'Service' : 'Job'} Details
+            {type === "service" ? "Service" : "Job"} Details
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -348,15 +312,18 @@ function DetailsDialog({ item, type, isOpen, onClose, onRecall }: DetailsDialogP
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Status</p>
-              <span className={`
+              <span
+                className={`
                 inline-block text-xs font-medium px-2.5 py-1 rounded-full
-                ${item.status === 'completed' 
-                  ? 'bg-green-50 text-green-700' 
-                  : item.status === 'pending'
-                  ? 'bg-orange-50 text-orange-700'
-                  : 'bg-gray-50 text-gray-700'
+                ${
+                  item.status === "completed"
+                    ? "bg-green-50 text-green-700"
+                    : item.status === "pending"
+                      ? "bg-orange-50 text-orange-700"
+                      : "bg-gray-50 text-gray-700"
                 }
-              `}>
+              `}
+              >
                 {item.status}
               </span>
             </div>
@@ -382,7 +349,7 @@ function DetailsDialog({ item, type, isOpen, onClose, onRecall }: DetailsDialogP
             <p className="font-medium text-gray-900">{item.machineRefNo}</p>
           </div>
 
-          {type === 'job' && (
+          {type === "job" && (
             <>
               <div>
                 <p className="text-sm text-gray-500 mb-1">Serial No</p>
@@ -390,7 +357,9 @@ function DetailsDialog({ item, type, isOpen, onClose, onRecall }: DetailsDialogP
               </div>
               <div>
                 <p className="text-sm text-gray-500 mb-1">Customer Agreement</p>
-                <p className="font-medium text-gray-900">{item.customer_agreement}</p>
+                <p className="font-medium text-gray-900">
+                  {item.customer_agreement}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500 mb-1">Description</p>
@@ -403,16 +372,20 @@ function DetailsDialog({ item, type, isOpen, onClose, onRecall }: DetailsDialogP
             </>
           )}
 
-          {type === 'service' && (
+          {type === "service" && (
             <>
               <div>
                 <p className="text-sm text-gray-500 mb-1">Expected Visit No</p>
-                <p className="font-medium text-gray-900">{item.expected_visit_no}</p>
+                <p className="font-medium text-gray-900">
+                  {item.expected_visit_no}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500 mb-1">Days Left</p>
-                <p className={`font-medium ${isOverdue ? 'text-red-600' : 'text-gray-900'}`}>
-                  {item.daysLeft} days {isOverdue ? '(Overdue)' : ''}
+                <p
+                  className={`font-medium ${isOverdue ? "text-red-600" : "text-gray-900"}`}
+                >
+                  {item.daysLeft} days {isOverdue ? "(Overdue)" : ""}
                 </p>
               </div>
             </>
@@ -421,7 +394,7 @@ function DetailsDialog({ item, type, isOpen, onClose, onRecall }: DetailsDialogP
           <div>
             <p className="text-sm text-gray-500 mb-1">Date</p>
             <p className="font-medium text-gray-900">
-              {item.date ? new Date(item.date).toLocaleDateString() : 'N/A'}
+              {item.date ? new Date(item.date).toLocaleDateString() : "N/A"}
             </p>
           </div>
         </div>
@@ -431,7 +404,7 @@ function DetailsDialog({ item, type, isOpen, onClose, onRecall }: DetailsDialogP
             Close
           </Button>
           {showRecall && (
-            <Button 
+            <Button
               onClick={() => {
                 onClose();
                 onRecall(item as Service | Job);
@@ -450,13 +423,21 @@ function DetailsDialog({ item, type, isOpen, onClose, onRecall }: DetailsDialogP
 
 // Recall Dialog Component
 function RecallDialog({ item, isOpen, onClose, onSubmit }: RecallDialogProps) {
-  const [reason, setReason] = useState<string>('');
+  const [reason, setReason] = useState<string>("");
   const [isOnSite, setIsOnSite] = useState<boolean>(false);
+  const { addRecall } = useApiConfig();
 
   const handleSubmit = () => {
+    const rowID = (item as Due).rowId || 0;
+    const recallReason = reason;
+    const recallDate = new Date().toISOString();
+    const visitNo = (item as Due).expectedVisitCount || 0;
+    const isRecall = true;
+    const onSite = isOnSite;
+
     if (reason.trim() && item) {
-      onSubmit(item, reason, isOnSite); // include isOnSite in submission
-      setReason('');
+      onSubmit(rowID, recallReason, recallDate, visitNo, isRecall, onSite); // include isOnSite in submission
+      setReason("");
       setIsOnSite(false);
       onClose();
     }
@@ -466,16 +447,24 @@ function RecallDialog({ item, isOpen, onClose, onSubmit }: RecallDialogProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">Recall Job</DialogTitle>
+          <DialogTitle className="text-xl font-semibold">
+            Recall Job
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div>
             <p className="text-sm text-gray-600 mb-1">
-              Job ID: <span className="font-semibold text-gray-900">{item?.machineRefNo}</span>
+              Job ID:{" "}
+              <span className="font-semibold text-gray-900">
+                {item?.machineRefNo}
+              </span>
             </p>
             <p className="text-sm text-gray-600">
-              Customer: <span className="font-semibold text-gray-900">{item?.customerName}</span>
+              Customer:{" "}
+              <span className="font-semibold text-gray-900">
+                {item?.customerName}
+              </span>
             </p>
           </div>
 
@@ -538,66 +527,66 @@ function RecallDialog({ item, isOpen, onClose, onSubmit }: RecallDialogProps) {
   );
 }
 
-
 // Main Component
 export default function ServiceJobManagement() {
-  const [activeTab, setActiveTab] = useState<TabType>('services');
+  const [activeTab, setActiveTab] = useState<TabType>("services");
   const [selectedItem, setSelectedItem] = useState<SelectedItem | any>(null);
   const [detailsOpen, setDetailsOpen] = useState<boolean>(false);
   const [recallOpen, setRecallOpen] = useState<boolean>(false);
-  const [recallItem, setRecallItem] = useState<Service | Job | Due | null>(null);
-  const { getAllBreakdownsList, getAllServiceList , getDueJobs } = useApiConfig()
+  const [recallItem, setRecallItem] = useState<Service | Job | Due | null>(
+    null,
+  );
+  const { getAllBreakdownsList, getAllServiceList, getDueJobs, addRecall } =
+    useApiConfig();
   const [loading, setLoading] = useState<boolean>(false);
-  const [breakdownsList, setBreakdownsList] = useState<Job[] | any >([]);
+  const [breakdownsList, setBreakdownsList] = useState<Job[] | any>([]);
   const [servicesList, setServicesList] = useState<Service[] | any>([]);
   const [duesList, setDuesList] = useState<Due[] | any>([]);
 
   const fetchBreakdownsList = async () => {
     try {
-      setLoading(true)
-      const mappedJobs = await getAllBreakdownsList() // Already mapped!
-      setBreakdownsList(mappedJobs)
-      console.log("mappedJobs", mappedJobs)
+      setLoading(true);
+      const mappedJobs = await getAllBreakdownsList(); // Already mapped!
+      setBreakdownsList(mappedJobs);
+      console.log("mappedJobs", mappedJobs);
     } catch (error) {
-      console.error('Error fetching breakdowns:', error)
+      console.error("Error fetching breakdowns:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const fetchDuesList = async () => {
     try {
-      setLoading(true)
+      setLoading(true);
       const data = await getDueJobs();
-      setDuesList(data)
-      console.log("Dues List", data)
+      setDuesList(data);
+      console.log("Dues List", data);
     } catch (error) {
-      console.error('Error fetching dues:', error)
-    }finally {
-      setLoading(false)
+      console.error("Error fetching dues:", error);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   const fetchServicesList = async () => {
     try {
-      setLoading(true)
-      const mappedServices = await getAllServiceList() 
-      setServicesList(mappedServices)
-      console.log("mappedServices List", mappedServices)
+      setLoading(true);
+      const mappedServices = await getAllServiceList();
+      setServicesList(mappedServices);
+      console.log("mappedServices List", mappedServices);
     } catch (error) {
-      console.error('Error fetching services:', error)
+      console.error("Error fetching services:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  useEffect(()=>{
+  useEffect(() => {
     fetchBreakdownsList();
     fetchServicesList();
     fetchDuesList();
-  },[]);
-
-
+  }, []);
 
   const handleViewDetails = (item: Service | Job, type: ItemType) => {
     setSelectedItem({ ...item, type });
@@ -609,14 +598,48 @@ export default function ServiceJobManagement() {
     setRecallOpen(true);
   };
 
-  const handleRecallSubmit = (item: Service | Job | Due, reason: string) => {
-    console.log('Recall submitted:', { item, reason });
+  const handleRecallSubmit = (
+    rowID: number,
+    recallReason: string,
+    recallDate: string,
+    visitNo: number,
+    isRecall: boolean,
+    isOnSite: boolean,
+  ) => {
+    console.log("Recall submitted:", {
+      rowID,
+      recallReason,
+      recallDate,
+      visitNo,
+      isRecall,
+      isOnSite,
+    });
+    const newVisitNumber = visitNo + 1;
     // Handle recall submission here
+    const payload = {
+      rowID,
+      recallReason,
+      recallDate,
+      visitNo: newVisitNumber,
+      isRecall,
+      onSite: isOnSite,
+    };
+    addRecallHandler(payload);
   };
 
-    if (loading) {
-  return <Loading fullScreen message="Loading dashboard data..." />
-}
+  const addRecallHandler = async (payload: any) => {
+    try {
+      const response = await addRecall(payload);
+      console.log("Recall added successfully:", response);
+      window.location.reload();
+    } catch (error) {
+      console.error("Error adding recall:", error);
+    }
+  };
+
+  if (loading) {
+    return <Loading fullScreen message="Loading dashboard data..." />;
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-4">
@@ -624,33 +647,33 @@ export default function ServiceJobManagement() {
       <div className="flex gap-2 border-b border-gray-200">
         <Button
           variant="ghost"
-          onClick={() => setActiveTab('services')}
+          onClick={() => setActiveTab("services")}
           className={`rounded-none border-b-2 ${
-            activeTab === 'services'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-600'
+            activeTab === "services"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600"
           }`}
         >
           All Services
         </Button>
         <Button
           variant="ghost"
-          onClick={() => setActiveTab('jobs')}
+          onClick={() => setActiveTab("jobs")}
           className={`rounded-none border-b-2 ${
-            activeTab === 'jobs'
-              ? 'border-orange-600 text-orange-600'
-              : 'border-transparent text-gray-600'
+            activeTab === "jobs"
+              ? "border-orange-600 text-orange-600"
+              : "border-transparent text-gray-600"
           }`}
         >
           All Jobs
         </Button>
         <Button
           variant="ghost"
-          onClick={() => setActiveTab('dues')}
+          onClick={() => setActiveTab("dues")}
           className={`rounded-none border-b-2 ${
-            activeTab === 'dues'
-              ? 'border-red-600 text-red-600'
-              : 'border-transparent text-gray-600'
+            activeTab === "dues"
+              ? "border-red-600 text-red-600"
+              : "border-transparent text-gray-600"
           }`}
         >
           All Dues
@@ -659,33 +682,33 @@ export default function ServiceJobManagement() {
 
       {/* Content */}
       <div className="space-y-3">
-        {activeTab === 'services' && (
+        {activeTab === "services" && (
           <>
             {servicesList.map((service: Service, idx: number) => (
               <ServiceCard
                 key={`${service.id}-${idx}`}
                 service={service}
-                onClick={() => handleViewDetails(service, 'service')}
+                onClick={() => handleViewDetails(service, "service")}
               />
             ))}
           </>
         )}
 
-        {activeTab === 'jobs' && (
+        {activeTab === "jobs" && (
           <>
             {breakdownsList.map((job: Job, idx: number) => (
               <JobCard
                 key={`${job.id}-${idx}`}
                 job={job}
-                onClick={() => handleViewDetails(job, 'job')}
+                onClick={() => handleViewDetails(job, "job")}
               />
             ))}
           </>
         )}
 
-        {activeTab === 'dues' && (
+        {activeTab === "dues" && (
           <>
-            {duesList.map((due:any, idx: number) => (
+            {duesList.map((due: any, idx: number) => (
               <DueCard
                 key={`${due.id}-${idx}`}
                 due={due}
@@ -720,4 +743,8 @@ export default function ServiceJobManagement() {
       />
     </div>
   );
+}
+
+function addRecall(payload: any) {
+  throw new Error("Function not implemented.");
 }

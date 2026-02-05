@@ -1,41 +1,50 @@
-import { Card, CardContent } from "@/components/ui/card"
-import { Calendar, AlertCircle, CheckCircle2, TrendingUp } from "lucide-react"
-import { JobCard } from "./JobCard"
+import { Card, CardContent } from "@/components/ui/card";
+import { Calendar, AlertCircle, CheckCircle2, TrendingUp } from "lucide-react";
+import { JobCard } from "./JobCard";
 
 interface Job {
-  id: string
-  jobId: string
-  date: string
-  location: string
-  description?: string
-  customerName?: string
-  status: string
-  note?: string
-  customer_agreement?: string
-  machineRefNo?: string
-
+  id: string;
+  jobId: string;
+  date: string;
+  location: string;
+  description?: string;
+  customerName?: string;
+  status: string;
+  note?: string;
+  customer_agreement?: string;
+  machineRefNo?: string;
 }
 
 interface DashboardOverviewProps {
-  recentServices: Job[]
-  recentBreakdowns: Job[]
-  onJobClick: (job: Job) => void
-  
+  recentServices: Job[];
+  recentBreakdowns: Job[];
+  onJobClick: (job: Job) => void;
 }
 
-export function DashboardOverview({ recentServices, recentBreakdowns, onJobClick }: DashboardOverviewProps) {
-  
+export function DashboardOverview({
+  recentServices,
+  recentBreakdowns,
+  onJobClick,
+}: DashboardOverviewProps) {
   return (
     <div className="space-y-3 md:space-y-5">
       {/* Colorful KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-        
         {/* Monthly Pending Service */}
         <Card className="bg-gradient-to-br from-blue-500 to-blue-600 border-none shadow-md hover:shadow-lg transition-all">
           <CardContent className="p-2.5 md:p-3 text-center">
             <Calendar className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 text-white" />
-            <p className="text-2xl md:text-3xl font-bold text-white">{recentServices.length}</p>
-            <p className="text-[9px] md:text-xs text-blue-100 font-semibold">Monthly Pending Service</p>
+
+            <p className="text-2xl md:text-3xl font-bold text-white">
+              {
+                recentServices.filter((service) => service.status === "pending")
+                  .length
+              }
+            </p>
+
+            <p className="text-[9px] md:text-xs text-blue-100 font-semibold">
+              Monthly Pending Service
+            </p>
           </CardContent>
         </Card>
 
@@ -43,8 +52,17 @@ export function DashboardOverview({ recentServices, recentBreakdowns, onJobClick
         <Card className="bg-gradient-to-br from-red-500 to-red-600 border-none shadow-md hover:shadow-lg transition-all">
           <CardContent className="p-2.5 md:p-3 text-center">
             <AlertCircle className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 text-white" />
-            <p className="text-2xl md:text-3xl font-bold text-white">{recentBreakdowns.length}</p>
-            <p className="text-[9px] md:text-xs text-red-100 font-semibold">Today Pending Jobs</p>
+
+            <p className="text-2xl md:text-3xl font-bold text-white">
+              {
+                recentBreakdowns.filter((job) => job.status === "pending")
+                  .length
+              }
+            </p>
+
+            <p className="text-[9px] md:text-xs text-red-100 font-semibold">
+              Today Pending Jobs
+            </p>
           </CardContent>
         </Card>
 
@@ -52,8 +70,12 @@ export function DashboardOverview({ recentServices, recentBreakdowns, onJobClick
         <Card className="bg-gradient-to-br from-green-500 to-green-600 border-none shadow-md hover:shadow-lg transition-all">
           <CardContent className="p-2.5 md:p-3 text-center">
             <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 text-white" />
-            <p className="text-2xl md:text-3xl font-bold text-white">12</p>
-            <p className="text-[9px] md:text-xs text-green-100 font-semibold">Monthly Completed Services</p>
+            <p className="text-2xl md:text-3xl font-bold text-white">
+              {recentServices.length}
+            </p>
+            <p className="text-[9px] md:text-xs text-green-100 font-semibold">
+              Monthly Completed Services
+            </p>
           </CardContent>
         </Card>
 
@@ -61,8 +83,12 @@ export function DashboardOverview({ recentServices, recentBreakdowns, onJobClick
         <Card className="bg-gradient-to-br from-purple-500 to-purple-600 border-none shadow-md hover:shadow-lg transition-all">
           <CardContent className="p-2.5 md:p-3 text-center">
             <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 text-white" />
-            <p className="text-2xl md:text-3xl font-bold text-white">2</p>
-            <p className="text-[9px] md:text-xs text-purple-100 font-semibold">Today Completed Jobs</p>
+            <p className="text-2xl md:text-3xl font-bold text-white">
+              {recentBreakdowns.length}
+            </p>
+            <p className="text-[9px] md:text-xs text-purple-100 font-semibold">
+              Today Completed Jobs
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -81,13 +107,20 @@ export function DashboardOverview({ recentServices, recentBreakdowns, onJobClick
         <div className="space-y-2">
           {recentServices.length > 0 ? (
             recentServices.map((job) => (
-              <JobCard key={job.id} job={job} onClick={() => onJobClick(job )} variant="service"  />
+              <JobCard
+                key={job.id}
+                job={job}
+                onClick={() => onJobClick(job)}
+                variant="service"
+              />
             ))
           ) : (
             <Card className="bg-gradient-to-r from-gray-50 to-gray-100 border-dashed border-2 border-gray-300">
               <CardContent className="p-4 text-center">
                 <Calendar className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                <p className="text-sm text-gray-600 font-medium">No service jobs</p>
+                <p className="text-sm text-gray-600 font-medium">
+                  No service jobs
+                </p>
               </CardContent>
             </Card>
           )}
@@ -108,7 +141,12 @@ export function DashboardOverview({ recentServices, recentBreakdowns, onJobClick
         <div className="space-y-2">
           {recentBreakdowns.length > 0 ? (
             recentBreakdowns.map((job) => (
-              <JobCard key={job.id} job={job} onClick={() => onJobClick(job)} variant="breakdown"  />
+              <JobCard
+                key={job.id}
+                job={job}
+                onClick={() => onJobClick(job)}
+                variant="breakdown"
+              />
             ))
           ) : (
             <Card className="bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200">
@@ -121,5 +159,5 @@ export function DashboardOverview({ recentServices, recentBreakdowns, onJobClick
         </div>
       </div>
     </div>
-  )
+  );
 }

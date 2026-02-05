@@ -59,7 +59,7 @@ const CustomerReviewSystem: React.FC<CustomerReviewSystemProps> = ({
     await fetchServiceDetails(service);
 
     router.push(
-      `/customer-feedback-machines/${serialNo}/service/${service.machineRefNo}?visitNo=${visitNo}`,
+      `/customer-feedback-machines/${serialNo}/service/${service.rowId}?visitNo=${visitNo}`,
     );
   };
 

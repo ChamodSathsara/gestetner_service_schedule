@@ -16,7 +16,7 @@ export default function JobReviewPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
-  const { getJobBySerialNoAndMachineNo } = useApiConfig();
+  const { getJobBySerialNoAndMachineNo, addFeedback } = useApiConfig();
   const [jobsData, setJobsData] = useState<any>(null);
 
   console.log("serialNo: ", serialNo);
@@ -37,9 +37,6 @@ export default function JobReviewPage() {
     }
   };
 
-  // Fetch job details - replace with your actual API call
-  // const { data: jobDetails } = useSWR(`/api/jobs/${jobId}`, fetcher);
-
   const handleSubmit = async () => {
     if (rating === 0) return;
 
@@ -51,19 +48,17 @@ export default function JobReviewPage() {
     setIsSubmitting(true);
 
     const reviewData = {
-      serialNo,
-      jobId,
-      customerName,
-      mobileNumber,
-      rating,
-      review,
-      type: "job",
+      feedback: review,
+      feedbackCount: rating,
+      mobileNo: mobileNumber,
+      customerName: customerName,
+      jobId: jobId,
     };
 
     try {
       console.log("Submitting review:", reviewData);
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
+      addFeedbackDb(reviewData);
       alert("Review submitted successfully!");
       router.push(`/customer-feedback-machines/${serialNo}`);
     } catch (error) {
@@ -71,6 +66,15 @@ export default function JobReviewPage() {
       alert("Failed to submit review. Please try again.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const addFeedbackDb = async (data: any) => {
+    try {
+      const response = await addFeedback(data);
+      console.log("Feedback added successfully:", response);
+    } catch (error) {
+      console.error("Error adding feedback:", error);
     }
   };
 
@@ -110,9 +114,7 @@ export default function JobReviewPage() {
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-bold text-gray-800">
-                {jobsData.jobId}
-              </h2>
+              <h2 className="text-xl font-bold text-gray-800">{jobId}</h2>
               <span className="inline-block px-3 py-1 mt-2 rounded-full text-xs font-semibold bg-green-100 text-green-800">
                 {jobsData?.visitStatus || "N/A"}
               </span>

@@ -42,6 +42,15 @@ interface ApiBreakdown {
   jobStatus: string
 }
 
+interface ReCallObj {
+  recallReason: string,
+  recallDate: string,
+  rowID: number,
+  visitNo: number,
+  isRecall: boolean,
+  onSite: boolean
+}
+
 // Type definitions for Service Visits
 export interface ServiceVisit {
   id: string
@@ -54,6 +63,7 @@ export interface ServiceVisit {
   phone_number: string
   expected_visit_no: number
   machineRefNo?: string
+  serialNo?: string
   
 }
 
@@ -66,6 +76,7 @@ interface getServicePayload {
 interface ApiServiceVisit {
   machineRefNo: string
   expectedVisitNo: string
+  serialNo: string
   expectedVisitDate: string
   expectedVisitCount: number
   visitStatus: string
@@ -88,6 +99,18 @@ interface BreakdownUpdatePayload {
   jobStatus: 'started' | 'COMPLETED'
   note: string
 }
+
+interface CustomerFeedBack {
+  feedback : string
+  feedbackCount : number
+  mobileNo : string
+  customerName : string
+  jobId : string
+  rowId : number
+}
+
+  
+ 
 
 // Service update payload
 interface ServiceUpdatePayload {
@@ -239,6 +262,7 @@ const mapServiceVisit = (visit: ApiServiceVisit): ServiceVisit => {
   return {
     id: visit.rowId.toString(),
     jobId: visit.rowId.toString(),
+    serialNo:visit.serialNo,
     customerName: visit.customerName,
     date: visit.expectedVisitDate,
     location: visit.machineLocation01,
@@ -293,22 +317,18 @@ export const useApiConfig = () => {
     return res;
   }
 
-    const apiCallNew = async (endpoint: string, method: 'GET' | 'POST' , body?: any) => {
-    // if (!user?.token) {
-    //   throw new Error('No authentication token available')
-    // }
-    if(method === 'GET'){
-      console.log("GET Method Payload___________________________:", body);
-    }
-
+  const apiCallWithoutToken = async (endpoint: string, method: 'GET' | 'POST' = 'GET', body?: any) => {
 
     const config: RequestInit = {
       method,
-      body: JSON.stringify(body),
       headers: {
-        // 'Authorization': `Bearer ${user.token}`,
         'Content-Type': 'application/json',
       },
+    }
+
+    if (body && method === 'POST') {
+        console.log("API Call Body___________________________:", body);
+      config.body = JSON.stringify(body)
     }
 
     const response = await fetch(`${BASE_URL}${endpoint}`, config)
@@ -320,6 +340,7 @@ export const useApiConfig = () => {
     console.log(res);
     return res;
   }
+
 
   return {
     // 1. Today Assigns Pending Breakdown (with mapping)
@@ -402,7 +423,7 @@ export const useApiConfig = () => {
     },
 
     getServiceBySerialNoAndMachineNo : async (payload: getServicePayload) => {
-      const data =  await apiCall(`api/customerfeedback/getServiceByRowID?serialNo=${payload.serialNo}&rowId=${payload.rowId}&visitNo=${payload.visitNo+1}`)
+      const data =  await apiCallWithoutToken(`api/customerfeedback/getServiceByRowID?serialNo=${payload.serialNo}&rowId=${payload.rowId}&visitNo=${payload.visitNo+1}`)
       // const data2 = await apiCallNew(`api/customerfeedback/getServiceByRowID` , 'GET' ,payload )
       console.log("Services By Serial No Data:", data);
       const newData = mapNew(data);
@@ -410,11 +431,23 @@ export const useApiConfig = () => {
     },
 
     getJobBySerialNoAndMachineNo : async (serialNo : string, jobID: string) => {
-      const data =  await apiCall(`api/customerfeedback/getJobsWithSerial?serialNo=${serialNo}&jobID=${jobID}`)
+      const data =  await apiCallWithoutToken(`api/customerfeedback/getJobsWithSerial?serialNo=${serialNo}&jobID=${jobID}`)
       console.log("Jobs By Serial No Data:", data);
       const newData = mapJobsBySerialNoJobObj(data);
       console.log("Mapped Job Data:", newData);
       return newData;
+    },
+
+    addFeedback: async (payload: CustomerFeedBack) => {
+      console.log("Added Customer Feedback payload", payload);
+      const test = await apiCallWithoutToken('api/customerfeedback/addCustomerReview', 'POST', payload); 
+      return test;    
+    },
+
+    addRecall: async (payload: ReCallObj) => {
+      console.log("Added Customer Feedback payload", payload);
+      const test = await apiCall('api/ScheduleRecall/recallPreviousSchedule', 'POST', payload); 
+      return test;    
     },
   }
 }
