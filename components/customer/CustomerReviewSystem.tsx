@@ -2,8 +2,10 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useApiConfig } from "@/hooks/apiconfig";
 
 interface Service {
+  techName: string;
   contactPerson: string | null;
   customerID: string;
   customerName: string;
@@ -17,7 +19,6 @@ interface Service {
   machineRefNo: string;
   rowId: number;
   visitStatus: string;
-  technicianName: string;
 }
 
 interface Job {
@@ -47,15 +48,51 @@ const CustomerReviewSystem: React.FC<CustomerReviewSystemProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<"jobs" | "services">("jobs");
   const router = useRouter();
+  const { getServiceBySerialNoAndMachineNo, getJobBySerialNoAndMachineNo } =
+    useApiConfig();
+  const [servicesData, setServicesData] = useState<any>();
+  const [jobsData, setJobsData] = useState<any>();
 
-  const handleServiceClick = (service: Service) => {
+  const handleServiceClick = async (service: Service) => {
     const visitNo = service.expectedVisitCount;
+
+    await fetchServiceDetails(service);
+
     router.push(
       `/customer-feedback-machines/${serialNo}/service/${service.machineRefNo}?visitNo=${visitNo}`,
     );
   };
 
+  const fetchServiceDetails = async (service: Service) => {
+    try {
+      const serviceDetails = await getServiceBySerialNoAndMachineNo({
+        serialNo: serialNo,
+        visitNo: service.expectedVisitCount,
+        rowId: service.rowId,
+      });
+      setServicesData(serviceDetails);
+      console.log("Fetched Service Details:", serviceDetails);
+    } catch (error) {
+      console.error("Error fetching service details:", error);
+    }
+  };
+
+  const fetchJobDetails = async (job: Job) => {
+    try {
+      const jobDetails = await getJobBySerialNoAndMachineNo(
+        serialNo,
+        job.jobId,
+      );
+
+      setJobsData(jobDetails);
+      console.log("Fetched Job Details:", jobDetails);
+    } catch (error) {
+      console.error("Error fetching job details:", error);
+    }
+  };
+
   const handleJobClick = (job: Job) => {
+    fetchJobDetails(job);
     router.push(`/customer-feedback-machines/${serialNo}/job/${job.jobId}`);
   };
 
@@ -69,6 +106,7 @@ const CustomerReviewSystem: React.FC<CustomerReviewSystemProps> = ({
   };
 
   const getStatusColor = (status: string) => {
+    console.log("Status:    __", status);
     const statusUpper = status.toUpperCase();
     switch (statusUpper) {
       case "COMPLETED":
@@ -130,6 +168,7 @@ const CustomerReviewSystem: React.FC<CustomerReviewSystemProps> = ({
         {/* Tabs */}
         <div className="bg-white rounded-lg shadow-md mb-6 overflow-hidden">
           <div className="flex border-b">
+            {/* Job tab */}
             <button
               onClick={() => setActiveTab("jobs")}
               className={`flex-1 py-4 px-6 text-center font-semibold transition-all ${
@@ -140,6 +179,8 @@ const CustomerReviewSystem: React.FC<CustomerReviewSystemProps> = ({
             >
               Jobs ({jobs.length})
             </button>
+
+            {/* Service tab */}
             <button
               onClick={() => setActiveTab("services")}
               className={`flex-1 py-4 px-6 text-center font-semibold transition-all ${
@@ -155,6 +196,7 @@ const CustomerReviewSystem: React.FC<CustomerReviewSystemProps> = ({
 
         {/* Content */}
         <div className="space-y-4">
+          {/* jobs Content */}
           {activeTab === "jobs" && (
             <>
               {jobs.length === 0 ? (
@@ -162,9 +204,9 @@ const CustomerReviewSystem: React.FC<CustomerReviewSystemProps> = ({
                   <p className="text-gray-500">No jobs available</p>
                 </div>
               ) : (
-                jobs.map((job) => (
+                jobs.map((job, index) => (
                   <div
-                    key={job.id}
+                    key={index}
                     onClick={() => handleJobClick(job)}
                     className="bg-white rounded-lg shadow-md hover:shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 duration-200"
                   >
@@ -283,6 +325,7 @@ const CustomerReviewSystem: React.FC<CustomerReviewSystemProps> = ({
             </>
           )}
 
+          {/* services Content */}
           {activeTab === "services" && (
             <>
               {services.length === 0 ? (
@@ -290,9 +333,9 @@ const CustomerReviewSystem: React.FC<CustomerReviewSystemProps> = ({
                   <p className="text-gray-500">No services available</p>
                 </div>
               ) : (
-                services.map((service) => (
+                services.map((service, index) => (
                   <div
-                    key={service.rowId}
+                    key={index}
                     onClick={() => handleServiceClick(service)}
                     className="bg-white rounded-lg shadow-md hover:shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 duration-200"
                   >
@@ -300,10 +343,10 @@ const CustomerReviewSystem: React.FC<CustomerReviewSystemProps> = ({
                       <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-4">
                         <div className="mb-3 md:mb-0">
                           <h3 className="text-xl font-bold text-gray-800 mb-1">
-                            {service.expectedVisitNo}
+                            {service.machineRefNo}
                           </h3>
                           <p className="text-gray-600 text-sm mb-2">
-                            {service.customerName}
+                            {service.expectedVisitNo}
                           </p>
                           <span
                             className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
@@ -383,7 +426,7 @@ const CustomerReviewSystem: React.FC<CustomerReviewSystemProps> = ({
                           <div>
                             <p className="text-xs text-gray-500">Technician</p>
                             <p className="font-medium truncate">
-                              {service.technicianName}
+                              {service.techName}
                             </p>
                           </div>
                         </div>

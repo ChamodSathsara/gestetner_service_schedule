@@ -1,7 +1,8 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, use } from "react";
+import { Job, useApiConfig } from "@/hooks/apiconfig";
 
 export default function JobReviewPage() {
   const params = useParams();
@@ -15,6 +16,26 @@ export default function JobReviewPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
+  const { getJobBySerialNoAndMachineNo } = useApiConfig();
+  const [jobsData, setJobsData] = useState<any>(null);
+
+  console.log("serialNo: ", serialNo);
+  console.log("jobId: ", jobId);
+
+  useEffect(() => {
+    fetchJobDetails();
+  }, []);
+
+  const fetchJobDetails = async () => {
+    try {
+      const jobDetails = await getJobBySerialNoAndMachineNo(serialNo, jobId);
+
+      setJobsData(jobDetails);
+      console.log("Fetched Job Details:", jobDetails);
+    } catch (error) {
+      console.error("Error fetching job details:", error);
+    }
+  };
 
   // Fetch job details - replace with your actual API call
   // const { data: jobDetails } = useSWR(`/api/jobs/${jobId}`, fetcher);
@@ -89,9 +110,11 @@ export default function JobReviewPage() {
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-bold text-gray-800">{jobId}</h2>
+              <h2 className="text-xl font-bold text-gray-800">
+                {jobsData.jobId}
+              </h2>
               <span className="inline-block px-3 py-1 mt-2 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                Completed
+                {jobsData?.visitStatus || "N/A"}
               </span>
             </div>
           </div>
@@ -115,7 +138,7 @@ export default function JobReviewPage() {
               </svg>
               <div>
                 <p className="text-xs text-gray-500">Date</p>
-                <p className="font-medium">Jan 25, 2026</p>
+                <p className="font-medium">{jobsData?.date || "N/A"}</p>
               </div>
             </div>
 
@@ -141,7 +164,7 @@ export default function JobReviewPage() {
               </svg>
               <div>
                 <p className="text-xs text-gray-500">Location</p>
-                <p className="font-medium">Building C - Floor 3</p>
+                <p className="font-medium">{jobsData?.location || "N/A"}</p>
               </div>
             </div>
 
@@ -161,7 +184,9 @@ export default function JobReviewPage() {
               </svg>
               <div>
                 <p className="text-xs text-gray-500">Technician</p>
-                <p className="font-medium">David Lee</p>
+                <p className="font-medium">
+                  {jobsData?.technicianName || "N/A"}
+                </p>
               </div>
             </div>
           </div>

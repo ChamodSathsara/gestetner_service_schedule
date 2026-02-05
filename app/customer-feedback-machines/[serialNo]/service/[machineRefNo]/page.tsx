@@ -1,53 +1,73 @@
 "use client";
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useApiConfig } from "@/hooks/apiconfig";
 
 export default function ServiceReviewPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { getServiceBySerialNoAndMachineNo } = useApiConfig();
 
   const serialNo = params.serialNo as string;
   const machineRefNo = params.machineRefNo as string;
-  const visitNo = searchParams.get("visitNo");
+  const visitNo = Number(searchParams.get("visitNo"));
 
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [review, setReview] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customerName, setCustomerName] = useState("");
+  const [mobileNumber, setMobileNumber] = useState("");
+  const [serviceDetails, setServiceDetails] = useState<any>(null);
 
   // Fetch service details - replace with your actual API call
   // const { data: serviceDetails } = useSWR(`/api/services/${machineRefNo}?visitNo=${visitNo}`, fetcher);
+  useEffect(() => {
+    fetchServiceDetails();
+  }, []);
+
+  const fetchServiceDetails = async () => {
+    try {
+      const data = {
+        serialNo,
+        rowId: Number(machineRefNo),
+        visitNo: visitNo || 0,
+      };
+      const serviceData = await getServiceBySerialNoAndMachineNo(data);
+
+      setServiceDetails(serviceData);
+      console.log("Fetched Service Details:", serviceData);
+    } catch (error) {
+      console.error("Error fetching service details:", error);
+    }
+  };
 
   const handleSubmit = async () => {
     if (rating === 0) return;
+
+    if (!customerName.trim() || !mobileNumber.trim()) {
+      alert("Please enter customer name and mobile number");
+      return;
+    }
 
     setIsSubmitting(true);
 
     const reviewData = {
       serialNo,
-      machineRefNo,
       visitNo,
+      customerName,
+      mobileNumber,
       rating,
       review,
-      type: "service",
+      type: "job",
     };
 
     try {
-      // Replace with your actual API endpoint
-      // const response = await fetch('/api/reviews', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(reviewData),
-      // });
-
       console.log("Submitting review:", reviewData);
-
-      // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Show success message or redirect
       alert("Review submitted successfully!");
       router.push(`/customer-feedback-machines/${serialNo}`);
     } catch (error) {
@@ -94,12 +114,12 @@ export default function ServiceReviewPage() {
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-bold text-gray-800">EXPT_SV1</h2>
+              <h2 className="text-xl font-bold text-gray-800">{`Visit No: ${visitNo}`}</h2>
               <p className="text-gray-600 text-sm mt-1">
-                Pamuditha Tillekeratne
+                {serviceDetails?.customerName || "Customer Name"}
               </p>
               <span className="inline-block px-3 py-1 mt-2 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                Completed
+                {serviceDetails?.visitStatus}
               </span>
             </div>
           </div>
@@ -121,7 +141,7 @@ export default function ServiceReviewPage() {
               </svg>
               <div>
                 <p className="text-xs text-gray-500">Date</p>
-                <p className="font-medium">Feb 01, 2026</p>
+                <p className="font-medium">{serviceDetails?.visitDate}</p>
               </div>
             </div>
 
@@ -147,7 +167,7 @@ export default function ServiceReviewPage() {
               </svg>
               <div>
                 <p className="text-xs text-gray-500">Location</p>
-                <p className="font-medium">Wadduwa</p>
+                <p className="font-medium">{serviceDetails?.location}</p>
               </div>
             </div>
 
@@ -167,7 +187,9 @@ export default function ServiceReviewPage() {
               </svg>
               <div>
                 <p className="text-xs text-gray-500">Technician</p>
-                <p className="font-medium">Samantha Silva</p>
+                <p className="font-medium">
+                  {serviceDetails?.technicianName || "Not Assigned"}
+                </p>
               </div>
             </div>
           </div>
@@ -187,12 +209,13 @@ export default function ServiceReviewPage() {
             <div>
               <p className="text-sm text-gray-600">
                 <span className="font-semibold">Customer ID:</span>{" "}
-                PAM2601089482
+                {serviceDetails?.customerId}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-600">
-                <span className="font-semibold">Phone:</span> 0713304911
+                <span className="font-semibold">Phone:</span>{" "}
+                {serviceDetails?.customerPhone || "0713304911"}
               </p>
             </div>
           </div>
@@ -234,6 +257,37 @@ export default function ServiceReviewPage() {
                 </svg>
               </button>
             ))}
+          </div>
+
+          {/* Customer Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Enter Your Name
+              </label>
+              <input
+                type="text"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Enter customer name"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Mobile Number
+              </label>
+              <input
+                type="tel"
+                value={mobileNumber}
+                onChange={(e) => setMobileNumber(e.target.value)}
+                placeholder="07XXXXXXXX"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                disabled={isSubmitting}
+              />
+            </div>
           </div>
 
           {/* Review Text */}

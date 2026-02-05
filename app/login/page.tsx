@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { use, useState } from "react";
 import {
   Card,
   CardContent,
@@ -37,8 +37,31 @@ export default function LoginPage() {
     }
 
     try {
-      if (username === "customer" && password === "abc@123") {
-        router.push("/customer-feedback-machines/customer123");
+      if (password === "customer") {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}api/Auth/login`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              tecH_CODE: username,
+              seriaL_NO: username,
+              password: password,
+            }),
+          },
+        );
+
+        const data = await response.json();
+
+        if (response.ok) {
+          login(data); // Save user & token in context + localStorage
+          router.push(`/customer-feedback-machines/${username}`);
+        } else {
+          // API returned invalid credentials
+          setError(data || "Invalid Serial Number");
+        }
       } else {
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_BASE_URL}api/Auth/login`,

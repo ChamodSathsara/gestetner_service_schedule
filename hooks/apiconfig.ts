@@ -16,6 +16,7 @@ export interface Job {
   phone_number?: string
   machineRefNo?: string
   serialNo?: string
+  technicianName?: string
 }
 
 interface ApiBreakdown {
@@ -54,6 +55,12 @@ export interface ServiceVisit {
   expected_visit_no: number
   machineRefNo?: string
   
+}
+
+interface getServicePayload {
+  serialNo: string
+  visitNo: number
+  rowId: number
 }
 
 interface ApiServiceVisit {
@@ -103,6 +110,68 @@ const mapCustomerAgreement = (cusStatus: string): string => {
   }
   return agreementMap[cusStatus] || cusStatus
 }
+
+// Main Mapping Function
+export const mapJobsBySerialNo = (data: any[]): Job[] => {
+  if (!Array.isArray(data)) return [];
+
+  return data.map((item, index) => ({
+    // Auto Increment ID (1,2,3...)
+    id: (index + 1).toString(),
+    // Job ID
+    jobId: item.dJ_ID,
+    // Date
+    date: item.dJ_DATE,
+    // Location Combined
+    location: `${item.cuS_ADD1 || ""} ${item.cuS_ADD2 || ""} ${
+      item.cuS_ADD3 || ""
+    }`.trim(),
+
+    // Description
+    description: item.note,
+    // Customer Name
+    customerName: item.cuS_NAME,
+    // Status
+    status: item.joB_STATUS,
+    // Note
+    note: item.note,
+    // Customer Agreement Mapping
+    customer_agreement: mapCustomerAgreement(item.cuS_STATUS),
+    // Machine Ref No
+    machineRefNo: item.machinE_REF_NO,
+    // Technician Name
+    technicianName: item.teaM_NAME,
+  }));
+};
+
+export const mapJobsBySerialNoJobObj = (item: any): Job => {
+  return {
+    // Auto ID (you can change this)
+    id: "1",
+    // Job ID
+    jobId: item.dJ_ID,
+    // Date
+    date: item.dJ_DATE,
+    // Location Combined
+    location: `${item.cuS_ADD1 || ""} ${item.cuS_ADD2 || ""} ${
+      item.cuS_ADD3 || ""
+    }`.trim(),
+    // Description
+    description: item.note,
+    // Customer Name
+    customerName: item.cuS_NAME,
+    // Status
+    status: item.joB_STATUS,
+    // Note
+    note: item.note,
+    // Agreement Mapping
+    customer_agreement: mapCustomerAgreement(item.cuS_STATUS),
+    // Machine Ref No
+    machineRefNo: item.machinE_REF_NO,
+    // Technician Name
+    technicianName: item.teaM_NAME,
+  };
+};
 
 const mapJobStatus = (jobStatus: string): string => {
     console.log("Mapping job status:", jobStatus);
@@ -182,6 +251,12 @@ const mapServiceVisit = (visit: ApiServiceVisit): ServiceVisit => {
   }
 }
 
+const mapNew = (visit: any[]) => {
+  return {
+    ...visit[0]
+  }
+}
+
 const mapServiceVisits = (visits: ApiServiceVisit[]): ServiceVisit[] => {
   console.log("Mapping service visits:", visits);;
   return visits.map(mapServiceVisit)
@@ -215,12 +290,35 @@ export const useApiConfig = () => {
     }
     const res = method === 'GET' ? await response.json() : response;
     console.log(res);
-    return res
+    return res;
+  }
 
-    // console.log("API call successful:", endpoint);
-    // const res = await response.json();
-    // console.log("API call response data:", res);
-    // return res;
+    const apiCallNew = async (endpoint: string, method: 'GET' | 'POST' , body?: any) => {
+    // if (!user?.token) {
+    //   throw new Error('No authentication token available')
+    // }
+    if(method === 'GET'){
+      console.log("GET Method Payload___________________________:", body);
+    }
+
+
+    const config: RequestInit = {
+      method,
+      body: JSON.stringify(body),
+      headers: {
+        // 'Authorization': `Bearer ${user.token}`,
+        'Content-Type': 'application/json',
+      },
+    }
+
+    const response = await fetch(`${BASE_URL}${endpoint}`, config)
+    console.log(response.status, "", response.statusText );
+    if (!response.ok ) {
+      throw new Error(`API Error: ${response.status} ${response.statusText}`)
+    }
+    const res = method === 'GET' ? await response.json() : response;
+    console.log(res);
+    return res;
   }
 
   return {
@@ -288,7 +386,36 @@ export const useApiConfig = () => {
       return data;
     },
 
+    getServicesBySerialNo : async (serialNo: string) => {
+      // const data =  apiCall(`api/Service/alltimedueservices?techCode=${user?.tecH_CODE}`)
+      const data2 = apiCall(`api/customerfeedback/getServicesWithSerial?serialNo=${serialNo}`)
+      console.log("Services By Serial No Data:", data2);
+      return data2;
+    },
 
+    getJobsBySerialNo : async (serialNo: string) => {
+      // const data =  apiCall(`api/Service/alltimedueservices?techCode=${user?.tecH_CODE}`)
+      const data = await apiCall(`api/customerfeedback/getBreakdownListsForLastYear?serialno=${serialNo}`)
+      console.log("Jobs By Serial No Data:", data);
+      const newData = mapJobsBySerialNo(data);
+      return newData;
+    },
 
+    getServiceBySerialNoAndMachineNo : async (payload: getServicePayload) => {
+      const data =  await apiCall(`api/customerfeedback/getServiceByRowID?serialNo=${payload.serialNo}&rowId=${payload.rowId}&visitNo=${payload.visitNo+1}`)
+      // const data2 = await apiCallNew(`api/customerfeedback/getServiceByRowID` , 'GET' ,payload )
+      console.log("Services By Serial No Data:", data);
+      const newData = mapNew(data);
+      return newData;
+    },
+
+    getJobBySerialNoAndMachineNo : async (serialNo : string, jobID: string) => {
+      const data =  await apiCall(`api/customerfeedback/getJobsWithSerial?serialNo=${serialNo}&jobID=${jobID}`)
+      console.log("Jobs By Serial No Data:", data);
+      const newData = mapJobsBySerialNoJobObj(data);
+      console.log("Mapped Job Data:", newData);
+      return newData;
+    },
   }
 }
+

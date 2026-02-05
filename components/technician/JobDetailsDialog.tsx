@@ -576,7 +576,7 @@ export function JobDetailsDialog({
                   {/* QR Code */}
                   <div className="p-4 bg-white rounded-lg border">
                     <QRCode
-                      value="https://servista.com/review/Q454546/1&techCode=0000"
+                      value={`http://localhost:3000/customer-feedback-machines/${job.serialNo}/job/${job.jobId}`}
                       size={180}
                       level="Q"
                       fgColor="#111827"
@@ -590,7 +590,7 @@ export function JobDetailsDialog({
                     <Button
                       onClick={() => {
                         navigator.clipboard.writeText(
-                          "https://servista.com/review/Q454546/1&techCode=0000",
+                          `http://localhost:3000/customer-feedback-machines/${job.serialNo}/job/${job.jobId}`,
                         );
                         // Optional: show a small toast/feedback
                         alert("Review link copied to clipboard!");
@@ -610,19 +610,19 @@ export function JobDetailsDialog({
                             .share({
                               title: "Review Your Service",
                               text: "We'd love your feedback!",
-                              url: "https://servista.com/review/Q454546/1&techCode=0000",
+                              url: `http://localhost:3000/customer-feedback-machines/${job.serialNo}/job/${job.jobId}`,
                             })
                             .catch(() => {
                               // Fallback to copy if share fails
                               navigator.clipboard.writeText(
-                                "https://servista.com/review/Q454546/1&techCode=0000",
+                                `http://localhost:3000/customer-feedback-machines/${job.serialNo}/job/${job.jobId}`,
                               );
                               alert("Link copied (sharing not available)");
                             });
                         } else {
                           // Fallback for desktop/no share support
                           navigator.clipboard.writeText(
-                            "https://servista.com/review/Q454546/1&techCode=0000",
+                            `http://localhost:3000/customer-feedback-machines/${job.serialNo}/job/${job.jobId}`,
                           );
                           alert("Review link copied to clipboard!");
                         }
@@ -637,7 +637,7 @@ export function JobDetailsDialog({
 
                   {/* Optional: Display the link for reference */}
                   <p className="text-xs text-gray-500 break-all">
-                    https://servista.com/review/Q454546/1&techCode=0000
+                    {`http://localhost:3000/customer-feedback-machines/${job.serialNo}/job/${job.jobId}`}
                   </p>
                 </div>
 

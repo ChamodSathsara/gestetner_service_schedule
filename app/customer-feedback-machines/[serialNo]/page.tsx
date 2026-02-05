@@ -1,18 +1,16 @@
+"use client";
+import { use, useEffect, useState } from "react";
 import CustomerReviewSystem from "@/components/customer/CustomerReviewSystem";
+import { useApiConfig } from "@/hooks/apiconfig";
 
 interface PageProps {
-  params: {
+  params: Promise<{
     serialNo: string;
-  };
+  }>;
 }
 
 // Fetch data function - replace with your actual API call
 async function getJobsAndServices(serialNo: string) {
-  // Replace this with your actual API endpoint
-  // const response = await fetch(`${process.env.API_URL}/machines/${serialNo}/jobs-services`);
-  // const data = await response.json();
-  // return data;
-
   // Mock data for demonstration
   return {
     jobs: [
@@ -91,13 +89,46 @@ async function getJobsAndServices(serialNo: string) {
   };
 }
 
-export default async function CustomerFeedbackMachinePage({
-  params,
-}: PageProps) {
-  const { serialNo } = params;
-  const { jobs, services } = await getJobsAndServices(serialNo);
+export default function CustomerFeedbackMachinePage({ params }: PageProps) {
+  // Unwrap the params Promise using React.use()
+  const { serialNo } = use(params);
+  const [servicesData, setServicesData] = useState<any[]>([]);
+  const [jobsData, setJobsData] = useState<any[]>([]);
+
+  const { getServicesBySerialNo, getJobsBySerialNo } = useApiConfig();
+
+  // Console log the serial number
+  useEffect(() => {
+    console.log("Serial No Param:", serialNo);
+    fetchServices();
+    fetchJobs();
+  }, [serialNo]);
+
+  const fetchServices = async () => {
+    try {
+      const servicesData = await getServicesBySerialNo(serialNo);
+      console.log("Fetched Services Data:", servicesData);
+      setServicesData(servicesData);
+    } catch (error) {
+      console.error("Error fetching services by serial no:", error);
+    }
+  };
+
+  const fetchJobs = async () => {
+    try {
+      const jobsData = await getJobsBySerialNo(serialNo);
+      console.log("Fetched Jobs Data:", jobsData);
+      setJobsData(jobsData);
+    } catch (error) {
+      console.error("Error fetching jobs by serial no:", error);
+    }
+  };
 
   return (
-    <CustomerReviewSystem jobs={jobs} services={services} serialNo={serialNo} />
+    <CustomerReviewSystem
+      jobs={jobsData} // You'll need to fetch this data client-side
+      services={servicesData} // You'll need to fetch this data client-side
+      serialNo={serialNo}
+    />
   );
 }
