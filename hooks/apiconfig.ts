@@ -449,8 +449,8 @@ export const useApiConfig = () => {
       return mapBreakdownsToJobs(data)
     },
 
-    resetPassword: async (newPassword:any) => {
-      const test = await apiCall('api/resetPassword', 'POST', newPassword);  
+    resetPassword: async (newPassword:string) => {
+      const test = await apiCall(`api/auth/resetPassword?techCode=${user?.tecH_CODE}`, 'POST', newPassword);  
       return test;
     },
   }
