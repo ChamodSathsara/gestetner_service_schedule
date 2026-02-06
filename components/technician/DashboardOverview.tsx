@@ -74,7 +74,7 @@ export function DashboardOverview({
               {recentServices.length}
             </p>
             <p className="text-[9px] md:text-xs text-green-100 font-semibold">
-              Monthly Completed Services
+              Monthly All Services
             </p>
           </CardContent>
         </Card>
@@ -87,7 +87,7 @@ export function DashboardOverview({
               {recentBreakdowns.length}
             </p>
             <p className="text-[9px] md:text-xs text-purple-100 font-semibold">
-              Today Completed Jobs
+              Today All Jobs
             </p>
           </CardContent>
         </Card>
@@ -106,9 +106,9 @@ export function DashboardOverview({
         </div>
         <div className="space-y-2">
           {recentServices.length > 0 ? (
-            recentServices.map((job) => (
+            recentServices.map((job, index) => (
               <JobCard
-                key={job.id}
+                key={index}
                 job={job}
                 onClick={() => onJobClick(job)}
                 variant="service"

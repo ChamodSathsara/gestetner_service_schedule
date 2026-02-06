@@ -30,7 +30,7 @@ export default function Settings() {
 
   const handleResetPasswordClick = () => {
     // router.push('/reset-password');
-    router.push("/login");
+    router.push("/reset-password");
   };
 
   return (

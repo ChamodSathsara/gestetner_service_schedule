@@ -253,7 +253,7 @@ const calculateDaysLeft = (expectedVisitDate: string): number => {
   const today = new Date()
   visitDate.setHours(0, 0, 0, 0)
   today.setHours(0, 0, 0, 0)
-  const diffTime = today.getTime() - visitDate.getTime()
+  const diffTime =  visitDate.getTime() - today.getTime()
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   return diffDays
 }
@@ -364,12 +364,6 @@ export const useApiConfig = () => {
       return mapServiceVisits(data)
     },
 
-    // 4. Update Service Visit Status
-    // updateServiceVisitStatus: async (payload: ServiceUpdatePayload) => {
-    //     console.log("updateServiceVisitStatus payload", payload);
-    //   return apiCall(`api/Service/updateservicevisit?jobId=${payload.jobId}&techCode=${user?.tecH_CODE}&visitNo=${payload.visitNo}&machineRefNo=${payload.machineRefNo}&jobStatus=${payload.jobStatus}&meterReadingValue=${payload.meterReadingValue}`, 'POST')
-    // },
-
     updateServiceVisitStatus: async (payload: ServiceUpdatePayload) => {
       console.log("updateServiceVisitStatus payload", payload);
       const test = await apiCall('api/Service/updateservicevisit', 'POST', payload);
@@ -389,7 +383,7 @@ export const useApiConfig = () => {
 
     // 5. Get Performance
     getPerformance: async () => {
-      const data =  apiCall(`api/Breakdown/getperformance?techCode=${user?.tecH_CODE}`)
+      const data =  await apiCall(`api/Breakdown/getperformance?techCode=${user?.tecH_CODE}`)
       console.log("Performance Data:", data);
       return data;
     },
@@ -402,14 +396,14 @@ export const useApiConfig = () => {
     },
 
     getDueJobs : async () => {
-      const data =  apiCall(`api/Service/alltimedueservices?techCode=${user?.tecH_CODE}`)
+      const data = await apiCall(`api/Service/alltimedueservices?techCode=${user?.tecH_CODE}`)
       console.log("Due Jobs Data:", data);
       return data;
     },
 
     getServicesBySerialNo : async (serialNo: string) => {
       // const data =  apiCall(`api/Service/alltimedueservices?techCode=${user?.tecH_CODE}`)
-      const data2 = apiCall(`api/customerfeedback/getServicesWithSerial?serialNo=${serialNo}`)
+      const data2 = await apiCall(`api/customerfeedback/getServicesWithSerial?serialNo=${serialNo}`)
       console.log("Services By Serial No Data:", data2);
       return data2;
     },
@@ -453,6 +447,11 @@ export const useApiConfig = () => {
     allTimeDueJobs: async (): Promise<Job[]> => {
       const data = await apiCall(`api/jobRecall/getAllLastYearsJobs?techCode=${user?.tecH_CODE}`)
       return mapBreakdownsToJobs(data)
+    },
+
+    resetPassword: async (newPassword:any) => {
+      const test = await apiCall('api/resetPassword', 'POST', newPassword);  
+      return test;
     },
   }
 }
