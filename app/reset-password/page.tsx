@@ -44,6 +44,7 @@ export default function ResetPassword() {
       router.push("/login");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to reset password");
+      router.push("/login");
     } finally {
       setLoading(false);
     }
