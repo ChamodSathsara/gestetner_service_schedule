@@ -390,7 +390,7 @@ export function TechnicianDashboardContent() {
             <span className="text-[10px] font-medium">All</span>
           </TabsTrigger>
 
-          {/* Settings */}
+          {/* Settingscvs */}
           <TabsTrigger
             value="settings"
             className="flex flex-col items-center justify-center gap-1 py-2 text-gray-500 data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50"
