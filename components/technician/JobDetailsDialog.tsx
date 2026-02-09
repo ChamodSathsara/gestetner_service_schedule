@@ -17,9 +17,10 @@ import {
 import { useApiConfig } from "@/hooks/apiconfig";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
-import QRCode from "react-qr-code"; // ← import this
+import QRCode from "react-qr-code";
 import { Copy, Share2 } from "lucide-react";
 import UnauthorizedDialog from "./UnauthorizedDialog";
+import Swal from "sweetalert2";
 
 interface Job {
   visitNo: any;
@@ -86,7 +87,8 @@ export function JobDetailsDialog({
     updateBreakdownStatus,
     updateServiceVisitStatus,
     getPreviousServiceLists,
-    showUnauthorizedDialog, setShowUnauthorizedDialog
+    showUnauthorizedDialog,
+    setShowUnauthorizedDialog,
   } = useApiConfig();
   const { user } = useAuth();
   console.log(
@@ -326,6 +328,25 @@ export function JobDetailsDialog({
 
   const isPending = job.status === "pending";
   const isStarted = job.status === "started";
+
+  // Beautiful alert function using SweetAlert2
+  const showLinkCopiedAlert = () => {
+    Swal.fire({
+      title: "Link Copied!",
+      text: "Review link copied to clipboard. Share it with your customer.",
+      icon: "success",
+      confirmButtonText: "Great!",
+      confirmButtonColor: "#2563eb",
+      timer: 3000,
+      timerProgressBar: true,
+      showClass: {
+        popup: "animate__animated animate__fadeInDown",
+      },
+      hideClass: {
+        popup: "animate__animated animate__fadeOutUp",
+      },
+    });
+  };
 
   return (
     <>
@@ -609,7 +630,7 @@ export function JobDetailsDialog({
                             : `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/job/${job.jobId}`;
 
                         navigator.clipboard.writeText(link);
-                        alert("Review link copied to clipboard!");
+                        showLinkCopiedAlert();
                       }}
                       variant="outline"
                       className="flex-1 flex items-center justify-center gap-2"
@@ -635,11 +656,11 @@ export function JobDetailsDialog({
                             })
                             .catch(() => {
                               navigator.clipboard.writeText(link);
-                              alert("Link copied (sharing not available)");
+                              showLinkCopiedAlert();
                             });
                         } else {
                           navigator.clipboard.writeText(link);
-                          alert("Review link copied to clipboard!");
+                          showLinkCopiedAlert();
                         }
                       }}
                       variant="default"

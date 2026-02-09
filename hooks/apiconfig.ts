@@ -219,7 +219,10 @@ const mapBreakdownToJob = (breakdown: ApiBreakdown): Job => {
     id: breakdown.dJ_ID,
     jobId: breakdown.dJ_ID,
     date: breakdown.dJ_DATE,
-    location: breakdown.cuS_ADD1,
+    // location: breakdown.cuS_ADD1,
+     location: `${breakdown.cuS_ADD1 || ""} ${breakdown.cuS_ADD2 || ""} ${
+      breakdown.cuS_ADD3 || ""
+    }`.trim(),
     description: breakdown.note,
     customerName: breakdown.cuS_NAME,
     status: mapJobStatus(breakdown.joB_STATUS),
@@ -266,7 +269,10 @@ const mapServiceVisit = (visit: ApiServiceVisit): ServiceVisit => {
     serialNo:visit.serialNo,
     customerName: visit.customerName,
     date: visit.expectedVisitDate,
-    location: visit.machineLocation01,
+    // location: visit.machineLocation01,
+     location: `${visit.machineLocation01 || ""} ${visit.machineLocation02 || ""} ${
+      visit.machineLocation03 || ""
+    }`.trim(),
     daysLeft: calculateDaysLeft(visit.expectedVisitDate),
     // status: visit.visitStatus.toLowerCase(),
     status: mapJobStatus(visit.visitStatus),

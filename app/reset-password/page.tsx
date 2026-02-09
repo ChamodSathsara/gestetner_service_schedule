@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useApiConfig } from "@/hooks/apiconfig";
 import UnauthorizedDialog from "@/components/technician/UnauthorizedDialog";
+import { useRouter } from "next/navigation";
 
 export default function ResetPassword() {
-  const { resetPassword , showUnauthorizedDialog , setShowUnauthorizedDialog } = useApiConfig();
+  const { resetPassword, showUnauthorizedDialog, setShowUnauthorizedDialog } =
+    useApiConfig();
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -14,6 +16,7 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const route = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +45,7 @@ export default function ResetPassword() {
       setSuccess(true);
       setNewPassword("");
       setConfirmPassword("");
+      route.push("/login");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to reset password");
     } finally {

@@ -516,7 +516,7 @@ function RecallDialog({ item, isOpen, onClose, onSubmit }: RecallDialogProps) {
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!reason.trim() || !isOnSite}
+            disabled={!reason.trim() }
             className="flex-1 bg-red-600 hover:bg-red-700 text-white"
           >
             <Bell className="w-4 h-4 mr-2" />

@@ -24,6 +24,7 @@ import AccountSettingsPage from "./Settings";
 import { useAuth } from "@/context/AuthContext";
 import UnauthorizedDialog from "@/components/technician/UnauthorizedDialog";
 import { useSignalR } from "@/hooks/useSignalR";
+import Swal from "sweetalert2";
 
 interface Service {
   id: string;
@@ -94,6 +95,7 @@ export function TechnicianDashboardContent() {
   const { user } = useAuth();
 
   const techCode = user?.tecH_CODE;
+  const technicianName = user?.tecH_NAME;
   // const techCode = localStorage.getItem("techCode");
   console.log("tech code", techCode);
   // const [breakdowns, setBreakdowns] = useState<Job[]>([])
@@ -156,8 +158,6 @@ export function TechnicianDashboardContent() {
     }
   };
 
-
-
   const allNotifications = [
     ...liveNotifications,
     // Your existing static notifications can be removed or kept as fallback
@@ -165,7 +165,31 @@ export function TechnicianDashboardContent() {
 
   useEffect(() => {
     if (liveNotifications.length > 0) {
-      // Show notification badge/sound
+      // Show beautiful notification alert
+      Swal.fire({
+        title: "New Assignment!",
+        text: "A new Job or Service has been assigned to you",
+        icon: "info",
+        confirmButtonText: "View Now",
+        confirmButtonColor: "#2563eb",
+        showCancelButton: true,
+        cancelButtonText: "Later",
+        cancelButtonColor: "#6b7280",
+        timer: 5000,
+        timerProgressBar: true,
+        showClass: {
+          popup: "animate__animated animate__fadeInDown",
+        },
+        hideClass: {
+          popup: "animate__animated animate__fadeOutUp",
+        },
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Open notifications panel if user clicks "View Now"
+          setShowNotifications(true);
+        }
+      });
+
       // playNotificationSound(); // Optional
       console.log("Okay");
 
@@ -185,17 +209,49 @@ export function TechnicianDashboardContent() {
     setSelectedJob(job);
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (selectedJob) {
-      alert(`Job ${selectedJob.jobId} marked as complete!`);
+      const result = await Swal.fire({
+        title: "Job Completed!",
+        html: `Job <b>#${selectedJob.jobId}</b> has been marked as complete.`,
+        icon: "success",
+        confirmButtonText: "Great!",
+        confirmButtonColor: "#10b981",
+        timer: 2500,
+        timerProgressBar: true,
+        showClass: {
+          popup: "animate__animated animate__fadeInDown",
+        },
+        hideClass: {
+          popup: "animate__animated animate__fadeOutUp",
+        },
+      });
+
+      // Refresh after alert closes
       window.location.reload();
       setSelectedJob(null);
     }
   };
 
-  const handleInProgress = () => {
+  const handleInProgress = async () => {
     if (selectedJob) {
-      alert(`Job ${selectedJob.jobId} marked as in progress!`);
+      await Swal.fire({
+        title: "Job Started!",
+        html: `Job <b>#${selectedJob.jobId}</b> is now in progress.`,
+        icon: "info",
+        confirmButtonText: "Got it!",
+        confirmButtonColor: "#2563eb",
+        timer: 2500,
+        timerProgressBar: true,
+        showClass: {
+          popup: "animate__animated animate__fadeInDown",
+        },
+        hideClass: {
+          popup: "animate__animated animate__fadeOutUp",
+        },
+      });
+
+      // Refresh after alert closes
       window.location.reload();
       setSelectedJob(null);
     }
@@ -221,9 +277,16 @@ export function TechnicianDashboardContent() {
       <div className="md:hidden sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between mb-2">
-            <h1 className="text-lg font-bold text-gray-900">
-              Technician Dashboard
-            </h1>
+            <div>
+              <h1 className="text-lg font-bold text-gray-900">
+                Technician Dashboard
+              </h1>
+              {technicianName && (
+                <p className="text-xs text-blue-600 font-medium mt-0.5">
+                  {technicianName}
+                </p>
+              )}
+            </div>
             <div className="relative">
               <Bell
                 className="w-5 h-5 cursor-pointer text-gray-700 hover:text-blue-600"
@@ -252,7 +315,8 @@ export function TechnicianDashboardContent() {
               Technician Dashboard
             </h1>
             <p className="text-gray-500">
-              Welcome back! Here are your assigned jobs.
+              Welcome back{technicianName ? `, ${technicianName}` : ""}! Here
+              are your assigned jobs.
             </p>
           </div>
           <div className="relative">
