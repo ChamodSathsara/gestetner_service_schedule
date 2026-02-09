@@ -23,6 +23,7 @@ import { Loading, LoadingDots, LoadingPulse } from "./Loading";
 import AccountSettingsPage from "./Settings";
 import { useAuth } from "@/context/AuthContext";
 import UnauthorizedDialog from "@/components/technician/UnauthorizedDialog";
+import { useSignalR } from "@/hooks/useSignalR";
 
 interface Service {
   id: string;
@@ -90,9 +91,18 @@ export function TechnicianDashboardContent() {
   const [recentServices, setRecentServices] = useState<any[]>([]);
   const [dueJobs, setDueJobs] = useState<any[]>([]);
   const { isLoading: authLoading } = useAuth(); // Get loading state
+  const { user } = useAuth();
 
+  const techCode = user?.tecH_CODE;
+  // const techCode = localStorage.getItem("techCode");
+  console.log("tech code", techCode);
   // const [breakdowns, setBreakdowns] = useState<Job[]>([])
   const [loading, setLoading] = useState(false);
+  const {
+    notifications: liveNotifications,
+    isConnected,
+    clearNotifications,
+  } = useSignalR(techCode || "");
 
   useEffect(() => {
     if (!authLoading) {
@@ -146,29 +156,30 @@ export function TechnicianDashboardContent() {
     }
   };
 
-  const notifications = [
-    {
-      id: 1,
-      type: "service",
-      title: "New Service Job Assigned",
-      message: "SVC-2025-012 - Routine maintenance at Oak Plaza",
-      time: "5 min ago",
-    },
-    {
-      id: 2,
-      type: "breakdown",
-      title: "Urgent Breakdown Alert",
-      message: "BRK-2025-009 - Elevator malfunction at Metro Tower",
-      time: "15 min ago",
-    },
-    {
-      id: 3,
-      type: "update",
-      title: "Job Update",
-      message: "BRK-2025-007 parts have arrived",
-      time: "1 hour ago",
-    },
+
+
+  const allNotifications = [
+    ...liveNotifications,
+    // Your existing static notifications can be removed or kept as fallback
   ];
+
+  useEffect(() => {
+    if (liveNotifications.length > 0) {
+      // Show notification badge/sound
+      // playNotificationSound(); // Optional
+      console.log("Okay");
+
+      // Refresh dashboard data
+      if (activeTab === "breakdown" || activeTab === "dashboard") {
+        fetchBreakdowns();
+      }
+    }
+  }, [liveNotifications.length]);
+
+  // const playNotificationSound = () => {
+  //   const audio = new Audio("/notification.mp3"); // Add sound file to public folder
+  //   audio.play().catch((err) => console.log("Sound play failed:", err));
+  // };
 
   const handleJobAction = (job: Job, expectedVisitNo?: number) => {
     setSelectedJob(job);
@@ -219,7 +230,7 @@ export function TechnicianDashboardContent() {
                 onClick={() => setShowNotifications(!showNotifications)}
               />
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center font-medium">
-                {notifications.length}
+                {allNotifications.length}
               </span>
             </div>
           </div>
@@ -250,7 +261,7 @@ export function TechnicianDashboardContent() {
               onClick={() => setShowNotifications(!showNotifications)}
             />
             <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
-              {notifications.length}
+              {allNotifications.length}
             </span>
           </div>
         </div>
@@ -259,8 +270,11 @@ export function TechnicianDashboardContent() {
       {/* Notifications Panel */}
       {showNotifications && (
         <NotificationsPanel
-          notifications={notifications}
-          onClose={() => setShowNotifications(false)}
+          notifications={allNotifications}
+          onClose={() => {
+            setShowNotifications(false);
+            clearNotifications(); // Clear notifications when panel closes
+          }}
         />
       )}
 
