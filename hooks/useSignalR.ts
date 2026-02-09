@@ -140,14 +140,52 @@ export const useSignalR = (techCode: string | null) => {
   }, [connection, techCode]);
 
   // Optional notification sound
-  const playNotificationSound = () => {
-    try {
-      const audio = new Audio('/notification.mp3');
-      audio.play().catch(err => console.log('Sound play failed:', err));
-    } catch (err) {
-      console.log('Sound not available');
+ const playNotificationSound = () => {
+  try {
+    const audio = new Audio();
+    
+    // Try multiple formats for browser compatibility
+    audio.src = '/notification.mp3';
+    audio.volume = 0.5;
+    audio.load(); // Preload the audio
+    
+    const playPromise = audio.play();
+    
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          console.log('✅ Notification sound played successfully');
+        })
+        .catch(err => {
+          console.error('⚠️ Sound play failed:', err.message);
+          // Fallback: try a different approach
+          tryAlternativeSound();
+        });
     }
-  };
+  } catch (err) {
+    console.error('❌ Sound not available:', err);
+  }
+};
+
+const tryAlternativeSound = () => {
+  // Fallback using Web Audio API
+  try {
+    const context = new (window.AudioContext || (window as any).webkitAudioContext)();
+    fetch('/notification.mp3')
+      .then(response => response.arrayBuffer())
+      .then(arrayBuffer => context.decodeAudioData(arrayBuffer))
+      .then(audioBuffer => {
+        const source = context.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(context.destination);
+        source.start();
+        console.log('✅ Sound played via Web Audio API');
+      })
+      .catch(err => console.error('Web Audio API failed:', err));
+  } catch (err) {
+    console.error('Alternative sound method failed:', err);
+  }
+};
 
   const clearNotifications = useCallback(() => {
     setNotifications([]);
