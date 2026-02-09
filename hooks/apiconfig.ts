@@ -472,6 +472,13 @@ export const useApiConfig = () => {
       const test = await apiCall(`api/auth/resetPassword?techCode=${user?.tecH_CODE}`, 'POST', newPassword);  
       return test;
     },
+
+    getSolutionCategories: async (): Promise<any[]> => {
+      // const data = await apiCall(`api/solutionCategories`)
+
+      // return data;
+      return ["COnnection" , "Development" , "Mapping" , "Whata"]
+    },
   }
 }
 

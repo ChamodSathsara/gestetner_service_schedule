@@ -82,6 +82,8 @@ export function JobDetailsDialog({
     PreviousServiceData | null | any
   >(null);
   const [loadingPrevious, setLoadingPrevious] = useState(false);
+  const [solutionCategory, setSolutionCategory] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
 
   const {
     updateBreakdownStatus,
@@ -89,14 +91,20 @@ export function JobDetailsDialog({
     getPreviousServiceLists,
     showUnauthorizedDialog,
     setShowUnauthorizedDialog,
+    getSolutionCategories,
   } = useApiConfig();
   const { user } = useAuth();
-  console.log(
-    "JobDetailsDialog rendered with job:",
-    job,
-    "and varient:",
-    varient,
-  );
+
+  useEffect(() => {
+    fetchSolutionCategories();
+  }, []);
+
+  const fetchSolutionCategories = async () => {
+    const data: any = await getSolutionCategories();
+
+    console.log(data);
+    setSolutionCategory(data);
+  };
 
   // Reset states when dialog closes
   useEffect(() => {
@@ -137,8 +145,6 @@ export function JobDetailsDialog({
       toast.error("Location not available");
     }
   };
-
-  console.log(process.env.NEXT_FRONTEND_URL);
 
   const fetchPreviousServices = async () => {
     if (loadingPrevious || previousServices) return;
@@ -534,35 +540,40 @@ export function JobDetailsDialog({
             {/* Complete Job Section - Only show when started */}
             {isStarted && (
               <div className="space-y-4">
-                {varient === "breakdown" ? (
-                  <div>
-                    <label className="text-sm font-semibold text-gray-900 block mb-2">
-                      Solution
-                    </label>
-                    <textarea
-                      value={solution}
-                      onChange={(e) => setSolution(e.target.value)}
-                      placeholder="Enter the solution or work completed..."
-                      className="w-full p-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      rows={4}
-                      disabled={isLoading}
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    <label className="text-sm font-semibold text-gray-900 block mb-2">
-                      Solution
-                    </label>
-                    <textarea
-                      value={solution}
-                      onChange={(e) => setSolution(e.target.value)}
-                      placeholder="Enter the solution or work completed..."
-                      className="w-full p-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      rows={4}
-                      disabled={isLoading}
-                    />
-                  </div>
-                )}
+                {/* Solution Category Dropdown */}
+                <div>
+                  <label className="text-sm font-semibold text-gray-900 block mb-2">
+                    Solution Category
+                  </label>
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="w-full p-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    disabled={isLoading}
+                  >
+                    <option value="">Select a category...</option>
+                    {solutionCategory?.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Solution Textarea */}
+                <div>
+                  <label className="text-sm font-semibold text-gray-900 block mb-2">
+                    Solution
+                  </label>
+                  <textarea
+                    value={solution}
+                    onChange={(e) => setSolution(e.target.value)}
+                    placeholder="Enter the solution or work completed..."
+                    className="w-full p-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    rows={4}
+                    disabled={isLoading}
+                  />
+                </div>
 
                 <div className="grid grid-cols-2 gap-3 pt-2">
                   <Button
