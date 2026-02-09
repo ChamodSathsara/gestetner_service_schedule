@@ -1,4 +1,5 @@
 import { useAuth } from '@/context/AuthContext'
+import { useState } from 'react'
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL
 
@@ -288,6 +289,7 @@ const mapServiceVisits = (visits: ApiServiceVisit[]): ServiceVisit[] => {
 
 export const useApiConfig = () => {
   const { user } = useAuth()
+  const [showUnauthorizedDialog, setShowUnauthorizedDialog] = useState(false)
 
   const apiCall = async (endpoint: string, method: 'GET' | 'POST' = 'GET', body?: any) => {
     if (!user?.token) {
@@ -333,6 +335,15 @@ export const useApiConfig = () => {
 
     const response = await fetch(`${BASE_URL}${endpoint}`, config)
     console.log(response.status, "", response.statusText );
+
+    // Check for unauthorized errors
+    if (response.status === 401 || response.status === 403) {
+      setShowUnauthorizedDialog(true)
+      throw new Error('Unauthorized access')
+    }
+
+
+
     if (!response.ok ) {
       throw new Error(`API Error: ${response.status} ${response.statusText}`)
     }
@@ -343,6 +354,8 @@ export const useApiConfig = () => {
 
 
   return {
+    showUnauthorizedDialog,
+    setShowUnauthorizedDialog,
     // 1. Today Assigns Pending Breakdown (with mapping)
     getAllBreakdowns: async (): Promise<Job[]> => {
       const data = await apiCall(`api/Breakdown/todaybreakdown?techCode=${user?.tecH_CODE}`)

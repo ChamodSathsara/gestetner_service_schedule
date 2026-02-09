@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import UnauthorizedDialog from "./UnauthorizedDialog";
 // import { signOut } from 'next-auth/react'; // ← if using next-auth
 // If you're NOT using next-auth → replace with your logout logic
 
@@ -16,11 +17,6 @@ export default function Settings() {
 
   const handleConfirmLogout = async () => {
     try {
-      // If using next-auth:
-      //   await signOut({ callbackUrl: '/' }); // or '/login'
-
-      // If using your own auth system:
-      // await fetch('/api/logout', { method: 'POST' });
       router.push("/login");
       // router.refresh();
     } catch (err) {
@@ -35,6 +31,7 @@ export default function Settings() {
 
   return (
     <div className="min-h-[calc(100vh-140px)] bg-gray-50 dark:bg-gray-900 px-4 py-8 md:py-12 ">
+      
       <div className="mx-auto max-w-md md:max-w-2xl">
         {/* Card-like container - better on desktop */}
         <div className="space-y-4 rounded-2xl bg-white p-5 shadow-sm dark:bg-gray-800 md:p-7 md:shadow">

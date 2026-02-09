@@ -1,8 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { TrendingUp, CheckCircle2, Clock } from "lucide-react"
-import { useApiConfig } from "@/hooks/apiconfig"
-import { useEffect, useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TrendingUp, CheckCircle2, Clock } from "lucide-react";
+import { useApiConfig } from "@/hooks/apiconfig";
+import { useEffect, useState } from "react";
 import { Loading } from "./Loading";
+import UnauthorizedDialog from "./UnauthorizedDialog";
 
 interface PerformanceData {
   totalJobs: number;
@@ -22,8 +23,9 @@ interface PerformanceData {
 }
 
 export function PerformanceTab() {
-  const { getPerformance } = useApiConfig();
-  const [performanceData, setPerformanceData] = useState<PerformanceData | null>(null);
+  const { getPerformance , setShowUnauthorizedDialog , showUnauthorizedDialog } = useApiConfig();
+  const [performanceData, setPerformanceData] =
+    useState<PerformanceData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   const fetchPerformance = async () => {
@@ -39,19 +41,16 @@ export function PerformanceTab() {
     }
   };
 
-
-
   useEffect(() => {
     fetchPerformance();
   }, []);
 
-  const pendingJobs = performanceData 
-    ? performanceData.totalJobs - performanceData.completedJobs 
+  const pendingJobs = performanceData
+    ? performanceData.totalJobs - performanceData.completedJobs
     : 0;
 
-
-    if (loading) {
-    return <Loading fullScreen message="Loading dashboard data..." />
+  if (loading) {
+    return <Loading fullScreen message="Loading dashboard data..." />;
   }
 
   if (loading) {
@@ -75,143 +74,165 @@ export function PerformanceTab() {
 
   return (
     <>
-    {/* // Services Card */}
-    <Card className="bg-white border-gray-200 shadow-sm mb-5">
-      <CardHeader>
-        <CardTitle className="text-gray-900 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-blue-600" />
-          Services Performance Metrics
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div>
-          <div className="flex justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">Overall Performance</span>
-            <span className="font-bold text-xl text-blue-600">
-              {performanceData?.servicesPerformancePercentage.toFixed(1)}%
-            </span>
-          </div>
-          <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-blue-600 rounded-full transition-all duration-500" 
-              style={{ width: `${performanceData?.servicesPerformancePercentage || 0}%` }} 
-            />
-          </div>
-          <p className="text-xs text-gray-500 mt-2">
-            {performanceData && performanceData.servicesPerformancePercentage >= 90 
-              ? "Excellent performance! Keep it up." 
-              : performanceData && performanceData.servicesPerformancePercentage >= 70
-              ? "Good performance! Room for improvement."
-              : "Keep working hard to improve your performance."}
-          </p>
-        </div>
+      {/* // Services Card */}
+      <Card className="bg-white border-gray-200 shadow-sm mb-5">
+        <UnauthorizedDialog
+          isOpen={showUnauthorizedDialog}
+          onClose={() => setShowUnauthorizedDialog(false)}
+        />
 
-        <div className="grid grid-cols-2 gap-3">
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="pt-4 pb-3 text-center">
-              <CheckCircle2 className="w-6 h-6 mx-auto mb-2 text-blue-600" />
-              <p className="text-2xl font-bold text-blue-700">
-                {performanceData?.completedServices || 0}
-              </p>
-              <p className="text-xs text-blue-600 font-medium">Completed</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="pt-4 pb-3 text-center">
-              <Clock className="w-6 h-6 mx-auto mb-2 text-blue-600" />
-              <p className="text-2xl font-bold text-blue-700">
-                {performanceData?.totalServices || 0}
-              </p>
-              <p className="text-xs text-blue-600 font-medium">Total Services</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        
-
-        <div className="pt-4 border-t border-gray-200">
-          <h3 className="font-semibold text-gray-900 mb-3">Recent Achievements</h3>
-          <div className="space-y-2">
-            <div className="flex items-center gap-3 p-2 bg-blue-50 rounded-lg">
-              <CheckCircle2 className="w-5 h-5 text-blue-600" />
-              <span className="text-sm text-gray-700">
-                {performanceData?.lastWeekCompetedServices || 0} Services completed this week from {performanceData?.lastWeekAllServices || 0} total services
+        <CardHeader>
+          <CardTitle className="text-gray-900 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-blue-600" />
+            Services Performance Metrics
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <div className="flex justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">
+                Overall Performance
+              </span>
+              <span className="font-bold text-xl text-blue-600">
+                {performanceData?.servicesPerformancePercentage.toFixed(1)}%
               </span>
             </div>
+            <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                style={{
+                  width: `${performanceData?.servicesPerformancePercentage || 0}%`,
+                }}
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              {performanceData &&
+              performanceData.servicesPerformancePercentage >= 90
+                ? "Excellent performance! Keep it up."
+                : performanceData &&
+                    performanceData.servicesPerformancePercentage >= 70
+                  ? "Good performance! Room for improvement."
+                  : "Keep working hard to improve your performance."}
+            </p>
           </div>
-        </div>
-      </CardContent>
-    </Card>
 
-
-
-    {/* // jobs Card */}
-     <Card className="bg-white border-gray-200 shadow-sm">
-      <CardHeader>
-        <CardTitle className="text-gray-900 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-blue-600" />
-          Jobs Performance Metrics
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div>
-          <div className="flex justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">Overall Performance</span>
-            <span className="font-bold text-xl text-blue-600">
-              {performanceData?.jobPerformancePercentage.toFixed(1)}%
-            </span>
+          <div className="grid grid-cols-2 gap-3">
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="pt-4 pb-3 text-center">
+                <CheckCircle2 className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+                <p className="text-2xl font-bold text-blue-700">
+                  {performanceData?.completedServices || 0}
+                </p>
+                <p className="text-xs text-blue-600 font-medium">Completed</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="pt-4 pb-3 text-center">
+                <Clock className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+                <p className="text-2xl font-bold text-blue-700">
+                  {performanceData?.totalServices || 0}
+                </p>
+                <p className="text-xs text-blue-600 font-medium">
+                  Total Services
+                </p>
+              </CardContent>
+            </Card>
           </div>
-          <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-blue-600 rounded-full transition-all duration-500" 
-              style={{ width: `${performanceData?.jobPerformancePercentage || 0}%` }} 
-            />
-          </div>
-          <p className="text-xs text-gray-500 mt-2">
-            {performanceData && performanceData.jobPerformancePercentage >= 90 
-              ? "Excellent performance! Keep it up." 
-              : performanceData && performanceData.jobPerformancePercentage >= 70
-              ? "Good performance! Room for improvement."
-              : "Keep working hard to improve your performance."}
-          </p>
-        </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="pt-4 pb-3 text-center">
-              <CheckCircle2 className="w-6 h-6 mx-auto mb-2 text-blue-600" />
-              <p className="text-2xl font-bold text-blue-700">
-                {performanceData?.completedJobs || 0}
-              </p>
-              <p className="text-xs text-blue-600 font-medium">Completed Jobs</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="pt-4 pb-3 text-center">
-              <Clock className="w-6 h-6 mx-auto mb-2 text-blue-600" />
-              <p className="text-2xl font-bold text-blue-700">
-                {performanceData?.totalJobs || 0}
-              </p>
-              <p className="text-xs text-blue-600 font-medium">Total Jobs</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        
-
-        <div className="pt-4 border-t border-gray-200">
-          <h3 className="font-semibold text-gray-900 mb-3">Recent Achievements</h3>
-          <div className="space-y-2">
-            <div className="flex items-center gap-3 p-2 bg-blue-50 rounded-lg">
-              <CheckCircle2 className="w-5 h-5 text-blue-600" />
-              <span className="text-sm text-gray-700">
-                {performanceData?.lastWeekCompletedJobs || 0} jobs completed this week from {performanceData?.lastWeekAllJobs || 0} total jobs
-              </span>
+          <div className="pt-4 border-t border-gray-200">
+            <h3 className="font-semibold text-gray-900 mb-3">
+              Recent Achievements
+            </h3>
+            <div className="space-y-2">
+              <div className="flex items-center gap-3 p-2 bg-blue-50 rounded-lg">
+                <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                <span className="text-sm text-gray-700">
+                  {performanceData?.lastWeekCompetedServices || 0} Services
+                  completed this week from{" "}
+                  {performanceData?.lastWeekAllServices || 0} total services
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* // jobs Card */}
+      <Card className="bg-white border-gray-200 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-gray-900 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-blue-600" />
+            Jobs Performance Metrics
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <div className="flex justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">
+                Overall Performance
+              </span>
+              <span className="font-bold text-xl text-blue-600">
+                {performanceData?.jobPerformancePercentage.toFixed(1)}%
+              </span>
+            </div>
+            <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                style={{
+                  width: `${performanceData?.jobPerformancePercentage || 0}%`,
+                }}
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              {performanceData && performanceData.jobPerformancePercentage >= 90
+                ? "Excellent performance! Keep it up."
+                : performanceData &&
+                    performanceData.jobPerformancePercentage >= 70
+                  ? "Good performance! Room for improvement."
+                  : "Keep working hard to improve your performance."}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="pt-4 pb-3 text-center">
+                <CheckCircle2 className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+                <p className="text-2xl font-bold text-blue-700">
+                  {performanceData?.completedJobs || 0}
+                </p>
+                <p className="text-xs text-blue-600 font-medium">
+                  Completed Jobs
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="pt-4 pb-3 text-center">
+                <Clock className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+                <p className="text-2xl font-bold text-blue-700">
+                  {performanceData?.totalJobs || 0}
+                </p>
+                <p className="text-xs text-blue-600 font-medium">Total Jobs</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="pt-4 border-t border-gray-200">
+            <h3 className="font-semibold text-gray-900 mb-3">
+              Recent Achievements
+            </h3>
+            <div className="space-y-2">
+              <div className="flex items-center gap-3 p-2 bg-blue-50 rounded-lg">
+                <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                <span className="text-sm text-gray-700">
+                  {performanceData?.lastWeekCompletedJobs || 0} jobs completed
+                  this week from {performanceData?.lastWeekAllJobs || 0} total
+                  jobs
+                </span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </>
   );
 }

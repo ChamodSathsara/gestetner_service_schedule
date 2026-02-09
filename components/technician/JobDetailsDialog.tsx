@@ -19,6 +19,7 @@ import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import QRCode from "react-qr-code"; // ← import this
 import { Copy, Share2 } from "lucide-react";
+import UnauthorizedDialog from "./UnauthorizedDialog";
 
 interface Job {
   visitNo: any;
@@ -85,6 +86,7 @@ export function JobDetailsDialog({
     updateBreakdownStatus,
     updateServiceVisitStatus,
     getPreviousServiceLists,
+    showUnauthorizedDialog, setShowUnauthorizedDialog
   } = useApiConfig();
   const { user } = useAuth();
   console.log(
@@ -328,6 +330,10 @@ export function JobDetailsDialog({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <UnauthorizedDialog
+          isOpen={showUnauthorizedDialog}
+          onClose={() => setShowUnauthorizedDialog(false)}
+        />
         <DialogContent
           className="bg-white border-gray-200 max-h-[90vh] overflow-y-auto sm:max-w-[425px]"
           data-mobile-bottom="true"

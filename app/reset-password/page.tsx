@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useApiConfig } from "@/hooks/apiconfig";
+import UnauthorizedDialog from "@/components/technician/UnauthorizedDialog";
 
 export default function ResetPassword() {
-  const { resetPassword } = useApiConfig();
+  const { resetPassword , showUnauthorizedDialog , setShowUnauthorizedDialog } = useApiConfig();
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -50,6 +51,10 @@ export default function ResetPassword() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
+      <UnauthorizedDialog
+        isOpen={showUnauthorizedDialog}
+        onClose={() => setShowUnauthorizedDialog(false)}
+      />
       {/* Header */}
       <div className="px-6 pt-12 pb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">

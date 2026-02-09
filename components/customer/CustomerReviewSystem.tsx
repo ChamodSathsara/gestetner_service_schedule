@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApiConfig } from "@/hooks/apiconfig";
+import UnauthorizedDialog from "../technician/UnauthorizedDialog";
 
 interface Service {
   techName: string;
@@ -48,8 +49,12 @@ const CustomerReviewSystem: React.FC<CustomerReviewSystemProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<"jobs" | "services">("jobs");
   const router = useRouter();
-  const { getServiceBySerialNoAndMachineNo, getJobBySerialNoAndMachineNo } =
-    useApiConfig();
+  const {
+    getServiceBySerialNoAndMachineNo,
+    getJobBySerialNoAndMachineNo,
+    setShowUnauthorizedDialog,
+    showUnauthorizedDialog,
+  } = useApiConfig();
   const [servicesData, setServicesData] = useState<any>();
   const [jobsData, setJobsData] = useState<any>();
 
@@ -135,6 +140,10 @@ const CustomerReviewSystem: React.FC<CustomerReviewSystemProps> = ({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-4 md:p-6">
+      <UnauthorizedDialog
+        isOpen={showUnauthorizedDialog}
+        onClose={() => setShowUnauthorizedDialog(false)}
+      />
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">

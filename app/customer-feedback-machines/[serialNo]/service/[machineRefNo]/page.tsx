@@ -3,12 +3,17 @@
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useApiConfig } from "@/hooks/apiconfig";
+import UnauthorizedDialog from "@/components/technician/UnauthorizedDialog";
 
 export default function ServiceReviewPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { getServiceBySerialNoAndMachineNo } = useApiConfig();
+  const {
+    getServiceBySerialNoAndMachineNo,
+    showUnauthorizedDialog,
+    setShowUnauthorizedDialog,
+  } = useApiConfig();
 
   const serialNo = params.serialNo as string;
   const machineRefNo = params.machineRefNo as string;
@@ -101,6 +106,10 @@ export default function ServiceReviewPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-4 md:p-6">
+      <UnauthorizedDialog
+        isOpen={showUnauthorizedDialog}
+        onClose={() => setShowUnauthorizedDialog(false)}
+      />
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">

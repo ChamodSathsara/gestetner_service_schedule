@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useApiConfig } from "@/hooks/apiconfig";
 import { Loading, LoadingDots, LoadingPulse } from "./Loading";
+import UnauthorizedDialog from "./UnauthorizedDialog";
 
 // Type Definitions
 interface Service {
@@ -536,7 +537,7 @@ export default function ServiceJobManagement() {
   const [recallItem, setRecallItem] = useState<Service | Job | Due | null>(
     null,
   );
-  const { getAllBreakdownsList, getAllServiceList, getDueJobs, addRecall } =
+  const { getAllBreakdownsList, getAllServiceList, getDueJobs, addRecall , showUnauthorizedDialog , setShowUnauthorizedDialog } =
     useApiConfig();
   const [loading, setLoading] = useState<boolean>(false);
   const [breakdownsList, setBreakdownsList] = useState<Job[] | any>([]);
@@ -643,6 +644,10 @@ export default function ServiceJobManagement() {
 
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-4">
+      <UnauthorizedDialog
+        isOpen={showUnauthorizedDialog}
+        onClose={() => setShowUnauthorizedDialog(false)}
+      />
       {/* Tabs */}
       <div className="flex gap-2 border-b border-gray-200">
         <Button

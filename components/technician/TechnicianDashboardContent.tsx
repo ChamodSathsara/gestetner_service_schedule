@@ -11,7 +11,6 @@ import {
   Settings,
   ArrowDownRight,
 } from "lucide-react";
-import { mockDataConfig } from "@/lib/data-config";
 import { NotificationsPanel } from "./NotificationsPanel";
 import { DashboardOverview } from "./DashboardOverview";
 import { BreakdownTab } from "./BreakdownTab";
@@ -23,8 +22,7 @@ import { useApiConfig } from "@/hooks/apiconfig";
 import { Loading, LoadingDots, LoadingPulse } from "./Loading";
 import AccountSettingsPage from "./Settings";
 import { useAuth } from "@/context/AuthContext";
-
-const { technicianServices: recentServices } = mockDataConfig;
+import UnauthorizedDialog from "@/components/technician/UnauthorizedDialog";
 
 interface Service {
   id: string;
@@ -76,7 +74,13 @@ export interface ServiceResponse {
 
 export function TechnicianDashboardContent() {
   // const api = useApiConfig()
-  const { getAllBreakdowns, getMonthlyServiceVisits , allTimeDueJobs } = useApiConfig();
+  const {
+    getAllBreakdowns,
+    getMonthlyServiceVisits,
+    allTimeDueJobs,
+    showUnauthorizedDialog,
+    setShowUnauthorizedDialog,
+  } = useApiConfig();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedJob, setSelectedJob] = useState<Job | Service | null | any>(
     null,
@@ -84,7 +88,7 @@ export function TechnicianDashboardContent() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [recentBreakdowns, setRecentBreakdowns] = useState<any[]>([]);
   const [recentServices, setRecentServices] = useState<any[]>([]);
-  const [dueJobs , setDueJobs] = useState<any[]>([])
+  const [dueJobs, setDueJobs] = useState<any[]>([]);
   const { isLoading: authLoading } = useAuth(); // Get loading state
 
   // const [breakdowns, setBreakdowns] = useState<Job[]>([])
@@ -96,7 +100,7 @@ export function TechnicianDashboardContent() {
       console.log(
         "Refreshing dashboard data...++++++++++++++++++++++++++++++++++++++",
       );
-      
+
       fetchBreakdowns();
       fetchServices();
       fetchAllDueJobs();
@@ -116,7 +120,7 @@ export function TechnicianDashboardContent() {
     }
   };
 
-   const fetchAllDueJobs = async () => {
+  const fetchAllDueJobs = async () => {
     try {
       setLoading(true);
       const dueJobs = await allTimeDueJobs(); // Already mapped!
@@ -198,6 +202,10 @@ export function TechnicianDashboardContent() {
 
   return (
     <div className="w-full min-h-screen bg-gray-50">
+      <UnauthorizedDialog
+        isOpen={showUnauthorizedDialog}
+        onClose={() => setShowUnauthorizedDialog(false)}
+      />
       {/* Mobile Header */}
       <div className="md:hidden sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
         <div className="px-4 py-3">
@@ -335,7 +343,7 @@ export function TechnicianDashboardContent() {
 
         <TabsContent value="breakdown" className="p-4 md:p-8 m-0 pb-20 md:pb-8">
           <BreakdownTab
-            dueJobs = {dueJobs}
+            dueJobs={dueJobs}
             breakdowns={recentBreakdowns}
             onJobClick={handleJobAction}
           />

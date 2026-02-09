@@ -2,7 +2,8 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect, use } from "react";
-import { Job, useApiConfig } from "@/hooks/apiconfig";
+import { useApiConfig } from "@/hooks/apiconfig";
+import UnauthorizedDialog from "@/components/technician/UnauthorizedDialog";
 
 export default function JobReviewPage() {
   const params = useParams();
@@ -16,7 +17,12 @@ export default function JobReviewPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
-  const { getJobBySerialNoAndMachineNo, addFeedback } = useApiConfig();
+  const {
+    getJobBySerialNoAndMachineNo,
+    addFeedback,
+    showUnauthorizedDialog,
+    setShowUnauthorizedDialog,
+  } = useApiConfig();
   const [jobsData, setJobsData] = useState<any>(null);
 
   console.log("serialNo: ", serialNo);
@@ -80,6 +86,10 @@ export default function JobReviewPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-4 md:p-6">
+      <UnauthorizedDialog
+        isOpen={showUnauthorizedDialog}
+        onClose={() => setShowUnauthorizedDialog(false)}
+      />
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
