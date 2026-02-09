@@ -65,6 +65,12 @@ interface PreviousServiceData {
   sv6: string | null;
 }
 
+interface SolutionCategory {
+  id: number;
+  solutionCategory: string;
+  solutionShortCategory: string;
+}
+
 export function JobDetailsDialog({
   job,
   isOpen,
@@ -78,12 +84,14 @@ export function JobDetailsDialog({
   const [meterReadingValue, setMeterReadingValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPreviousVisits, setShowPreviousVisits] = useState(false);
-  const [previousServices, setPreviousServices] = useState<
-    PreviousServiceData | null | any
-  >(null);
+  const [previousServices, setPreviousServices] =
+    useState<PreviousServiceData | null>();
+
   const [loadingPrevious, setLoadingPrevious] = useState(false);
-  const [solutionCategory, setSolutionCategory] = useState<any[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [solutionCategories, setSolutionCategories] = useState<
+    SolutionCategory[]
+  >([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
 
   const {
     updateBreakdownStatus,
@@ -100,10 +108,20 @@ export function JobDetailsDialog({
   }, []);
 
   const fetchSolutionCategories = async () => {
-    const data: any = await getSolutionCategories();
-
-    console.log(data);
-    setSolutionCategory(data);
+    try {
+      const data = await getSolutionCategories();
+      console.log("Solution Categories:", data);
+      setSolutionCategories(data || []);
+    } catch (error) {
+      console.error("Error fetching solution categories:", error);
+      // Fallback to hardcoded categories if API fails
+      setSolutionCategories([
+        { id: 1, solutionCategory: "Connection", solutionShortCategory: "CO" },
+        { id: 2, solutionCategory: "Development", solutionShortCategory: "DV" },
+        { id: 3, solutionCategory: "Mapping", solutionShortCategory: "MA" },
+        { id: 4, solutionCategory: "Whata", solutionShortCategory: "WH" },
+      ]);
+    }
   };
 
   // Reset states when dialog closes
@@ -114,6 +132,7 @@ export function JobDetailsDialog({
       setJobNote("");
       setSolution("");
       setMeterReadingValue("");
+      setSelectedCategoryId("");
     }
   }, [isOpen]);
 
@@ -151,7 +170,7 @@ export function JobDetailsDialog({
 
     setLoadingPrevious(true);
     try {
-      const data = await getPreviousServiceLists(job.machineRefNo || "");
+      const data: any = await getPreviousServiceLists(job.machineRefNo || "");
       setPreviousServices(data);
       console.log("Previous Services for job", job.jobId, ":", data);
     } catch (error) {
@@ -229,10 +248,8 @@ export function JobDetailsDialog({
   };
 
   const handleStarted = async () => {
-    console.log(
-      meterReadingValue,
-      "meterReadingValue meterReadingValue meterReadingValue",
-    );
+    console.log("Starting job with meter reading:", meterReadingValue);
+
     if (!user?.tecH_CODE) {
       toast.error("User information not available");
       return;
@@ -283,6 +300,28 @@ export function JobDetailsDialog({
       return;
     }
 
+    // Validate solution category is selected
+    if (!selectedCategoryId) {
+      toast.error("Please select a solution category");
+      return;
+    }
+
+    // Validate solution text is entered
+    if (!solution.trim()) {
+      toast.error("Please enter a solution description");
+      return;
+    }
+
+    // Get the selected category's solutionCategory value
+    const selectedCategory = solutionCategories.find(
+      (cat) => cat.id === parseInt(selectedCategoryId),
+    );
+
+    if (!selectedCategory) {
+      toast.error("Invalid solution category selected");
+      return;
+    }
+
     setIsLoading(true);
     try {
       if (varient === "breakdown") {
@@ -293,6 +332,7 @@ export function JobDetailsDialog({
           serialNo: job.serialNo || "",
           jobStatus: "COMPLETED",
           note: solution || "",
+          solutionCategory: selectedCategory.solutionCategory, // Pass only the category name
         });
       } else {
         // Service API call with meter reading
@@ -303,6 +343,7 @@ export function JobDetailsDialog({
           machineRefNo: job.machineRefNo || "",
           jobStatus: "COMPLETED",
           solution: solution || "",
+          solutionCategory: selectedCategory.solutionCategory, // Pass only the category name
           meterReadingValue: meterReadingValue
             ? parseInt(meterReadingValue)
             : 3,
@@ -314,6 +355,7 @@ export function JobDetailsDialog({
       setSolution("");
       setJobNote("");
       setMeterReadingValue("");
+      setSelectedCategoryId("");
       onClose();
     } catch (error) {
       console.error("Error completing job:", error);
@@ -327,6 +369,7 @@ export function JobDetailsDialog({
     setJobNote("");
     setSolution("");
     setMeterReadingValue("");
+    setSelectedCategoryId("");
     setShowPreviousVisits(false);
     setPreviousServices(null);
     onClose();
@@ -543,18 +586,19 @@ export function JobDetailsDialog({
                 {/* Solution Category Dropdown */}
                 <div>
                   <label className="text-sm font-semibold text-gray-900 block mb-2">
-                    Solution Category
+                    Solution Category <span className="text-red-500">*</span>
                   </label>
                   <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    value={selectedCategoryId}
+                    onChange={(e) => setSelectedCategoryId(e.target.value)}
                     className="w-full p-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     disabled={isLoading}
                   >
                     <option value="">Select a category...</option>
-                    {solutionCategory?.map((category) => (
+                    {solutionCategories.map((category) => (
                       <option key={category.id} value={category.id}>
-                        {category.name}
+                        {category.solutionCategory} (
+                        {category.solutionShortCategory})
                       </option>
                     ))}
                   </select>
@@ -563,7 +607,7 @@ export function JobDetailsDialog({
                 {/* Solution Textarea */}
                 <div>
                   <label className="text-sm font-semibold text-gray-900 block mb-2">
-                    Solution
+                    Solution <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     value={solution}
@@ -586,8 +630,10 @@ export function JobDetailsDialog({
                   </Button>
                   <Button
                     onClick={handleCompleted}
-                    className="bg-green-600 hover:bg-green-700 text-white h-11 font-semibold"
-                    disabled={isLoading}
+                    className="bg-green-600 hover:bg-green-700 text-white h-11 font-semibold disabled:bg-gray-400"
+                    disabled={
+                      isLoading || !selectedCategoryId || !solution.trim()
+                    }
                   >
                     <CheckCircle2 className="w-4 h-4 mr-2" />
                     {isLoading ? "Completing..." : "Complete Job"}

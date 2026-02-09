@@ -99,6 +99,7 @@ interface BreakdownUpdatePayload {
   serialNo: string
   jobStatus: 'started' | 'COMPLETED'
   note: string
+  solutionCategory?:any
 }
 
 interface CustomerFeedBack {
@@ -122,6 +123,7 @@ interface ServiceUpdatePayload {
   jobStatus: 'started' | 'COMPLETED' 
   meterReadingValue: number
   solution?: string
+  solutionCategory?:any
 }
 
 // Breakdown Mapping functions
@@ -477,7 +479,12 @@ export const useApiConfig = () => {
       // const data = await apiCall(`api/solutionCategories`)
 
       // return data;
-      return ["COnnection" , "Development" , "Mapping" , "Whata"]
+      return [
+        {id:1,solutionCategory:"COnnection",solutionShortCategory:"CO"} , 
+        {id:2,solutionCategory:"Development",solutionShortCategory:"DV"} , 
+        {id:3,solutionCategory:"Mapping",solutionShortCategory:"MA"} , 
+        {id:4,solutionCategory:"Whata",solutionShortCategory:"WH"}
+      ]
     },
   }
 }
