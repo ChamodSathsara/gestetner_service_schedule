@@ -41,7 +41,7 @@ export const useSignalR = (techCode: string | null) => {
 
     // Create connection
     const newConnection = new signalR.HubConnectionBuilder()
-      .withUrl(`${apiUrl}/notificationhub?techCode=${techCode}`, {
+      .withUrl(`${apiUrl}notificationhub?techCode=${techCode}`, {
         skipNegotiation: false,
         transport: signalR.HttpTransportType.WebSockets | 
                    signalR.HttpTransportType.ServerSentEvents | 
