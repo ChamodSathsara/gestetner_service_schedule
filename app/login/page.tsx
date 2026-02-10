@@ -95,6 +95,10 @@ export default function LoginPage() {
     }
   };
 
+  const handleForget = () => {
+    router.push("/reset-password");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-sky-100 to-blue-100 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Animated background elements */}
@@ -189,6 +193,7 @@ export default function LoginPage() {
             {/* Forgot Password */}
             <div className="flex justify-end">
               <button
+                onClick={handleForget}
                 type="button"
                 className="text-sm font-medium text-blue-400 hover:text-blue-500 transition-colors"
               >

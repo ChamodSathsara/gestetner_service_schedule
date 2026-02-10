@@ -35,7 +35,7 @@ export const useSignalR = (techCode: string | null) => {
     if (!techCode) return;
 
     // ✅ Use environment variable for backend URL
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:7249';
+    const apiUrl = process.env.NEXT_PUBLIC_BASE_URL;
     
     console.log('Connecting to SignalR hub at:', apiUrl);
 
