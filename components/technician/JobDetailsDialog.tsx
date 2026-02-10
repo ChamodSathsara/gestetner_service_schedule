@@ -102,6 +102,7 @@ export function JobDetailsDialog({
     showUnauthorizedDialog,
     setShowUnauthorizedDialog,
     getSolutionCategories,
+    addRecallJob,
   } = useApiConfig();
   const { user } = useAuth();
 
@@ -262,16 +263,26 @@ export function JobDetailsDialog({
     setIsLoading(true);
     try {
       if (varient === "breakdown") {
-        const breackdownUpdate = await updateBreakdownStatus({
-          techCode: user.tecH_CODE,
-          jobId: parseInt(job.jobId),
-          machineRefNo: job.machineRefNo || "",
-          serialNo: job.serialNo || "",
-          jobStatus: "started",
-          note: jobNote || "",
-          recallReason: isDueAndPending ? recallReason : undefined, // Include recall reason if applicable
-        });
-        console.log("Breakdown update response:", breackdownUpdate);
+        if (isDueAndPending) {
+          const breackdownUpdate = await addRecallJob({
+            techCode: user.tecH_CODE,
+            jobId: parseInt(job.jobId),
+            note: jobNote || "",
+            recallReason: recallReason, // Include recall reason if applicable
+          });
+          console.log("Breakdown update response:", breackdownUpdate);
+        } else {
+          const breackdownUpdate = await updateBreakdownStatus({
+            techCode: user.tecH_CODE,
+            jobId: parseInt(job.jobId),
+            machineRefNo: job.machineRefNo || "",
+            serialNo: job.serialNo || "",
+            jobStatus: "started",
+            note: jobNote || "",
+            // recallReason: isDueAndPending ? recallReason : undefined, // Include recall reason if applicable
+          });
+          console.log("Breakdown update response:", breackdownUpdate);
+        }
       } else {
         // Service API call with meter reading
         const updateServiceresponse = await updateServiceVisitStatus({

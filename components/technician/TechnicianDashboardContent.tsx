@@ -50,7 +50,7 @@ interface Job {
   status: string;
   note?: string;
   customer_agreement?: string;
-  type?:string
+  type?: string;
 }
 
 // Single visit item
@@ -207,7 +207,7 @@ export function TechnicianDashboardContent() {
   //   audio.play().catch((err) => console.log("Sound play failed:", err));
   // };
 
-  const handleJobAction = (job: Job,  expectedVisitNo?: number) => {
+  const handleJobAction = (job: Job, expectedVisitNo?: number) => {
     setSelectedJob(job);
   };
 
@@ -254,7 +254,7 @@ export function TechnicianDashboardContent() {
       });
 
       // Refresh after alert closes
-      window.location.reload();
+      // window.location.reload();
       setSelectedJob(null);
     }
   };

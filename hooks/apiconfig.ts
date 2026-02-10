@@ -54,6 +54,14 @@ interface ReCallObj {
   onSite: boolean
 }
 
+interface RecallJob {
+  techCode: string,
+  jobId: number,
+  note: string,
+  recallReason: string, // Include recall reason if applicable
+
+}
+
 // Type definitions for Service Visits
 export interface ServiceVisit {
   id: string
@@ -484,6 +492,10 @@ export const useApiConfig = () => {
       const data = await apiCall(`api/breakdown/solutionCategories`)
       return data;
      
+    },
+    addRecallJob: async (payload:RecallJob) => {
+      const test = await apiCall('api/ScheduleRecall/recallPreviousSchedule', 'POST', payload); 
+      return test;    
     },
   }
 }
