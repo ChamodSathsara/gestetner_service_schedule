@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { NotificationsPanel } from "./NotificationsPanel";
 import { DashboardOverview } from "./DashboardOverview";
-import { BreakdownTab } from "./BreakdownTab";
+
 import { ServiceTab } from "./ServiceTab";
 import { PerformanceTab } from "./PerformanceTab";
 import ServiceJobManagement from "./ServiceJobManagement";
@@ -25,6 +25,7 @@ import { useAuth } from "@/context/AuthContext";
 import UnauthorizedDialog from "@/components/technician/UnauthorizedDialog";
 import { useSignalR } from "@/hooks/useSignalR";
 import Swal from "sweetalert2";
+import { BreakdownTab } from "./BreakdownTab";
 
 interface Service {
   id: string;
@@ -49,6 +50,7 @@ interface Job {
   status: string;
   note?: string;
   customer_agreement?: string;
+  type?:string
 }
 
 // Single visit item
@@ -205,7 +207,7 @@ export function TechnicianDashboardContent() {
   //   audio.play().catch((err) => console.log("Sound play failed:", err));
   // };
 
-  const handleJobAction = (job: Job, expectedVisitNo?: number) => {
+  const handleJobAction = (job: Job,  expectedVisitNo?: number) => {
     setSelectedJob(job);
   };
 
@@ -257,11 +259,11 @@ export function TechnicianDashboardContent() {
     }
   };
 
-  const clickedJob = (job: Job) => {
-    return (
-      <ServiceTab services={recentServices} onJobClick={handleJobAction} />
-    );
-  };
+  // const clickedJob = (job: Job) => {
+  //   return (
+  //     <ServiceTab services={recentServices} onJobClick={handleJobAction} />
+  //   );
+  // };
 
   if (loading) {
     return <Loading fullScreen message="Loading dashboard data..." />;
@@ -287,14 +289,17 @@ export function TechnicianDashboardContent() {
                 </p>
               )}
             </div>
+
             <div className="relative">
               <Bell
                 className="w-5 h-5 cursor-pointer text-gray-700 hover:text-blue-600"
                 onClick={() => setShowNotifications(!showNotifications)}
               />
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center font-medium">
-                {allNotifications.length}
-              </span>
+              {allNotifications.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center font-medium">
+                  {allNotifications.length}
+                </span>
+              )}
             </div>
           </div>
           <p className="text-xs text-gray-500">

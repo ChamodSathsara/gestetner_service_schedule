@@ -18,6 +18,7 @@ export interface Job {
   machineRefNo?: string
   serialNo?: string
   technicianName?: string
+  type?:string
 }
 
 interface ApiBreakdown {
@@ -41,6 +42,7 @@ interface ApiBreakdown {
   cuS_STATUS: string
   note: string
   jobStatus: string
+  type?:string
 }
 
 interface ReCallObj {
@@ -100,6 +102,7 @@ interface BreakdownUpdatePayload {
   jobStatus: 'started' | 'COMPLETED'
   note: string
   solutionCategory?:any
+  recallReason?:string
 }
 
 interface CustomerFeedBack {
@@ -233,7 +236,8 @@ const mapBreakdownToJob = (breakdown: ApiBreakdown): Job => {
     customer_agreement: mapCustomerAgreement(breakdown.cuS_STATUS),
     phone_number: breakdown.cuS_TEL_NO,
     machineRefNo: breakdown.machinE_REF_NO,
-    serialNo: breakdown.seriaL_NO
+    serialNo: breakdown.seriaL_NO,
+    type:breakdown.type
   }
 }
 
@@ -467,6 +471,7 @@ export const useApiConfig = () => {
 
     allTimeDueJobs: async (): Promise<Job[]> => {
       const data = await apiCall(`api/jobRecall/getAllLastYearsJobs?techCode=${user?.tecH_CODE}`)
+      console.log(data," _________________+++++++++++++++++++++++=========")
       return mapBreakdownsToJobs(data)
     },
 
@@ -476,15 +481,9 @@ export const useApiConfig = () => {
     },
 
     getSolutionCategories: async (): Promise<any[]> => {
-      // const data = await apiCall(`api/solutionCategories`)
-
-      // return data;
-      return [
-        {id:1,solutionCategory:"COnnection",solutionShortCategory:"CO"} , 
-        {id:2,solutionCategory:"Development",solutionShortCategory:"DV"} , 
-        {id:3,solutionCategory:"Mapping",solutionShortCategory:"MA"} , 
-        {id:4,solutionCategory:"Whata",solutionShortCategory:"WH"}
-      ]
+      const data = await apiCall(`api/breakdown/solutionCategories`)
+      return data;
+     
     },
   }
 }

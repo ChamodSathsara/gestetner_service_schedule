@@ -39,6 +39,7 @@ interface Job {
   serialNo?: string;
   expected_visit_no: number;
   phone_number?: string;
+  type?: string; // Added type field
 }
 
 interface JobDetailsDialogProps {
@@ -67,8 +68,8 @@ interface PreviousServiceData {
 
 interface SolutionCategory {
   id: number;
-  solutionCategory: string;
-  solutionShortCategory: string;
+  solutioN_CATEGORY: string;
+  solutioN_SHORT_CATEGORY: string;
 }
 
 export function JobDetailsDialog({
@@ -82,6 +83,7 @@ export function JobDetailsDialog({
   const [jobNote, setJobNote] = useState("");
   const [solution, setSolution] = useState("");
   const [meterReadingValue, setMeterReadingValue] = useState("");
+  const [recallReason, setRecallReason] = useState(""); // New state for recall reason
   const [isLoading, setIsLoading] = useState(false);
   const [showPreviousVisits, setShowPreviousVisits] = useState(false);
   const [previousServices, setPreviousServices] =
@@ -115,12 +117,6 @@ export function JobDetailsDialog({
     } catch (error) {
       console.error("Error fetching solution categories:", error);
       // Fallback to hardcoded categories if API fails
-      setSolutionCategories([
-        { id: 1, solutionCategory: "Connection", solutionShortCategory: "CO" },
-        { id: 2, solutionCategory: "Development", solutionShortCategory: "DV" },
-        { id: 3, solutionCategory: "Mapping", solutionShortCategory: "MA" },
-        { id: 4, solutionCategory: "Whata", solutionShortCategory: "WH" },
-      ]);
     }
   };
 
@@ -133,6 +129,7 @@ export function JobDetailsDialog({
       setSolution("");
       setMeterReadingValue("");
       setSelectedCategoryId("");
+      setRecallReason(""); // Reset recall reason
     }
   }, [isOpen]);
 
@@ -255,6 +252,13 @@ export function JobDetailsDialog({
       return;
     }
 
+    // Check if recall reason is required and provided
+    const isDueAndPending = job.type === "Due" && job.status === "pending";
+    if (isDueAndPending && !recallReason.trim()) {
+      toast.error("Please enter a recall reason");
+      return;
+    }
+
     setIsLoading(true);
     try {
       if (varient === "breakdown") {
@@ -265,6 +269,7 @@ export function JobDetailsDialog({
           serialNo: job.serialNo || "",
           jobStatus: "started",
           note: jobNote || "",
+          recallReason: isDueAndPending ? recallReason : undefined, // Include recall reason if applicable
         });
         console.log("Breakdown update response:", breackdownUpdate);
       } else {
@@ -278,6 +283,7 @@ export function JobDetailsDialog({
           meterReadingValue: meterReadingValue
             ? parseInt(meterReadingValue)
             : 10,
+          // recallReason: isDueAndPending ? recallReason : undefined, // Include recall reason if applicable
         });
         console.log("Service visit update response:", updateServiceresponse);
       }
@@ -286,6 +292,7 @@ export function JobDetailsDialog({
       onInProgress();
       setJobNote("");
       setMeterReadingValue("");
+      setRecallReason("");
     } catch (error) {
       console.error("Error starting job:", error);
       toast.error("Failed to start job. Please try again.");
@@ -332,7 +339,7 @@ export function JobDetailsDialog({
           serialNo: job.serialNo || "",
           jobStatus: "COMPLETED",
           note: solution || "",
-          solutionCategory: selectedCategory.solutionCategory, // Pass only the category name
+          solutionCategory: selectedCategory.solutioN_CATEGORY, // Pass only the category name
         });
       } else {
         // Service API call with meter reading
@@ -343,7 +350,7 @@ export function JobDetailsDialog({
           machineRefNo: job.machineRefNo || "",
           jobStatus: "COMPLETED",
           solution: solution || "",
-          solutionCategory: selectedCategory.solutionCategory, // Pass only the category name
+          solutionCategory: selectedCategory.solutioN_CATEGORY, // Pass only the category name
           meterReadingValue: meterReadingValue
             ? parseInt(meterReadingValue)
             : 3,
@@ -370,6 +377,7 @@ export function JobDetailsDialog({
     setSolution("");
     setMeterReadingValue("");
     setSelectedCategoryId("");
+    setRecallReason(""); // Reset recall reason
     setShowPreviousVisits(false);
     setPreviousServices(null);
     onClose();
@@ -377,6 +385,10 @@ export function JobDetailsDialog({
 
   const isPending = job.status === "pending";
   const isStarted = job.status === "started";
+  const isDueAndPending = job.type === "Due" && isPending; // Check if type is "Due" and status is "pending"
+  console.log("Job_Type ", job.type);
+  console.log(job);
+  console.log("job.status ", job.status);
 
   // Beautiful alert function using SweetAlert2
   const showLinkCopiedAlert = () => {
@@ -560,6 +572,23 @@ export function JobDetailsDialog({
                   </div>
                 )}
 
+                {/* Recall Reason - Only show for Due type and pending status */}
+                {isDueAndPending && (
+                  <div>
+                    <label className="text-sm font-semibold text-gray-900 block mb-2">
+                      Recall Reason <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={recallReason}
+                      onChange={(e) => setRecallReason(e.target.value)}
+                      placeholder="Enter the reason for this recall visit..."
+                      className="w-full p-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      rows={3}
+                      disabled={isLoading}
+                    />
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-3 pt-2">
                   <Button
                     onClick={handleCancel}
@@ -571,8 +600,10 @@ export function JobDetailsDialog({
                   </Button>
                   <Button
                     onClick={handleStarted}
-                    className="bg-blue-600 hover:bg-blue-700 text-white h-11 font-semibold"
-                    disabled={isLoading}
+                    className="bg-blue-600 hover:bg-blue-700 text-white h-11 font-semibold disabled:bg-gray-400"
+                    disabled={
+                      isLoading || (isDueAndPending && !recallReason.trim())
+                    }
                   >
                     {isLoading ? "Starting..." : "Start Job"}
                   </Button>
@@ -597,8 +628,8 @@ export function JobDetailsDialog({
                     <option value="">Select a category...</option>
                     {solutionCategories.map((category) => (
                       <option key={category.id} value={category.id}>
-                        {category.solutionCategory} (
-                        {category.solutionShortCategory})
+                        {category.solutioN_CATEGORY} (
+                        {category.solutioN_SHORT_CATEGORY})
                       </option>
                     ))}
                   </select>

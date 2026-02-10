@@ -21,6 +21,7 @@ interface Job {
   note?: string;
   customer_agreement?: string;
   phone_number?: number;
+  type?:string
 }
 
 interface BreakdownTabProps {
@@ -141,6 +142,7 @@ export function BreakdownTab({
                   job={job}
                   onClick={() => onJobClick(job)}
                   variant="breakdown"
+                  
                 />
               ))
             ) : (

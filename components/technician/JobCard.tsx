@@ -23,10 +23,11 @@ interface Job {
 interface JobCardProps {
   job: Job;
   onClick: () => void;
-  variant?: "service" | "breakdown";
+  variant?: "service" | "breakdown" | "Due_breakdown";
+  type?:string
 }
 
-export function JobCard({ job, onClick, variant = "service" }: JobCardProps) {
+export function JobCard({ job, onClick, variant = "service" , type}: JobCardProps) {
   // console.log("Rendering JobCard for job:", job.jobId, "with variant:", variant ,"__________ ",job);
   const {
     getPreviousServiceLists,
