@@ -330,6 +330,13 @@ export const useApiConfig = () => {
     }
 
     const response = await fetch(`${BASE_URL}${endpoint}`, config)
+
+ // Check for unauthorized errors
+    if (response.status === 401 || response.status === 403) {
+      setShowUnauthorizedDialog(true)
+      throw new Error('Unauthorized access')
+    }
+
     console.log(response.status, "", response.statusText );
     if (!response.ok ) {
       throw new Error(`API Error: ${response.status} ${response.statusText}`)
@@ -356,11 +363,7 @@ export const useApiConfig = () => {
     const response = await fetch(`${BASE_URL}${endpoint}`, config)
     console.log(response.status, "", response.statusText );
 
-    // Check for unauthorized errors
-    if (response.status === 401 || response.status === 403) {
-      setShowUnauthorizedDialog(true)
-      throw new Error('Unauthorized access')
-    }
+   
 
 
 
