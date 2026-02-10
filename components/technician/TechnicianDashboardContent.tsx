@@ -254,7 +254,7 @@ export function TechnicianDashboardContent() {
       });
 
       // Refresh after alert closes
-      // window.location.reload();
+      window.location.reload();
       setSelectedJob(null);
     }
   };
