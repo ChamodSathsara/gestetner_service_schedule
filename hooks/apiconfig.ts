@@ -494,7 +494,7 @@ export const useApiConfig = () => {
      
     },
     addRecallJob: async (payload:RecallJob) => {
-      const test = await apiCall('api/ScheduleRecall/recallPreviousSchedule', 'POST', payload); 
+      const test = await apiCall('api/jobRecall/recallJob', 'POST', payload); 
       return test;    
     },
   }
