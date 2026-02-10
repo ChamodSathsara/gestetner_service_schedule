@@ -66,7 +66,7 @@ export default function JobReviewPage() {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       addFeedbackDb(reviewData);
       alert("Review submitted successfully!");
-      router.push(`/customer-feedback-machines/${serialNo}`);
+      router.back();
     } catch (error) {
       console.error("Error submitting review:", error);
       alert("Failed to submit review. Please try again.");
@@ -110,7 +110,7 @@ export default function JobReviewPage() {
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Back to List
+            Back
           </button>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
             Leave a Review

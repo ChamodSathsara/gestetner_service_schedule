@@ -75,7 +75,7 @@ export default function ServiceReviewPage() {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       alert("Review submitted successfully!");
-      router.push(`/customer-feedback-machines/${serialNo}`);
+      router.back();
     } catch (error) {
       console.error("Error submitting review:", error);
       alert("Failed to submit review. Please try again.");
@@ -130,7 +130,7 @@ export default function ServiceReviewPage() {
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Back to List
+            Back
           </button>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
             Leave a Review
