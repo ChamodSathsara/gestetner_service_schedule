@@ -58,7 +58,7 @@ interface RecallJob {
   techCode: string,
   jobId: number,
   note: string,
-  recallReason: string, // Include recall reason if applicable
+  reason: string, // Include recall reason if applicable
 
 }
 

@@ -268,7 +268,7 @@ export function JobDetailsDialog({
             techCode: user.tecH_CODE,
             jobId: parseInt(job.jobId),
             note: jobNote || "",
-            recallReason: recallReason, // Include recall reason if applicable
+            reason: recallReason, // Include recall reason if applicable
           });
           console.log("Breakdown update response:", breackdownUpdate);
         } else {
@@ -350,7 +350,7 @@ export function JobDetailsDialog({
           serialNo: job.serialNo || "",
           jobStatus: "COMPLETED",
           note: solution || "",
-          solutionCategory: selectedCategory.solutioN_CATEGORY, // Pass only the category name
+          solutionCategory: selectedCategory.solutioN_SHORT_CATEGORY, // Pass only the category name
         });
       } else {
         // Service API call with meter reading
@@ -361,7 +361,7 @@ export function JobDetailsDialog({
           machineRefNo: job.machineRefNo || "",
           jobStatus: "COMPLETED",
           solution: solution || "",
-          solutionCategory: selectedCategory.solutioN_CATEGORY, // Pass only the category name
+          solutionCategory: selectedCategory.solutioN_SHORT_CATEGORY, // Pass only the category name
           meterReadingValue: meterReadingValue
             ? parseInt(meterReadingValue)
             : 3,
