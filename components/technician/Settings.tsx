@@ -29,9 +29,12 @@ export default function Settings() {
     router.push("/reset-password");
   };
 
+  const handleHelpDeskClick = () => {
+    router.push("/help-desk");
+  };
+
   return (
     <div className="min-h-[calc(100vh-140px)] bg-gray-50 dark:bg-gray-900 px-4 py-8 md:py-12 ">
-      
       <div className="mx-auto max-w-md md:max-w-2xl">
         {/* Card-like container - better on desktop */}
         <div className="space-y-4 rounded-2xl bg-white p-5 shadow-sm dark:bg-gray-800 md:p-7 md:shadow">
@@ -57,6 +60,32 @@ export default function Settings() {
                 strokeLinejoin="round"
                 strokeWidth={2}
                 d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+
+          {/* Help Desk Button */}
+          <button
+            onClick={handleHelpDeskClick}
+            className="flex w-full items-center justify-between rounded-xl border border-blue-200 px-5 py-4 text-left text-blue-600 transition hover:bg-blue-50 active:bg-blue-100 dark:border-blue-800/40 dark:text-blue-400 dark:hover:bg-blue-950/30 md:py-5"
+          >
+            <div>
+              <div className="font-medium">Help Desk</div>
+              <div className="mt-1 text-sm text-blue-500/80 dark:text-blue-400/80">
+                Report an issue or request support
+              </div>
+            </div>
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"
               />
             </svg>
           </button>

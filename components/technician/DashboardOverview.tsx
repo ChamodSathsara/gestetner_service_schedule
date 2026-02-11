@@ -221,7 +221,7 @@ export function DashboardOverview({
             <div>
               <div className="flex items-center justify-between mb-2 px-0.5">
                 <h3 className="text-sm md:text-base font-bold text-gray-900 flex items-center gap-1.5">
-                  <span>All Recall Added Services</span>
+                  <span>Recall Services</span>
                 </h3>
                 <span className="text-[10px] md:text-xs text-blue-700 bg-blue-100 px-2.5 py-1 rounded-full font-semibold">
                   {sortedServices.length}
@@ -242,7 +242,7 @@ export function DashboardOverview({
                     <CardContent className="p-4 text-center">
                       <Calendar className="w-8 h-8 mx-auto mb-2 text-gray-400" />
                       <p className="text-sm text-gray-600 font-medium">
-                        No service jobs
+                        No services
                       </p>
                     </CardContent>
                   </Card>
@@ -304,7 +304,7 @@ export function DashboardOverview({
                     <CardContent className="p-4 text-center">
                       <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-green-500" />
                       <p className="text-sm text-green-700 font-medium">
-                        All clear!
+                        No Assign Jobs Today!
                       </p>
                     </CardContent>
                   </Card>
@@ -316,7 +316,7 @@ export function DashboardOverview({
             <div>
               <div className="flex items-center justify-between mb-2 px-0.5">
                 <h3 className="text-sm md:text-base font-bold text-gray-900 flex items-center gap-1.5">
-                  <span>All Due Jobs</span>
+                  <span>Recall Jobs</span>
                 </h3>
                 <span className="text-[10px] md:text-xs text-red-700 bg-red-100 px-2.5 py-1 rounded-full font-semibold">
                   {recentBreakdowns.length}
@@ -337,7 +337,7 @@ export function DashboardOverview({
                     <CardContent className="p-4 text-center">
                       <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-green-500" />
                       <p className="text-sm text-green-700 font-medium">
-                        All clear!
+                        No Recall Jobs Today!
                       </p>
                     </CardContent>
                   </Card>

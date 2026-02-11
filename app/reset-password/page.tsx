@@ -59,6 +59,25 @@ export default function ResetPassword() {
         isOpen={showUnauthorizedDialog}
         onClose={() => setShowUnauthorizedDialog(false)}
       />
+      <button
+        onClick={() => route.back()}
+        className="mt-6 ms-4 flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
+      >
+        <svg
+          className="h-5 w-5 mr-2"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
+        Back
+      </button>
       {/* Header */}
       <div className="px-6 pt-12 pb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
