@@ -84,6 +84,8 @@ export function TechnicianDashboardContent() {
     allTimeDueJobs,
     showUnauthorizedDialog,
     setShowUnauthorizedDialog,
+    getRecallServices,
+    getRecallJobs,
   } = useApiConfig();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedJob, setSelectedJob] = useState<Job | Service | null | any>(
@@ -93,6 +95,8 @@ export function TechnicianDashboardContent() {
   const [recentBreakdowns, setRecentBreakdowns] = useState<any[]>([]);
   const [recentServices, setRecentServices] = useState<any[]>([]);
   const [dueJobs, setDueJobs] = useState<any[]>([]);
+  const [recallJobs, setRecallJobs] = useState<any[]>([]);
+  const [recallServices, setRecallServices] = useState<any[]>([]);
   const { isLoading: authLoading } = useAuth(); // Get loading state
   const { user } = useAuth();
 
@@ -118,6 +122,8 @@ export function TechnicianDashboardContent() {
       fetchBreakdowns();
       fetchServices();
       fetchAllDueJobs();
+      fetchRecallJobs();
+      fetchRecallServices();
     }
   }, [authLoading]);
 
@@ -142,6 +148,32 @@ export function TechnicianDashboardContent() {
       console.log("mappedJobs", dueJobs);
     } catch (error) {
       console.error("Error fetching breakdowns:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchRecallJobs = async () => {
+    try {
+      setLoading(true);
+      const dueJobs = await getRecallJobs(); // Already mapped!
+      setRecallJobs(dueJobs);
+      console.log("mapped Recall Jobs", dueJobs);
+    } catch (error) {
+      console.error("Error fetching breakdowns:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchRecallServices = async () => {
+    try {
+      setLoading(true);
+      const dueServices = await getRecallServices(); // Already mapped!
+      setRecallServices(dueServices);
+      console.log("mapped Recall===> Services", dueServices);
+    } catch (error) {
+      console.error("Error fetching Services:", error);
     } finally {
       setLoading(false);
     }
@@ -421,6 +453,8 @@ export function TechnicianDashboardContent() {
             recentServices={recentServices}
             recentBreakdowns={recentBreakdowns}
             onJobClick={handleJobAction}
+            recallJobs={recallJobs}
+            recallServices={recallServices}
           />
         </TabsContent>
 

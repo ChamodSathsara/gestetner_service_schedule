@@ -432,8 +432,14 @@ export default function ServiceJobManagement() {
   const [recallItem, setRecallItem] = useState<Service | Job | Due | null>(
     null,
   );
-  const { getAllBreakdownsList, getAllServiceList, getDueJobs, addRecall , showUnauthorizedDialog , setShowUnauthorizedDialog } =
-    useApiConfig();
+  const {
+    getAllBreakdownsList,
+    getAllServiceList,
+    getDueJobs,
+    addRecall,
+    showUnauthorizedDialog,
+    setShowUnauthorizedDialog,
+  } = useApiConfig();
   const [loading, setLoading] = useState<boolean>(false);
   const [breakdownsList, setBreakdownsList] = useState<Job[] | any>([]);
   const [servicesList, setServicesList] = useState<Service[] | any>([]);

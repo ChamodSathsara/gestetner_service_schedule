@@ -46,6 +46,7 @@ interface ApiBreakdown {
 }
 
 interface ReCallObj {
+  techCode: string | undefined
   recallReason: string,
   recallDate: string,
   rowID: number,
@@ -276,6 +277,24 @@ const calculateDaysLeft = (expectedVisitDate: string): number => {
   return diffDays
 }
 
+const MapRecallService = (data: any[]): any[] => {
+  return data.map((visit) => ({
+    id: visit.rowId.toString(),
+    jobId: visit.rowId.toString(),
+    serialNo: visit.serialNo,
+    customerName: visit.customerName,
+    date: visit.expectedVisitDate,
+    location: `${visit.machineLocation01 || ""} ${visit.machineLocation02 || ""} ${
+      visit.machineLocation03 || ""
+    }`.trim(),
+    daysLeft: calculateDaysLeft(visit.expectedVisitDate),
+    status: mapJobStatus(visit.serviceStatus),
+    phone_number: visit.customerTelephone,
+    expected_visit_no: mapExpectedVisitNo(visit.expectedVisitNo),
+    machineRefNo: visit.machineRefNo
+  }));
+};
+
 const mapServiceVisit = (visit: ApiServiceVisit): ServiceVisit => {
   return {
     id: visit.rowId.toString(),
@@ -476,6 +495,8 @@ export const useApiConfig = () => {
 
     addRecall: async (payload: ReCallObj) => {
       console.log("Added Customer Feedback payload", payload);
+      payload.techCode = user?.tecH_CODE
+      console.log(payload);
       const test = await apiCall('api/ScheduleRecall/recallPreviousSchedule', 'POST', payload); 
       return test;    
     },
@@ -497,8 +518,20 @@ export const useApiConfig = () => {
      
     },
     addRecallJob: async (payload:RecallJob) => {
+
       const test = await apiCall('api/jobRecall/recallJob', 'POST', payload); 
       return test;    
+    },
+    getRecallServices: async (): Promise<any[]> => {
+      const data = await apiCall(`api/scheduleRecall/getAllRecallServices?techCode=${user?.tecH_CODE}`);
+      const newData = MapRecallService(data);
+      return newData;
+    },
+    getRecallJobs: async (): Promise<any[]> => {
+      const data = await apiCall(`api/jobRecall/getallRecallJobs?techCode=${user?.tecH_CODE}`)
+      console.log("______________________________",data);
+      return mapBreakdownsToJobs(data)
+     
     },
   }
 }
