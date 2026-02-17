@@ -55,7 +55,7 @@ interface Due {
 }
 
 interface RecallCardProps {
-  item: Service | Job | Due | null;
+  item: any;
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (

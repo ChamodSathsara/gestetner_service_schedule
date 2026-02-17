@@ -75,7 +75,7 @@ export function JobCard({
 
   return (
     <Card
-      className={`border shadow-sm hover:shadow transition-all cursor-pointer ${
+      className={`border shadow-sm hover:shadow transition-all cursor-pointer bg-amber-200 ${
         isCompleted
           ? "bg-gray-50 border-gray-200 opacity-70 hover:opacity-80"
           : "bg-white border-gray-200 hover:border-gray-300"
@@ -95,7 +95,7 @@ export function JobCard({
                 isCompleted ? "text-gray-500" : "text-gray-900"
               }`}
             >
-              {job.jobId}
+              {job.machineRefNo}
             </h3>
             <p
               className={`text-xs truncate ${
@@ -153,7 +153,7 @@ export function JobCard({
                     isCompleted ? "text-gray-300" : "text-gray-400"
                   }`}
                 />
-                <span>Visit {job.expected_visit_no}</span>
+                <span>Visit {Number(job.expected_visit_no) + 1}</span>
               </div>
               {job.daysLeft !== undefined && (
                 <span className="text-gray-400">•</span>

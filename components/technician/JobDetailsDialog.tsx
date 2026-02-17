@@ -170,7 +170,7 @@ export function JobDetailsDialog({
     try {
       const data: any = await getPreviousServiceLists(job.machineRefNo || "");
       setPreviousServices(data);
-      console.log("Previous Services for job", job.jobId, ":", data);
+      console.log("Previous Services for job", job.machineRefNo, ":", data);
     } catch (error) {
       console.error("Error fetching previous services:", error);
       toast.error("Failed to load previous visits");
@@ -445,10 +445,10 @@ export function JobDetailsDialog({
             <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg space-y-3 border border-gray-200">
               <div>
                 <p className="text-xs text-gray-500 uppercase tracking-wide">
-                  Job ID
+                  Machine Ref
                 </p>
                 <p className="font-bold text-lg text-gray-900 mt-1">
-                  {job.jobId}
+                  {job.machineRefNo}
                 </p>
               </div>
               {job.description && (
@@ -721,7 +721,7 @@ export function JobDetailsDialog({
                   {/* Action Buttons */}
                   <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
                     {/* Copy Link Button */}
-                    <Button
+                    {/* <Button
                       onClick={() => {
                         const link =
                           varient === "service"
@@ -736,7 +736,7 @@ export function JobDetailsDialog({
                     >
                       <Copy className="w-4 h-4" />
                       Copy Link
-                    </Button>
+                    </Button> */}
 
                     {/* Native Share Button (works great on mobile) */}
                     <Button
