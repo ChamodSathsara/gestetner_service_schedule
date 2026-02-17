@@ -54,19 +54,24 @@ export default function JobReviewPage() {
     setIsSubmitting(true);
 
     const reviewData = {
-      feedback: review,
-      feedbackCount: rating,
-      mobileNo: mobileNumber,
+      review: review,
+      rating: rating,
+      mobileNumber: mobileNumber,
       customerName: customerName,
       jobId: jobId,
+      type: "job" as const,
     };
 
     try {
       console.log("Submitting review:", reviewData);
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      addFeedbackDb(reviewData);
-      alert("Review submitted successfully!");
-      router.back();
+      const result = await addFeedbackDb(reviewData);
+      if (result.success) {
+        alert("Review submitted successfully!");
+        router.back();
+      } else {
+        alert("Failed to submit review. Please try again.");
+      }
     } catch (error) {
       console.error("Error submitting review:", error);
       alert("Failed to submit review. Please try again.");
@@ -79,8 +84,10 @@ export default function JobReviewPage() {
     try {
       const response = await addFeedback(data);
       console.log("Feedback added successfully:", response);
+      return { success: true };
     } catch (error) {
       console.error("Error adding feedback:", error);
+      return { success: false };
     }
   };
 

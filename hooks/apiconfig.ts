@@ -115,12 +115,13 @@ interface BreakdownUpdatePayload {
 }
 
 interface CustomerFeedBack {
-  feedback : string
-  feedbackCount : number
-  mobileNo : string
-  customerName : string
-  jobId : string
-  rowId : number
+  jobId: any
+  visitNo?: number,
+  customerName:string,
+  mobileNumber:string,
+  rating:number,
+  review:string,
+  type: "job" | "service"
 }
 
   

@@ -12,6 +12,7 @@ export default function ServiceReviewPage() {
   const {
     getServiceBySerialNoAndMachineNo,
     showUnauthorizedDialog,
+    addFeedback,
     setShowUnauthorizedDialog,
   } = useApiConfig();
 
@@ -61,21 +62,26 @@ export default function ServiceReviewPage() {
     setIsSubmitting(true);
 
     const reviewData = {
-      serialNo,
+      // serialNo,
+      jobId: serviceDetails?.jobId || "0",
       visitNo,
       customerName,
       mobileNumber,
       rating,
       review,
-      type: "job",
+      type: "service" as const,
     };
 
     try {
       console.log("Submitting review:", reviewData);
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      alert("Review submitted successfully!");
-      router.back();
+      const result = await addFeedback(reviewData);
+      if (result.success) {
+        alert("Review submitted successfully!");
+        router.back();
+      } else {
+        alert("Failed to submit review. Please try again.");
+      }
     } catch (error) {
       console.error("Error submitting review:", error);
       alert("Failed to submit review. Please try again.");
@@ -114,7 +120,7 @@ export default function ServiceReviewPage() {
         {/* Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <button
-            onClick={() => router.back()}
+            // onClick={() => router.back()}
             className="flex items-center text-blue-600 hover:text-blue-800 mb-4 transition-colors"
           >
             <svg

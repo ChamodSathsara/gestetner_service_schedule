@@ -75,7 +75,7 @@ export function JobCard({
 
   return (
     <Card
-      className={`border shadow-sm hover:shadow transition-all cursor-pointer bg-amber-200 ${
+      className={`border shadow-sm hover:shadow transition-all cursor-pointer  ${
         isCompleted
           ? "bg-gray-50 border-gray-200 opacity-70 hover:opacity-80"
           : "bg-white border-gray-200 hover:border-gray-300"
