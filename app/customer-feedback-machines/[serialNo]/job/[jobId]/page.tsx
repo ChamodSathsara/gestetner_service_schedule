@@ -56,7 +56,7 @@ export default function JobReviewPage() {
     const reviewData = {
       review: review,
       rating: rating,
-      mobileNumber: mobileNumber,
+      mobileNo: mobileNumber,
       customerName: customerName,
       jobId: jobId,
       type: "job" as const,
@@ -133,7 +133,7 @@ export default function JobReviewPage() {
             <div>
               <h2 className="text-xl font-bold text-gray-800">{jobId}</h2>
               <span className="inline-block px-3 py-1 mt-2 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                {jobsData?.visitStatus || "N/A"}
+                {jobsData?.status || "N/A"}
               </span>
             </div>
           </div>

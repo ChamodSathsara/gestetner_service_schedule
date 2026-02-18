@@ -44,8 +44,8 @@ export default function ServiceReviewPage() {
       };
       const serviceData = await getServiceBySerialNoAndMachineNo(data);
 
-      setServiceDetails(serviceData);
-      console.log("Fetched Service Details:", serviceData);
+      setServiceDetails(serviceData[0]);
+      console.log("Fetched Service Details:", serviceData[0]);
     } catch (error) {
       console.error("Error fetching service details:", error);
     }
@@ -63,10 +63,10 @@ export default function ServiceReviewPage() {
 
     const reviewData = {
       // serialNo,
-      jobId: serviceDetails?.jobId || "0",
+      jobId: String(serviceDetails?.rowId || "0"),
       visitNo,
       customerName,
-      mobileNumber,
+      mobileNo: mobileNumber,
       rating,
       review,
       type: "service" as const,
@@ -120,7 +120,7 @@ export default function ServiceReviewPage() {
         {/* Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <button
-            // onClick={() => router.back()}
+            onClick={() => router.back()}
             className="flex items-center text-blue-600 hover:text-blue-800 mb-4 transition-colors"
           >
             <svg

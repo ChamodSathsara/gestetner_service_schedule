@@ -118,7 +118,7 @@ interface CustomerFeedBack {
   jobId: any
   visitNo?: number,
   customerName:string,
-  mobileNumber:string,
+  mobileNo:string,
   rating:number,
   review:string,
   type: "job" | "service"
