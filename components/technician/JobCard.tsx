@@ -153,7 +153,7 @@ export function JobCard({
                     isCompleted ? "text-gray-300" : "text-gray-400"
                   }`}
                 />
-                <span>Visit {Number(job.expected_visit_no) + 1}</span>
+                <span>Visit {Number(job.expected_visit_no)}</span>
               </div>
               {job.daysLeft !== undefined && (
                 <span className="text-gray-400">•</span>

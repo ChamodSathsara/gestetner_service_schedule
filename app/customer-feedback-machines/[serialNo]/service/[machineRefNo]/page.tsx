@@ -44,8 +44,8 @@ export default function ServiceReviewPage() {
       };
       const serviceData = await getServiceBySerialNoAndMachineNo(data);
 
-      setServiceDetails(serviceData[0]);
-      console.log("Fetched Service Details:", serviceData[0]);
+      setServiceDetails(serviceData);
+      console.log("Fetched Service Details:", serviceData);
     } catch (error) {
       console.error("Error fetching service details:", error);
     }
@@ -150,7 +150,7 @@ export default function ServiceReviewPage() {
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-bold text-gray-800">{`Visit No: ${visitNo}`}</h2>
+              <h2 className="text-xl font-bold text-gray-800">{`Visit No: ${visitNo + 1}`}</h2>
               <p className="text-gray-600 text-sm mt-1">
                 {serviceDetails?.customerName || "Customer Name"}
               </p>
@@ -247,7 +247,7 @@ export default function ServiceReviewPage() {
             </div>
             <div>
               <p className="text-sm text-gray-600">
-                <span className="font-semibold">Visit No:</span> {visitNo}
+                <span className="font-semibold">Visit No:</span> {visitNo + 1}
               </p>
             </div>
             <div>

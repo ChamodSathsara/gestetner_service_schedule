@@ -208,7 +208,7 @@ export const mapJobsBySerialNoJobObj = (item: any): Job => {
     // Machine Ref No
     machineRefNo: item.machinE_REF_NO,
     // Technician Name
-    technicianName: item.teaM_NAME,
+    technicianName: item.tecH_NAME,
   };
 };
 
@@ -263,7 +263,13 @@ const mapExpectedVisitNo = (expectedVisitNo: string): number => {
     'EXPT_SV3': 3,
     'EXPT_SV4': 4,
     'EXPT_SV5': 5,
-    'EXPT_SV6': 6
+    'EXPT_SV6': 6,
+    '1': 1,
+    '2': 2,
+    '3': 3,
+    '4': 4,
+    '5': 5,
+    '6': 6
   }
   return visitMap[expectedVisitNo] || 0
 }
@@ -477,6 +483,7 @@ export const useApiConfig = () => {
       // const data2 = await apiCallNew(`api/customerfeedback/getServiceByRowID` , 'GET' ,payload )
       console.log("Services By Serial No Data:", data);
       const newData = mapNew(data);
+      console.log(" newData:", newData);
       return newData;
     },
 

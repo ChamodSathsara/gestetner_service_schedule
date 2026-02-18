@@ -347,9 +347,9 @@ export function DashboardOverview({
                 {/* {recallJobs.length > 0 ? (
                   recallJobs.map((job: any) => ( */}
                 {recallJobs.length > 0 ? (
-                  recallJobs.map((job: any) => (
+                  recallJobs.map((job: any, index) => (
                     <JobCard
-                      key={job.id}
+                      key={index}
                       job={job}
                       onClick={() => onJobClick(job)}
                       variant="breakdown"
