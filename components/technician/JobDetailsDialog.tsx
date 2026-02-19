@@ -708,8 +708,8 @@ export function JobDetailsDialog({
                     <QRCode
                       value={
                         varient === "service"
-                          ? `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/service/${job.jobId}?visitNo=${job.expected_visit_no - 1}`
-                          : `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/job/${job.jobId}`
+                          ? `${window.location.origin}customer-feedback-machines/${job.serialNo}/service/${job.jobId}?visitNo=${job.expected_visit_no - 1}`
+                          : `${window.location.origin}customer-feedback-machines/${job.serialNo}/job/${job.jobId}`
                       }
                       size={180}
                       level="Q"
@@ -725,8 +725,8 @@ export function JobDetailsDialog({
                       onClick={() => {
                         const link =
                           varient === "service"
-                            ? `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/service/${job.jobId}?visitNo=${job.expected_visit_no - 1}`
-                            : `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/job/${job.jobId}`;
+                            ? `${window.location.origin}customer-feedback-machines/${job.serialNo}/service/${job.jobId}?visitNo=${job.expected_visit_no - 1}`
+                            : `${window.location.origin}customer-feedback-machines/${job.serialNo}/job/${job.jobId}`;
 
                         navigator.clipboard.writeText(link);
                         showLinkCopiedAlert();
@@ -743,8 +743,8 @@ export function JobDetailsDialog({
                       onClick={() => {
                         const link =
                           varient === "service"
-                            ? `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/service/${job.jobId}?visitNo=${job.expected_visit_no - 1}`
-                            : `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/job/${job.jobId}`;
+                            ? `${window.location.origin}customer-feedback-machines/${job.serialNo}/service/${job.jobId}?visitNo=${job.expected_visit_no - 1}`
+                            : `${window.location.origin}customer-feedback-machines/${job.serialNo}/job/${job.jobId}`;
 
                         if (navigator.share) {
                           navigator
@@ -773,8 +773,8 @@ export function JobDetailsDialog({
                   {/* Optional: Display the link for reference */}
                   <p className="text-xs text-gray-500 break-all">
                     {varient === "service"
-                      ? `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/service/${job.jobId}?visitNo=${job.expected_visit_no - 1}`
-                      : `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/job/${job.jobId}`}
+                      ? `${window.location.origin}customer-feedback-machines/${job.serialNo}/service/${job.jobId}?visitNo=${job.expected_visit_no - 1}`
+                      : `${window.location.origin}customer-feedback-machines/${job.serialNo}/job/${job.jobId}`}
                   </p>
                 </div>
 
