@@ -64,7 +64,7 @@ interface RecallCardProps {
     recallDate: string,
     visitNo: number,
     isRecall: boolean,
-    onSite: boolean
+    onSite: boolean,
   ) => void;
 }
 
@@ -81,16 +81,24 @@ export default function RecallCard({
     const rowID = (item as Due).rowId || 0;
     const recallReason = reason;
     const recallDate = new Date().toISOString();
-    const visitNo = (item as Due).expectedVisitCount || 0;
+    const visitNo = (item as Due).expectedVisitNo
+      ? parseInt((item as Due).expectedVisitNo)
+      : 0;
     const isRecall = true;
     const onSite = isOnSite;
+    console.log("Submitting recall with data:", {
+      rowID,
+      recallReason,
+      recallDate,
+      visitNo,
+      isRecall,
+      onSite,
+    });
 
-    if (reason.trim() && item) {
-      onSubmit(rowID, recallReason, recallDate, visitNo, isRecall, onSite);
-      setReason("");
-      setIsOnSite(false);
-      onClose();
-    }
+    onSubmit(rowID, recallReason, recallDate, visitNo, isRecall, onSite);
+    setReason("");
+    setIsOnSite(false);
+    onClose();
   };
 
   return (

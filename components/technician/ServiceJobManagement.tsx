@@ -101,21 +101,6 @@ interface DetailsDialogProps {
   onRecall: (item: Service | Job) => void;
 }
 
-interface RecallDialogProps {
-  item: Service | Job | Due | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (
-    rowID: number,
-    recallReason: string,
-    recallDate: string,
-    visitNo: number,
-    isRecall: boolean,
-    OnSite: boolean,
-  ) => void;
-  isOnSite: boolean;
-}
-
 type TabType = "services" | "jobs" | "dues";
 
 function ServiceCard({ service, onClick }: ServiceCardProps) {
@@ -516,13 +501,14 @@ export default function ServiceJobManagement() {
       isRecall,
       isOnSite,
     });
-    const newVisitNumber = visitNo + 1;
+    console.log("Recall Item Visit Number:", visitNo);
+
     // Handle recall submission here
     const payload = {
       rowID,
       recallReason,
       recallDate,
-      visitNo: newVisitNumber,
+      visitNo,
       isRecall,
       onSite: isOnSite,
     };
