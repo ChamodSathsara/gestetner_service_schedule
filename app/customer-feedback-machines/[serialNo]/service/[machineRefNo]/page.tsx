@@ -76,12 +76,7 @@ export default function ServiceReviewPage() {
       console.log("Submitting review:", reviewData);
       await new Promise((resolve) => setTimeout(resolve, 1000));
       const result = await addFeedback(reviewData);
-      if (result.success) {
-        alert("Review submitted successfully!");
-        router.back();
-      } else {
-        alert("Failed to submit review. Please try again.");
-      }
+      router.back();
     } catch (error) {
       console.error("Error submitting review:", error);
       alert("Failed to submit review. Please try again.");
