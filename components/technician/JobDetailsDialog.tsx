@@ -23,6 +23,7 @@ import UnauthorizedDialog from "./UnauthorizedDialog";
 import Swal from "sweetalert2";
 
 interface Job {
+  model: any;
   visitNo: any;
   rowId: any;
   id: string;
@@ -469,6 +470,15 @@ export function JobDetailsDialog({
                   <p className="text-sm text-gray-700 mt-1">
                     {job.customerName}
                   </p>
+                </div>
+              )}
+
+              {job.model && (
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">
+                    Model
+                  </p>
+                  <p className="text-sm text-gray-700 mt-1">{job.model}</p>
                 </div>
               )}
               <div>

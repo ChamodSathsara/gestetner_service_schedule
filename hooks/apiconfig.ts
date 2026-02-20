@@ -19,6 +19,7 @@ export interface Job {
   serialNo?: string
   technicianName?: string
   type?:string
+  model?:string
 }
 
 interface ApiBreakdown {
@@ -76,6 +77,7 @@ export interface ServiceVisit {
   expected_visit_no: number
   machineRefNo?: string
   serialNo?: string
+  model?: string
   
 }
 
@@ -100,6 +102,7 @@ interface ApiServiceVisit {
   machineLocation01: string
   machineLocation02: string
   machineLocation03: string
+  machineModel: string
 }
 
 // Breakdown update payload
@@ -247,7 +250,8 @@ const mapBreakdownToJob = (breakdown: ApiBreakdown): Job => {
     phone_number: breakdown.cuS_TEL_NO,
     machineRefNo: breakdown.machinE_REF_NO,
     serialNo: breakdown.seriaL_NO,
-    type:breakdown.type
+    type:breakdown.type,
+    model: breakdown.machinE_MODEL_NAME
   }
 }
 
@@ -318,7 +322,8 @@ const mapServiceVisit = (visit: ApiServiceVisit): ServiceVisit => {
     status: mapJobStatus(visit.visitStatus),
     phone_number: visit.customerTelephone,
     expected_visit_no: mapExpectedVisitNo(visit.expectedVisitNo),
-    machineRefNo: visit.machineRefNo
+    machineRefNo: visit.machineRefNo,
+    model: visit.machineModel
   }
 }
 
