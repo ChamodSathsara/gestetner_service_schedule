@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
+import { useApiConfig } from "@/hooks/apiconfig";
 
 export default function HelpDesk() {
   const router = useRouter();
@@ -13,6 +14,7 @@ export default function HelpDesk() {
     mobileNumber: "",
     priority: "normal",
   });
+  const { addHelpDeskMessage } = useApiConfig();
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -50,12 +52,8 @@ export default function HelpDesk() {
     }
 
     try {
-      // Here you would normally send the data to your backend
-      // const response = await fetch('/api/help-desk', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData),
-      // });
+      const data = await addHelpDeskMessage(formData);
+      console.log("Help desk request submitted:", data);
 
       // Show success alert
       Swal.fire({

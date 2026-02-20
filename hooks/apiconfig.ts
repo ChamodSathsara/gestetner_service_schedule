@@ -541,6 +541,10 @@ export const useApiConfig = () => {
       return mapBreakdownsToJobs(data)
      
     },
+    addHelpDeskMessage: async (payload: any) => {
+      const test = await apiCall('api/helpdesk/helpRequest', 'POST', payload); 
+      return test;    
+    },
   }
 }
 

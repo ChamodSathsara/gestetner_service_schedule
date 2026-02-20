@@ -166,7 +166,108 @@ export function DashboardOverview({
         </Card>
       </div>
 
-      {/* Services Section */}
+     
+
+      {/* Breakdowns Section */}
+      <div className="border-2 border-red-200 rounded-lg bg-red-50/30">
+        {/* Section Header with Collapse */}
+        <div
+          className="flex items-center justify-between p-3 cursor-pointer hover:bg-red-100/50 transition-colors rounded-t-lg"
+          onClick={() => setBreakdownsExpanded(!breakdownsExpanded)}
+        >
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-6 bg-gradient-to-b from-red-500 to-red-600 rounded-full"></div>
+            <h2 className="text-base md:text-lg font-bold text-red-900">
+              Jobs / Breakdowns
+            </h2>
+            <span className="text-xs text-white bg-gradient-to-r from-red-500 to-red-600 px-2.5 py-1 rounded-full font-semibold shadow-sm">
+              {recentBreakdowns.length}
+            </span>
+          </div>
+          {breakdownsExpanded ? (
+            <ChevronUp className="w-5 h-5 text-red-600" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-red-600" />
+          )}
+        </div>
+
+        {/* Collapsible Content */}
+        {breakdownsExpanded && (
+          <div className="p-3 pt-0 space-y-4">
+            {/* Today Breakdown */}
+            <div>
+              <div className="flex items-center justify-between mb-2 px-0.5">
+                <h3 className="text-sm md:text-base font-bold text-gray-900 flex items-center gap-1.5">
+                  <span>All Jobs</span>
+                </h3>
+                <span className="text-[10px] md:text-xs text-red-700 bg-red-100 px-2.5 py-1 rounded-full font-semibold">
+                  {recentBreakdowns.length}
+                </span>
+              </div>
+              <div className="space-y-2">
+                {recentBreakdowns.length > 0 ? (
+                  recentBreakdowns.map((job) => (
+                    <JobCard
+                      key={job.id}
+                      job={job}
+                      onClick={() => onJobClick(job)}
+                      variant="breakdown"
+                    />
+                  ))
+                ) : (
+                  <Card className="bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200">
+                    <CardContent className="p-4 text-center">
+                      <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-green-500" />
+                      <p className="text-sm text-green-700 font-medium">
+                        No Assign Jobs Today!
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+
+            {/* All Due Jobs */}
+            <div>
+              <div className="flex items-center justify-between mb-2 px-0.5">
+                <h3 className="text-sm md:text-base font-bold text-gray-900 flex items-center gap-1.5">
+                  <span>Recall Jobs</span>
+                </h3>
+                <span className="text-[10px] md:text-xs text-red-700 bg-red-100 px-2.5 py-1 rounded-full font-semibold">
+                  {recallJobs.length}
+                  {/* {recentBreakdowns.length} */}
+                </span>
+              </div>
+              <div className="space-y-2">
+                {/* {recallJobs.length > 0 ? (
+                  recallJobs.map((job: any) => ( */}
+                {recallJobs.length > 0 ? (
+                  recallJobs.map((job: any, index) => (
+                    <JobCard
+                      key={index}
+                      job={job}
+                      onClick={() => onJobClick(job)}
+                      variant="breakdown"
+                    />
+                  ))
+                ) : (
+                  <Card className="bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200">
+                    <CardContent className="p-4 text-center">
+                      <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-green-500" />
+                      <p className="text-sm text-green-700 font-medium">
+                        No Recall Jobs Today!
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+
+       {/* Services Section */}
       <div className="border-2 border-blue-200 rounded-lg bg-blue-50/30">
         {/* Section Header with Collapse */}
         <div
@@ -263,104 +364,6 @@ export function DashboardOverview({
                       <Calendar className="w-8 h-8 mx-auto mb-2 text-gray-400" />
                       <p className="text-sm text-gray-600 font-medium">
                         No services
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Breakdowns Section */}
-      <div className="border-2 border-red-200 rounded-lg bg-red-50/30">
-        {/* Section Header with Collapse */}
-        <div
-          className="flex items-center justify-between p-3 cursor-pointer hover:bg-red-100/50 transition-colors rounded-t-lg"
-          onClick={() => setBreakdownsExpanded(!breakdownsExpanded)}
-        >
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-6 bg-gradient-to-b from-red-500 to-red-600 rounded-full"></div>
-            <h2 className="text-base md:text-lg font-bold text-red-900">
-              Jobs / Breakdowns
-            </h2>
-            <span className="text-xs text-white bg-gradient-to-r from-red-500 to-red-600 px-2.5 py-1 rounded-full font-semibold shadow-sm">
-              {recentBreakdowns.length}
-            </span>
-          </div>
-          {breakdownsExpanded ? (
-            <ChevronUp className="w-5 h-5 text-red-600" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-red-600" />
-          )}
-        </div>
-
-        {/* Collapsible Content */}
-        {breakdownsExpanded && (
-          <div className="p-3 pt-0 space-y-4">
-            {/* Today Breakdown */}
-            <div>
-              <div className="flex items-center justify-between mb-2 px-0.5">
-                <h3 className="text-sm md:text-base font-bold text-gray-900 flex items-center gap-1.5">
-                  <span>All Jobs</span>
-                </h3>
-                <span className="text-[10px] md:text-xs text-red-700 bg-red-100 px-2.5 py-1 rounded-full font-semibold">
-                  {recentBreakdowns.length}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {recentBreakdowns.length > 0 ? (
-                  recentBreakdowns.map((job) => (
-                    <JobCard
-                      key={job.id}
-                      job={job}
-                      onClick={() => onJobClick(job)}
-                      variant="breakdown"
-                    />
-                  ))
-                ) : (
-                  <Card className="bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200">
-                    <CardContent className="p-4 text-center">
-                      <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-green-500" />
-                      <p className="text-sm text-green-700 font-medium">
-                        No Assign Jobs Today!
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </div>
-
-            {/* All Due Jobs */}
-            <div>
-              <div className="flex items-center justify-between mb-2 px-0.5">
-                <h3 className="text-sm md:text-base font-bold text-gray-900 flex items-center gap-1.5">
-                  <span>Recall Jobs</span>
-                </h3>
-                <span className="text-[10px] md:text-xs text-red-700 bg-red-100 px-2.5 py-1 rounded-full font-semibold">
-                  {recallJobs.length}
-                  {/* {recentBreakdowns.length} */}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {/* {recallJobs.length > 0 ? (
-                  recallJobs.map((job: any) => ( */}
-                {recallJobs.length > 0 ? (
-                  recallJobs.map((job: any, index) => (
-                    <JobCard
-                      key={index}
-                      job={job}
-                      onClick={() => onJobClick(job)}
-                      variant="breakdown"
-                    />
-                  ))
-                ) : (
-                  <Card className="bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200">
-                    <CardContent className="p-4 text-center">
-                      <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-green-500" />
-                      <p className="text-sm text-green-700 font-medium">
-                        No Recall Jobs Today!
                       </p>
                     </CardContent>
                   </Card>
