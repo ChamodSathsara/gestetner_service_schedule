@@ -4,6 +4,12 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useApiConfig } from "@/hooks/apiconfig";
 import UnauthorizedDialog from "@/components/technician/UnauthorizedDialog";
+import {
+  Loading,
+  LoadingDots,
+  LoadingPulse,
+} from "@/components/technician/Loading";
+import { se } from "date-fns/locale";
 
 export default function ServiceReviewPage() {
   const params = useParams();
@@ -27,6 +33,7 @@ export default function ServiceReviewPage() {
   const [customerName, setCustomerName] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
   const [serviceDetails, setServiceDetails] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Fetch service details - replace with your actual API call
   // const { data: serviceDetails } = useSWR(`/api/services/${machineRefNo}?visitNo=${visitNo}`, fetcher);
@@ -36,17 +43,21 @@ export default function ServiceReviewPage() {
   }, []);
 
   const fetchServiceDetails = async () => {
+    setIsLoading(true);
     try {
       const data = {
         serialNo,
         rowId: Number(machineRefNo),
         visitNo: visitNo || 0,
       };
+
       const serviceData = await getServiceBySerialNoAndMachineNo(data);
 
       setServiceDetails(serviceData);
+      setIsLoading(false);
       console.log("Fetched Service Details:", serviceData);
     } catch (error) {
+      setIsLoading(false);
       console.error("Error fetching service details:", error);
     }
   };
@@ -76,6 +87,7 @@ export default function ServiceReviewPage() {
       console.log("Submitting review:", reviewData);
       await new Promise((resolve) => setTimeout(resolve, 1000));
       const result = await addFeedback(reviewData);
+
       router.back();
     } catch (error) {
       console.error("Error submitting review:", error);
@@ -104,6 +116,10 @@ export default function ServiceReviewPage() {
       .join(", ");
     return locations || "No location specified";
   };
+
+  if (isLoading) {
+    return <Loading fullScreen message="Fetching job details..." size="md" />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-4 md:p-6">

@@ -4,6 +4,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect, use } from "react";
 import { useApiConfig } from "@/hooks/apiconfig";
 import UnauthorizedDialog from "@/components/technician/UnauthorizedDialog";
+import { Loading } from "@/components/technician/Loading";
+import { se } from "date-fns/locale";
 
 export default function JobReviewPage() {
   const params = useParams();
@@ -17,6 +19,7 @@ export default function JobReviewPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const {
     getJobBySerialNoAndMachineNo,
     addFeedback,
@@ -34,9 +37,11 @@ export default function JobReviewPage() {
 
   const fetchJobDetails = async () => {
     try {
+      setIsLoading(true);
       const jobDetails = await getJobBySerialNoAndMachineNo(serialNo, jobId);
 
       setJobsData(jobDetails);
+      setIsLoading(false);
       console.log("Fetched Job Details:", jobDetails);
     } catch (error) {
       console.error("Error fetching job details:", error);
@@ -86,6 +91,9 @@ export default function JobReviewPage() {
       return { success: false };
     }
   };
+  if (isLoading) {
+    return <Loading fullScreen message="Fetching job details..." size="md" />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-4 md:p-6">
