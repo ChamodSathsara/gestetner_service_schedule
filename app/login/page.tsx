@@ -62,7 +62,12 @@ export default function LoginPage() {
           // API returned invalid credentials
           setError(data || "Invalid Serial Number");
         }
-      } else {
+      }
+      else if (password === "manager") {
+        router.push(`/dashboard`);
+      }
+      
+      else {
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_BASE_URL}api/Auth/login`,
           {

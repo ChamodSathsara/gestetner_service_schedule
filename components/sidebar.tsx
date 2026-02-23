@@ -50,24 +50,6 @@ export function Sidebar({ userRole, username, onCollapsedChange }: SidebarProps)
       roles: ["admin", "manager", "team_leader", "branch_leader", "data_entry"],
     },
     {
-      icon: Calendar,
-      label: "Service Schedule Recall",
-      href: "/service-schedule-recall",
-      roles: ["admin", "manager", "team_leader", "branch_leader", "data_entry"],
-    },
-    {
-      icon: Wrench,
-      label: "Breakdown Assign",
-      href: "/breakdown-assign",
-      roles: ["admin", "manager", "team_leader", "branch_leader", "data_entry"],
-    },
-    {
-      icon: Lock,
-      label: "User Activation",
-      href: "/user-activation",
-      roles: ["admin", "manager", "team_leader", "branch_leader", "data_entry"],
-    },
-    {
       icon: Users,
       label: "Technicians",
       href: "/technicians",
