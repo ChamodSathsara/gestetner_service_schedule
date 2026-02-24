@@ -62,12 +62,13 @@ export default function LoginPage() {
           // API returned invalid credentials
           setError(data || "Invalid Serial Number");
         }
-      }
-      else if (password === "manager") {
+      } else if (password === "manager") {
+        console.log("Manager login successful");
+        const user = new Object() as any; // Create a user object with necessary properties
+        user.role = "manager"; // Set role for manager
+        login(user); // Save user & token in context + localStorage
         router.push(`/dashboard`);
-      }
-      
-      else {
+      } else {
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_BASE_URL}api/Auth/login`,
           {

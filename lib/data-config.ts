@@ -10,13 +10,13 @@ export const mockDataConfig = {
   ],
 
   technicianSummaryData: [
-    { date: "Mon", services: 12, breakdowns: 8, completed: 15 },
-    { date: "Tue", services: 14, breakdowns: 10, completed: 18 },
-    { date: "Wed", services: 10, breakdowns: 12, completed: 16 },
-    { date: "Thu", services: 16, breakdowns: 7, completed: 19 },
-    { date: "Fri", services: 18, breakdowns: 11, completed: 22 },
-    { date: "Sat", services: 8, breakdowns: 5, completed: 11 },
-    { date: "Sun", services: 6, breakdowns: 3, completed: 7 },
+    { date: "02/21", pending: 12, completed: 8, total: 15 },
+    { date: "02/22", pending: 14, completed: 10, total: 18 },
+    { date: "02/23", pending: 10, completed: 12, total: 16 },
+    { date: "02/24", pending: 16, completed: 7, total: 19 },
+    { date: "02/25", pending: 18, completed: 11, total: 22 },
+    { date: "02/26", pending: 8, completed: 5, total: 11 },
+    { date: "02/27", pending: 6, completed: 3, total: 7 },
   ],
 
   technicianPerformance: [
@@ -111,6 +111,11 @@ export const mockDataConfig = {
     },
   ],
 
+  warrantyDetailsDataNew:[
+    {erea: "COLOMBO", ns:12 ,fs:10 , ma:23 , ex:4 },
+    {erea: "SUBURBS", ns:21 ,fs:8, ma:13 , ex:5 },
+    {erea: "OUTSTATION", ns:15 ,fs:20 , ma:31 , ex:8 }
+  ],
   warrantySummaryData: [
     { tOfficerCode: "TO001", tOfficerName: "John Silva", team: "Team A", machineCount: 45 },
     { tOfficerCode: "TO002", tOfficerName: "Priya Sharma", team: "Team B", machineCount: 38 },

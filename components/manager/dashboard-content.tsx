@@ -31,7 +31,7 @@ export function DashboardContent() {
     technicianSummaryData,
     technicianPerformance,
     pendingJobs,
-    warrantyDetailsData,
+    warrantyDetailsDataNew,
     warrantySummaryData,
   } = mockDataConfig;
 
@@ -54,9 +54,7 @@ export function DashboardContent() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">432</div>
-            <p className="text-xs text-muted-foreground">
-              +12% from last month
-            </p>
+            <p className="text-xs text-muted-foreground">94% Success Rate</p>
           </CardContent>
         </Card>
 
@@ -74,29 +72,30 @@ export function DashboardContent() {
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Active Technicians
+              Total Services
             </CardTitle>
-            <Users className="h-4 w-4 text-blue-500" />
+            <CheckCircle2 className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">24</div>
-            <p className="text-xs text-muted-foreground">Across all branches</p>
+            <div className="text-2xl font-bold">2345</div>
+
+            <p className="text-xs text-muted-foreground"> 45% Success Rate</p>
           </CardContent>
         </Card>
 
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-500" />
+            <CardTitle className="text-sm font-medium">
+              Pending Services
+            </CardTitle>
+            <AlertCircle className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">94.2%</div>
-            <p className="text-xs text-muted-foreground">On-time completion</p>
+            <div className="text-2xl font-bold">297</div>
+            <p className="text-xs text-muted-foreground">Awaiting completion</p>
           </CardContent>
         </Card>
       </div>
-
-      
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -183,24 +182,24 @@ export function DashboardContent() {
               <Legend />
               <Line
                 type="monotone"
-                dataKey="services"
+                dataKey="pending"
                 stroke="#3b82f6"
                 dot={false}
-                name="Service Schedules"
-              />
-              <Line
-                type="monotone"
-                dataKey="breakdowns"
-                stroke="#ef4444"
-                dot={false}
-                name="Breakdowns"
+                name="Pending Jobs"
               />
               <Line
                 type="monotone"
                 dataKey="completed"
+                stroke="#ef4444"
+                dot={false}
+                name="Completed Jobs"
+              />
+              <Line
+                type="monotone"
+                dataKey="total"
                 stroke="#22c55e"
                 dot={false}
-                name="Completed"
+                name="Total Jobs"
               />
             </LineChart>
           </ResponsiveContainer>
@@ -248,7 +247,7 @@ export function DashboardContent() {
         {/* Pending Jobs Alert */}
         <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle>Pending Jobs - Due Soon</CardTitle>
+            <CardTitle>Overdue Jobs</CardTitle>
             <CardDescription>
               Jobs requiring immediate attention
             </CardDescription>
@@ -293,7 +292,9 @@ export function DashboardContent() {
       {/* Customer Warranty Details Report table */}
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle>Customer Warranty Details Report</CardTitle>
+          <CardTitle>
+            Last Year Customer Warranty Details Report Summery
+          </CardTitle>
           <CardDescription>
             Machine warranty information for all customers
           </CardDescription>
@@ -304,58 +305,35 @@ export function DashboardContent() {
               <thead>
                 <tr className="border-b-2 border-border">
                   <th className="text-left p-2 font-semibold text-foreground">
-                    Customer Name
+                    Area
+                  </th>
+
+                  <th className="text-left p-2 font-semibold text-foreground">
+                    NS
                   </th>
                   <th className="text-left p-2 font-semibold text-foreground">
-                    Address 1
+                    FS
                   </th>
                   <th className="text-left p-2 font-semibold text-foreground">
-                    Address 2
+                    MA
                   </th>
                   <th className="text-left p-2 font-semibold text-foreground">
-                    Address 3
-                  </th>
-                  <th className="text-left p-2 font-semibold text-foreground">
-                    Serial No
-                  </th>
-                  <th className="text-left p-2 font-semibold text-foreground">
-                    Machine Description
-                  </th>
-                  <th className="text-left p-2 font-semibold text-foreground">
-                    Ref Code
-                  </th>
-                  <th className="text-left p-2 font-semibold text-foreground">
-                    Team
-                  </th>
-                  <th className="text-left p-2 font-semibold text-foreground">
-                    Status
-                  </th>
-                  <th className="text-left p-2 font-semibold text-foreground">
-                    Officer Code
-                  </th>
-                  <th className="text-left p-2 font-semibold text-foreground">
-                    Officer Name
-                  </th>
-                  <th className="text-left p-2 font-semibold text-foreground">
-                    MA Period End
-                  </th>
-                  <th className="text-left p-2 font-semibold text-foreground">
-                    Warranty End
+                    EX
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {warrantyDetailsData.map((row, idx) => (
+                {warrantyDetailsDataNew.map((row, idx) => (
                   <tr
                     key={idx}
                     className="border-b border-border hover:bg-secondary transition-colors"
                   >
-                    <td className="p-2 text-foreground">{row.cusName}</td>
-                    <td className="p-2 text-foreground">{row.invAdd1}</td>
-                    <td className="p-2 text-foreground">{row.invAdd2}</td>
-                    <td className="p-2 text-foreground">{row.invAdd3}</td>
-                    <td className="p-2 text-foreground">{row.serialNo}</td>
-                    <td className="p-2 text-foreground">{row.machineDesc}</td>
+                    <td className="p-2 text-foreground">{row.erea}</td>
+                    <td className="p-2 text-foreground">{row.ns}</td>
+                    <td className="p-2 text-foreground">{row.fs}</td>
+                    <td className="p-2 text-foreground">{row.ma}</td>
+                    <td className="p-2 text-foreground">{row.ex}</td>
+                    {/* <td className="p-2 text-foreground">{row.machineDesc}</td>
                     <td className="p-2 text-foreground">
                       {row.machineRefCode}
                     </td>
@@ -372,58 +350,7 @@ export function DashboardContent() {
                     <td className="p-2 text-foreground">{row.maPeriodEnd}</td>
                     <td className="p-2 text-foreground">
                       {row.mWarrantyEndDate}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Customer Warranty Summary Report table */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle>Customer Warranty Summary Report</CardTitle>
-          <CardDescription>
-            Machine count summary by technician officer
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b-2 border-border">
-                  <th className="text-left p-2 font-semibold text-foreground">
-                    Officer Code
-                  </th>
-                  <th className="text-left p-2 font-semibold text-foreground">
-                    Officer Name
-                  </th>
-                  <th className="text-left p-2 font-semibold text-foreground">
-                    Team
-                  </th>
-                  <th className="text-left p-2 font-semibold text-foreground">
-                    Machine Count
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {warrantySummaryData.map((row, idx) => (
-                  <tr
-                    key={idx}
-                    className="border-b border-border hover:bg-secondary transition-colors"
-                  >
-                    <td className="p-2 text-foreground font-medium">
-                      {row.tOfficerCode}
-                    </td>
-                    <td className="p-2 text-foreground">{row.tOfficerName}</td>
-                    <td className="p-2 text-foreground">{row.team}</td>
-                    <td className="p-2">
-                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-bold">
-                        {row.machineCount}
-                      </span>
-                    </td>
+                    </td> */}
                   </tr>
                 ))}
               </tbody>
