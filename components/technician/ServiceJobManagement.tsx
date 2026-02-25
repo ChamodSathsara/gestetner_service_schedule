@@ -18,6 +18,8 @@ import {
   Hash,
   FileText,
   Bell,
+  Search,
+  X,
 } from "lucide-react";
 import { useApiConfig } from "@/hooks/apiconfig";
 import { Loading, LoadingDots, LoadingPulse } from "./Loading";
@@ -429,6 +431,7 @@ export default function ServiceJobManagement() {
   const [breakdownsList, setBreakdownsList] = useState<Job[] | any>([]);
   const [servicesList, setServicesList] = useState<Service[] | any>([]);
   const [duesList, setDuesList] = useState<Due[] | any>([]);
+  const [duesSearch, setDuesSearch] = useState<string>("");
 
   const fetchBreakdownsList = async () => {
     try {
@@ -600,13 +603,59 @@ export default function ServiceJobManagement() {
 
         {activeTab === "dues" && (
           <>
-            {duesList.map((due: any, idx: number) => (
-              <DueCard
-                key={`${due.id}-${idx}`}
-                due={due}
-                onRecall={handleRecallClick}
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                value={duesSearch}
+                onChange={(e) => setDuesSearch(e.target.value)}
+                placeholder="Search by machine ref no..."
+                className="w-full pl-9 pr-9 py-2 text-sm rounded-lg border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent placeholder:text-gray-400"
               />
-            ))}
+              {duesSearch && (
+                <button
+                  onClick={() => setDuesSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Result hint */}
+            {duesSearch.trim() && (
+              <p className="text-xs text-gray-500 px-1">
+                {
+                  duesList.filter((d: Due) =>
+                    d.machineRefNo
+                      .toLowerCase()
+                      .includes(duesSearch.toLowerCase()),
+                  ).length
+                }{" "}
+                result(s) for{" "}
+                <span className="font-semibold text-gray-700">
+                  "{duesSearch}"
+                </span>
+              </p>
+            )}
+
+            {/* Due Cards */}
+            {duesList
+              .filter((due: Due) =>
+                duesSearch.trim()
+                  ? due.machineRefNo
+                      .toLowerCase()
+                      .includes(duesSearch.toLowerCase())
+                  : true,
+              )
+              .map((due: any, idx: number) => (
+                <DueCard
+                  key={`${due.id}-${idx}`}
+                  due={due}
+                  onRecall={handleRecallClick}
+                />
+              ))}
           </>
         )}
       </div>

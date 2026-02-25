@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { use, useState } from "react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -11,9 +11,30 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Lock, User, Eye, EyeOff, ArrowRight } from "lucide-react";
+import {
+  Lock,
+  User,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  Building2,
+  ChevronDown,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+
+const COMPANIES = [
+  {
+    id: "001",
+    name: "Gestetner of Ceylon PLC",
+    logo: "https://www.gestetner.lk/wp-content/uploads/2023/11/footer-logo.jpg",
+  },
+  {
+    id: "002",
+    name: "Fintek Managed Solutions (PVT) LTD",
+    logo: "https://rainbowpages.lk/uploads/listings/logo/f/fintekman.jpg",
+  },
+];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,19 +43,28 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState<
+    (typeof COMPANIES)[0] | null
+  >(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setIsLoading(true);
+
+    if (!selectedCompany) {
+      setError("Please select a company");
+      return;
+    }
 
     if (!username || !password) {
       setError("Please enter username and password");
-      setIsLoading(false);
       return;
     }
+
+    setIsLoading(true);
 
     try {
       if (password === "customer") {
@@ -42,13 +72,12 @@ export default function LoginPage() {
           `${process.env.NEXT_PUBLIC_BASE_URL}api/Auth/login`,
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               tecH_CODE: username,
               seriaL_NO: username,
               password: password,
+              companyID: selectedCompany.id,
             }),
           },
         );
@@ -56,10 +85,9 @@ export default function LoginPage() {
         const data = await response.json();
 
         if (response.ok) {
-          login(data); // Save user & token in context + localStorage
+          login(data);
           router.push(`/customer-feedback-machines/${username}`);
         } else {
-          // API returned invalid credentials
           setError(data || "Invalid Serial Number");
         }
       } else {
@@ -67,12 +95,11 @@ export default function LoginPage() {
           `${process.env.NEXT_PUBLIC_BASE_URL}api/Auth/login`,
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               tecH_CODE: username,
               password: password,
+              companyID: selectedCompany.id,
             }),
           },
         );
@@ -80,10 +107,9 @@ export default function LoginPage() {
         const data = await response.json();
 
         if (response.ok) {
-          login(data); // Save user & token in context + localStorage
+          login(data);
           router.push("/technician-dashboard");
         } else {
-          // API returned invalid credentials
           setError(data || "Invalid Credentials");
         }
       }
@@ -109,50 +135,135 @@ export default function LoginPage() {
 
       <Card className="w-full max-w-md bg-white/95 backdrop-blur-sm border-0 shadow-2xl relative z-10">
         <CardHeader className="space-y-4 pb-8">
-          {/* Logo */}
+          {/* Logo — changes based on selected company */}
           <div className="flex items-center justify-center">
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-sky-500 rounded-2xl blur-lg opacity-30"></div>
-              <div className="relative bg-white rounded-2xl p-4 shadow-lg">
-                <img
-                  src="https://www.gestetner.lk/wp-content/uploads/2023/11/footer-logo.jpg"
-                  alt="Gestetner Logo"
-                  className="w-32 h-auto"
-                />
+              <div className="relative bg-white rounded-2xl p-4 shadow-lg flex items-center justify-center min-h-[80px] min-w-[160px]">
+                {selectedCompany ? (
+                  <img
+                    src={selectedCompany.logo}
+                    alt={`${selectedCompany.name} Logo`}
+                    className="w-32 h-auto max-h-14 object-contain transition-all duration-300"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-1 text-gray-300">
+                    <img
+                      src={
+                        "https://www.gestetner.lk/wp-content/uploads/2023/11/footer-logo.jpg"
+                      }
+                      alt={"Gestetner of Ceylon PLC"}
+                      className="w-32 h-auto max-h-14 object-contain transition-all duration-300"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          <div className="text-center space-y-2">
+          <div className="text-center space-y-1">
             <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-sky-500 bg-clip-text text-transparent">
               Welcome Back
             </CardTitle>
             <CardDescription className="text-base text-gray-600">
               Service Management System
             </CardDescription>
-            <p className="text-sm font-medium text-gray-500">
-              Gestetner of Ceylon PLC
-            </p>
+            {selectedCompany && (
+              <p className="text-sm font-semibold text-gray-500 transition-all duration-200">
+                {selectedCompany.name}
+              </p>
+            )}
           </div>
         </CardHeader>
 
         <CardContent className="space-y-6">
           <form onSubmit={handleLogin} className="space-y-5">
+            {/* Company Dropdown */}
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-blue-400" />
+                Company
+              </label>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className={`w-full h-12 pl-4 pr-10 bg-gray-50 border rounded-md text-left text-sm transition-all flex items-center
+                    ${
+                      selectedCompany
+                        ? "text-gray-900 border-blue-400 ring-2 ring-blue-400/20"
+                        : "text-gray-400 border-gray-200"
+                    }
+                    hover:border-blue-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20`}
+                >
+                  {selectedCompany ? (
+                    <span className="flex items-center gap-2 truncate">
+                      <img
+                        src={selectedCompany.logo}
+                        alt=""
+                        className="w-8 h-6 object-contain flex-shrink-0"
+                      />
+                      <span className="truncate">{selectedCompany.name}</span>
+                    </span>
+                  ) : (
+                    <span>Select your company</span>
+                  )}
+                  <ChevronDown
+                    className={`w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+
+                {dropdownOpen && (
+                  <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden">
+                    {COMPANIES.map((company) => (
+                      <button
+                        key={company.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCompany(company);
+                          setDropdownOpen(false);
+                          setError("");
+                        }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 text-left text-sm hover:bg-blue-50 transition-colors
+                          ${selectedCompany?.id === company.id ? "bg-blue-50" : ""}`}
+                      >
+                        <div className="w-12 h-9 flex items-center justify-center bg-white border border-gray-100 rounded p-0.5 flex-shrink-0">
+                          <img
+                            src={company.logo}
+                            alt={company.name}
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span
+                            className={`font-medium leading-tight truncate ${selectedCompany?.id === company.id ? "text-blue-600" : "text-gray-700"}`}
+                          >
+                            {company.name}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            Code: {company.id}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Username Field */}
             <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                 <User className="w-4 h-4 text-blue-400" />
                 Tech Code Or Mobile Number
               </label>
-              <div className="relative">
-                <Input
-                  type="text"
-                  placeholder="Enter your tech code or mobile number"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="h-12 pl-4 pr-4 bg-gray-50 border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"
-                />
-              </div>
+              <Input
+                type="text"
+                placeholder="Enter your tech code or mobile number"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="h-12 pl-4 pr-4 bg-gray-50 border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"
+              />
             </div>
 
             {/* Password Field */}
