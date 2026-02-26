@@ -85,7 +85,7 @@ export default function LoginPage() {
         const data = await response.json();
 
         if (response.ok) {
-          login(data);
+          login(data );
           router.push(`/customer-feedback-machines/${username}`);
         } else {
           setError(data || "Invalid Serial Number");
@@ -107,7 +107,7 @@ export default function LoginPage() {
         const data = await response.json();
 
         if (response.ok) {
-          login(data);
+          login(data, selectedCompany.id);
           router.push("/technician-dashboard");
         } else {
           setError(data || "Invalid Credentials");

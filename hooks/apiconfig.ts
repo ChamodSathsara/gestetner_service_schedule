@@ -339,7 +339,7 @@ const mapServiceVisits = (visits: ApiServiceVisit[]): ServiceVisit[] => {
 }
 
 export const useApiConfig = () => {
-  const { user } = useAuth()
+  const { user, companyID } = useAuth()
   const [showUnauthorizedDialog, setShowUnauthorizedDialog] = useState(false)
 
   const apiCall = async (endpoint: string, method: 'GET' | 'POST' = 'GET', body?: any) => {
@@ -484,7 +484,7 @@ export const useApiConfig = () => {
     },
 
     getServiceBySerialNoAndMachineNo : async (payload: getServicePayload) => {
-      const data =  await apiCallWithoutToken(`api/customerfeedback/getServiceByRowID?serialNo=${payload.serialNo}&rowId=${payload.rowId}&visitNo=${payload.visitNo+1}`)
+      const data =  await apiCallWithoutToken(`api/customerfeedback/getServiceByRowID?serialNo=${payload.serialNo}&rowId=${payload.rowId}&visitNo=${payload.visitNo+1}&companyID=${companyID}`)
       // const data2 = await apiCallNew(`api/customerfeedback/getServiceByRowID` , 'GET' ,payload )
       console.log("Services By Serial No Data:", data);
       const newData = mapNew(data);

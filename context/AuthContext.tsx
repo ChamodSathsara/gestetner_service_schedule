@@ -22,7 +22,8 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (userData: User) => void;
+  companyID: string | null;
+  login: (userData: User, companyID?: string) => void;
   logout: () => void;
   isLoading: boolean; // Add loading state
 }
@@ -31,30 +32,41 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [companyID, setCompanyID] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true); // Add loading state
 
   // Load user from localStorage on mount
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
+    const storedCompanyID = localStorage.getItem("companyID");
     if (storedUser) {
       setUser(JSON.parse(storedUser));
+    }
+    if (storedCompanyID) {
+      setCompanyID(storedCompanyID);
     }
     setIsLoading(false); // Mark as loaded
   }, []);
 
-  const login = (userData: User) => {
+  const login = (userData: User, companyIDValue?: string) => {
     console.log("Logging in user:", userData);
     setUser(userData);
     localStorage.setItem("user", JSON.stringify(userData));
+    if (companyIDValue) {
+      setCompanyID(companyIDValue);
+      localStorage.setItem("companyID", companyIDValue);
+    }
   };
 
   const logout = () => {
     setUser(null);
+    setCompanyID(null);
     localStorage.removeItem("user");
+    localStorage.removeItem("companyID");
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, companyID, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
