@@ -126,6 +126,7 @@ interface CustomerFeedBack {
   rating:number,
   review:string,
   type: "job" | "service"
+  companyId: string
 }
 
   

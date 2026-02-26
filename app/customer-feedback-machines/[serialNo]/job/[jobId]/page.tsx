@@ -74,6 +74,7 @@ export default function JobReviewPage() {
       customerName: customerName,
       jobId: jobId,
       type: "job" as const,
+      companyId: companyID || "",
     };
 
     try {

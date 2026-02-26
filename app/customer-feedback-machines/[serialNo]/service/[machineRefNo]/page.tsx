@@ -84,6 +84,7 @@ export default function ServiceReviewPage() {
       rating,
       review,
       type: "service" as const,
+      companyId: companyID || "",
     };
 
     try {
