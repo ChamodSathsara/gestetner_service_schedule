@@ -6,12 +6,15 @@ import { useApiConfig } from "@/hooks/apiconfig";
 import UnauthorizedDialog from "@/components/technician/UnauthorizedDialog";
 import { Loading } from "@/components/technician/Loading";
 import { se } from "date-fns/locale";
+import { useSearchParams } from "next/navigation";
 
 export default function JobReviewPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const serialNo = params.serialNo as string;
   const jobId = params.jobId as string;
+  const companyID = searchParams.get("CompanyID");
 
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
@@ -20,6 +23,8 @@ export default function JobReviewPage() {
   const [customerName, setCustomerName] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+
+  console.log("Company ID from params: ", companyID);
   const {
     getJobBySerialNoAndMachineNo,
     addFeedback,
@@ -38,7 +43,11 @@ export default function JobReviewPage() {
   const fetchJobDetails = async () => {
     try {
       setIsLoading(true);
-      const jobDetails = await getJobBySerialNoAndMachineNo(serialNo, jobId);
+      const jobDetails = await getJobBySerialNoAndMachineNo(
+        serialNo,
+        jobId,
+        companyID || "",
+      );
 
       setJobsData(jobDetails);
       setIsLoading(false);

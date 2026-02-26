@@ -23,8 +23,10 @@ export default function ServiceReviewPage() {
   } = useApiConfig();
 
   const serialNo = params.serialNo as string;
+  const companyID = searchParams.get("CompanyID");
   const machineRefNo = params.machineRefNo as string;
   const visitNo = Number(searchParams.get("visitNo"));
+  console.log("Company ID:", companyID);
 
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
@@ -49,6 +51,7 @@ export default function ServiceReviewPage() {
         serialNo,
         rowId: Number(machineRefNo),
         visitNo: visitNo || 0,
+        companyID: companyID || "",
       };
 
       const serviceData = await getServiceBySerialNoAndMachineNo(data);

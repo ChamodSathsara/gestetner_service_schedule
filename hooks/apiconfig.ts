@@ -85,6 +85,7 @@ interface getServicePayload {
   serialNo: string
   visitNo: number
   rowId: number
+  companyID: string
 }
 
 interface ApiServiceVisit {
@@ -484,7 +485,7 @@ export const useApiConfig = () => {
     },
 
     getServiceBySerialNoAndMachineNo : async (payload: getServicePayload) => {
-      const data =  await apiCallWithoutToken(`api/customerfeedback/getServiceByRowID?serialNo=${payload.serialNo}&rowId=${payload.rowId}&visitNo=${payload.visitNo+1}&companyID=${companyID}`)
+      const data =  await apiCallWithoutToken(`api/customerfeedback/getServiceByRowID?serialNo=${payload.serialNo}&rowId=${payload.rowId}&visitNo=${payload.visitNo+1}&companyID=${payload.companyID}`)
       // const data2 = await apiCallNew(`api/customerfeedback/getServiceByRowID` , 'GET' ,payload )
       console.log("Services By Serial No Data:", data);
       const newData = mapNew(data);
@@ -492,8 +493,8 @@ export const useApiConfig = () => {
       return newData;
     },
 
-    getJobBySerialNoAndMachineNo : async (serialNo : string, jobID: string) => {
-      const data =  await apiCallWithoutToken(`api/customerfeedback/getJobsWithSerial?serialNo=${serialNo}&jobID=${jobID}`)
+    getJobBySerialNoAndMachineNo : async (serialNo : string, jobID: string , companyID: string) => {
+      const data =  await apiCallWithoutToken(`api/customerfeedback/getJobsWithSerial?serialNo=${serialNo}&jobID=${jobID}&companyID=${companyID}`)
       console.log("Jobs By Serial No Data:", data);
       const newData = mapJobsBySerialNoJobObj(data);
       console.log("Mapped Job Data:", newData);

@@ -49,7 +49,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = (userData: User, companyIDValue?: string) => {
-    console.log("Logging in user:", userData);
+    console.log(
+      "Logging in user:",
+      userData,
+      "with companyID:",
+      companyIDValue,
+    );
     setUser(userData);
     localStorage.setItem("user", JSON.stringify(userData));
     if (companyIDValue) {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,7 @@ import QRCode from "react-qr-code";
 import { Copy, Share2 } from "lucide-react";
 import UnauthorizedDialog from "./UnauthorizedDialog";
 import Swal from "sweetalert2";
+import { set } from "date-fns";
 
 interface Job {
   model: any;
@@ -87,6 +88,7 @@ export function JobDetailsDialog({
   const [recallReason, setRecallReason] = useState(""); // New state for recall reason
   const [isLoading, setIsLoading] = useState(false);
   const [showPreviousVisits, setShowPreviousVisits] = useState(false);
+  const [companyID, setCompanyID] = useState<string>("");
   const [previousServices, setPreviousServices] =
     useState<PreviousServiceData | null>();
 
@@ -106,6 +108,15 @@ export function JobDetailsDialog({
     addRecallJob,
   } = useApiConfig();
   const { user } = useAuth();
+
+  useEffect(() => {
+    const storedCompanyID = localStorage.getItem("companyID");
+    console.log(
+      "Stored Company ID:++++++++++++++++++++++++++++++++++++++++++===============",
+      storedCompanyID,
+    );
+    setCompanyID(storedCompanyID || "");
+  }, []);
 
   useEffect(() => {
     fetchSolutionCategories();
@@ -718,8 +729,8 @@ export function JobDetailsDialog({
                     <QRCode
                       value={
                         varient === "service"
-                          ? `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/service/${job.jobId}?visitNo=${job.expected_visit_no - 1}`
-                          : `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/job/${job.jobId}`
+                          ? `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/service/${job.jobId}?visitNo=${job.expected_visit_no - 1}?CompanyID=${companyID}`
+                          : `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/job/${job.jobId}?CompanyID=${companyID}`
                       }
                       size={180}
                       level="Q"
@@ -753,8 +764,8 @@ export function JobDetailsDialog({
                       onClick={() => {
                         const link =
                           varient === "service"
-                            ? `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/service/${job.jobId}?visitNo=${job.expected_visit_no - 1}`
-                            : `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/job/${job.jobId}`;
+                            ? `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/service/${job.jobId}?visitNo=${job.expected_visit_no - 1}?CompanyID=${companyID}`
+                            : `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/job/${job.jobId}?CompanyID=${companyID}`;
 
                         if (navigator.share) {
                           navigator
@@ -783,8 +794,8 @@ export function JobDetailsDialog({
                   {/* Optional: Display the link for reference */}
                   <p className="text-xs text-gray-500 break-all">
                     {varient === "service"
-                      ? `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/service/${job.jobId}?visitNo=${job.expected_visit_no - 1}`
-                      : `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/job/${job.jobId}`}
+                      ? `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/service/${job.jobId}?visitNo=${job.expected_visit_no - 1}&CompanyID=${companyID}`
+                      : `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/job/${job.jobId}?CompanyID=${companyID}`}
                   </p>
                 </div>
 
