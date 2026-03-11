@@ -7,63 +7,102 @@ import {
   Wrench,
   ClipboardList,
   AlertTriangle,
+  ShieldCheck,
+  Users,
+  MessageSquare,
 } from "lucide-react";
 
 const reports = [
   {
-    id: "ns",
+    id: 1,
     title: "NS Base Report",
     subtitle: "No Service Machines",
     description:
       "Find all machines that have not received any service. Identify gaps in coverage and unserviced units across all regions.",
     icon: Search,
-    route: "/dailyReports/ns",
+    route: "/reports/1",
     accent: "#ef4444",
     tag: "No Service",
   },
   {
-    id: "fs",
+    id: 2,
     title: "FS Free Report",
     subtitle: "Free Service Due Next Month",
     description:
       "Locate machines whose free service period ends next month. Plan ahead and schedule timely service visits before expiry.",
     icon: Star,
-    route: "/dailyReports/fs",
+    route: "/reports/2",
     accent: "#3b82f6",
     tag: "Free Service",
   },
   {
-    id: "ma",
+    id: 3,
     title: "MA Base Report",
     subtitle: "Maintenance Agreement Expiry",
     description:
       "Discover machines under maintenance agreements expiring next month. Ensure renewals and continued coverage are handled proactively.",
     icon: Wrench,
-    route: "/dailyReports/ma",
+    route: "/reports/3",
     accent: "#10b981",
     tag: "Maintenance",
   },
   {
-    id: "job",
+    id: 4,
     title: "Daily Job Report",
     subtitle: "Technician Job Completion",
     description:
       "Review completed jobs per technician with timestamps and durations. Justify daily productivity and measure field performance.",
     icon: ClipboardList,
-    route: "/dailyReports/job",
+    route: "/reports/4",
     accent: "#f59e0b",
     tag: "Daily Jobs",
   },
   {
-    id: "back",
+    id: 5,
     title: "Back Lock Report",
     subtitle: "Uncompleted Jobs & Services",
     description:
       "Track all pending and incomplete jobs across technicians. Surface backlogs before they escalate into service failures.",
     icon: AlertTriangle,
-    route: "/dailyReports/back",
+    route: "/reports/5",
     accent: "#a855f7",
     tag: "Backlog",
+  },
+
+  // ✅ New Reports
+
+  {
+    id: 6,
+    title: "EX Report",
+    subtitle: "Extended Warranty Data",
+    description:
+      "Retrieve all machines under extended warranty coverage. Monitor warranty periods, expiry dates, and eligibility for service claims.",
+    icon: ShieldCheck,
+    route: "/reports/6",
+    accent: "#06b6d4",
+    tag: "Extended Warranty",
+  },
+  {
+    id: 7,
+    title: "Customer Base Report",
+    subtitle: "Complete Customer Information",
+    description:
+      "Access full customer records including contact details, machine allocations, service history, and agreement status.",
+    icon: Users,
+    route: "/reports/7",
+    accent: "#6366f1",
+    tag: "Customers",
+  },
+  {
+    id: 8,
+    title: "Customer Feedback Report",
+    subtitle: "Service & Job Feedback Analysis",
+    description:
+      "Analyze customer feedback for completed jobs and services. Track satisfaction levels, ratings, and recurring issues.",
+    icon: MessageSquare,
+    route: "/reports/8",
+    accent: "#ec4899",
+    tag: "Feedback",
   },
 ];
 
