@@ -729,7 +729,7 @@ export function JobDetailsDialog({
                     <QRCode
                       value={
                         varient === "service"
-                          ? `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/service/${job.jobId}?visitNo=${job.expected_visit_no - 1}?CompanyID=${companyID}`
+                          ? `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/service/${job.jobId}?visitNo=${job.expected_visit_no - 1}&CompanyID=${companyID}`
                           : `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/job/${job.jobId}?CompanyID=${companyID}`
                       }
                       size={180}
@@ -764,7 +764,7 @@ export function JobDetailsDialog({
                       onClick={() => {
                         const link =
                           varient === "service"
-                            ? `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/service/${job.jobId}?visitNo=${job.expected_visit_no - 1}?CompanyID=${companyID}`
+                            ? `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/service/${job.jobId}?visitNo=${job.expected_visit_no - 1}&CompanyID=${companyID}`
                             : `${process.env.NEXT_PUBLIC_FRONTEND_URL}customer-feedback-machines/${job.serialNo}/job/${job.jobId}?CompanyID=${companyID}`;
 
                         if (navigator.share) {
