@@ -9,6 +9,7 @@ import BackLoackReport from "@/components/manager/reports/BackLoackReport";
 import ExReport from "@/components/manager/reports/ExReport";
 import CustomerBaseReport from "@/components/manager/reports/CustomerBaseReport";
 import CustomerFeedbackReport from "@/components/manager/reports/CustomerFeedbackReport";
+import MonthlyServiceReport from "@/components/manager/reports/MonthlyServiceReport";
 
 const reportMap: Record<number, React.ComponentType> = {
   1: NsBaseReport,
@@ -19,6 +20,7 @@ const reportMap: Record<number, React.ComponentType> = {
   6: ExReport,
   7: CustomerBaseReport,
   8: CustomerFeedbackReport,
+  9 : MonthlyServiceReport
 };
 
 export default function ReportPage() {

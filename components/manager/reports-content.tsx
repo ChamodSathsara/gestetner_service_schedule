@@ -26,7 +26,7 @@ const reports = [
   },
   {
     id: 2,
-    title: "FS Free Report",
+    title: "FS Report",
     subtitle: "Free Service Due Next Month",
     description:
       "Locate machines whose free service period ends next month. Plan ahead and schedule timely service visits before expiry.",
@@ -59,7 +59,7 @@ const reports = [
   },
   {
     id: 5,
-    title: "Back Lock Report",
+    title: "Back Log Report",
     subtitle: "Uncompleted Jobs & Services",
     description:
       "Track all pending and incomplete jobs across technicians. Surface backlogs before they escalate into service failures.",
@@ -103,6 +103,17 @@ const reports = [
     route: "/reports/8",
     accent: "#ec4899",
     tag: "Feedback",
+  },
+  {
+    id: 9,
+    title: "Monthly Service Report",
+    subtitle: "List of Services ",
+    description:
+      "Analyze customer feedback for completed jobs and services. Track satisfaction levels, ratings, and recurring issues.",
+    icon: MessageSquare,
+    route: "/reports/9",
+    accent: "#ec4899",
+    tag: "Service List",
   },
 ];
 

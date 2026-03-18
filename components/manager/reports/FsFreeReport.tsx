@@ -430,7 +430,7 @@ export default function FsFreeReport() {
 
   // ── Export PDF (print window)
   const downloadPDF = () => {
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>FS Free Report</title>
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>FS Report</title>
     <style>
       @page { margin: 15mm; }
       * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -454,7 +454,7 @@ export default function FsFreeReport() {
       .footer { margin: 16px 24px 0; padding-top: 10px; border-top: 1px solid #e2e8f0; font-size: 9px; color: #94a3b8; display: flex; justify-content: space-between; }
     </style></head><body>
     <div class="hdr">
-      <h1>FS Free Report</h1>
+      <h1>FS Report</h1>
       <div class="sub">Generated ${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })} &nbsp;•&nbsp; ${filtered.length} Records &nbsp;•&nbsp; Team: ${team}</div>
     </div>
     <div class="stats">
@@ -486,7 +486,7 @@ export default function FsFreeReport() {
       </tbody>
     </table>
     <div class="footer">
-      <span>FS Free Report — Confidential</span>
+      <span>FS Report — Confidential</span>
       <span>${new Date().toLocaleString("en-GB")}</span>
     </div>
     </body></html>`;
@@ -604,7 +604,7 @@ export default function FsFreeReport() {
                   letterSpacing: "-0.5px",
                 }}
               >
-                FS Free Report
+                FS Report
               </h1>
             </div>
           </div>
@@ -1270,7 +1270,7 @@ export default function FsFreeReport() {
                 fontWeight: 600,
               }}
             >
-              FS FREE REPORT • {new Date().getFullYear()}
+              FS REPORT • {new Date().getFullYear()}
             </div>
           </div>
         </div>
