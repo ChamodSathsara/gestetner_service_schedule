@@ -90,13 +90,18 @@ export default function LoginPage() {
         } else {
           setError(data || "Invalid Serial Number");
         }
-      } else if (password === "manager") {
+      } 
+      
+      else if (password === "manager") {
+        // use this temporely until manager login is implemented in the backend
         console.log("Manager login successful");
         const user = new Object() as any; // Create a user object with necessary properties
         user.role = "manager"; // Set role for manager
         login(user); // Save user & token in context + localStorage
         router.push(`/dashboard`);
-      } else {
+      } 
+      
+      else {
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_BASE_URL}api/Auth/login`,
           {
@@ -112,13 +117,24 @@ export default function LoginPage() {
 
         const data = await response.json();
 
+        console.log(response);
+
         if (response.ok) {
-          login(data, selectedCompany.id);
-          router.push("/technician-dashboard");
+          if (data.USER_ROLE != "tech") {
+            console.log("Manager login successful");
+            login(data, selectedCompany.id);
+            router.push(`/dashboard`);
+            
+          } else {
+            console.log("Technician login successful");
+            login(data, selectedCompany.id);
+            router.push("/technician-dashboard");
+          }
         } else {
           setError(data || "Invalid Credentials");
         }
       }
+      
     } catch (err) {
       console.error(err);
       setError("Something went wrong. Please try again.");
@@ -138,7 +154,6 @@ export default function LoginPage() {
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-300/20 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-sky-300/20 rounded-full blur-3xl animate-pulse delay-700"></div>
       </div>
-
 
       <Card className="w-full max-w-md bg-white/95 backdrop-blur-sm border-0 shadow-2xl relative z-10">
         <CardHeader className="space-y-4 pb-8">
