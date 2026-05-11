@@ -1,34 +1,36 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Sidebar } from "./sidebar"
+import type React from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Sidebar } from "./sidebar";
 
 interface ProtectedLayoutProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 interface User {
-  username: string
-  role: string
+  tecH_NAME: string;
+  useR_NAME?: string;
+  useR_ROLE?: string;
 }
 
 export function ProtectedLayout({ children }: ProtectedLayoutProps) {
-  const router = useRouter()
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user")
+    const storedUser = JSON.parse(localStorage.getItem("user") || "{}") as User;
+    console.log(storedUser);
     if (!storedUser) {
-      router.push("/")
+      router.push("/");
     } else {
-      setUser(JSON.parse(storedUser))
-      setIsLoading(false)
+      setUser(storedUser);
+      setIsLoading(false);
     }
-  }, [router])
+  }, [router]);
 
   if (isLoading) {
     return (
@@ -38,39 +40,57 @@ export function ProtectedLayout({ children }: ProtectedLayoutProps) {
           <p className="text-gray-500">Loading...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (!user) {
-    return null
+    return null;
   }
 
-  const isTechnician = user.role === "technician"
+  var role = user.useR_ROLE || "unknown";
+  if (role === "m_tech") {
+    role = "technician";
+  }
+  if (role === "s_tech") {
+    role = "technician";
+  }
+  if (role === "t_leader") {
+    role = "technician";
+  }
+  if (role === "tech") {
+    role = "technician";
+  } else if (role === "ADMIN") {
+    role = "admin";
+  } else if (role === "MANAGER") {
+    role = "manager";
+  } else if (role === "BRANCH_MANAGER") {
+    role = "branch_leader";
+  } else if (role === "DATA_ANTRY") {
+    role = "data_entry";
+  } else {
+    role = "unknown";
+  }
+
+  const isTechnician = role === "technician";
 
   return (
     <div className="flex h-screen bg-white">
       {/* Sidebar only for non-technician users */}
       {!isTechnician && (
         <Sidebar
-          userRole={user.role}
-          username={user.username}
+          userRole={role}
+          username={user.tecH_NAME || user.useR_NAME || "unknown"}
           onCollapsedChange={setIsCollapsed}
         />
       )}
 
       <main
         className={`flex-1 overflow-auto transition-all duration-300 ${
-          !isTechnician
-            ? isCollapsed
-              ? "md:ml-20"
-              : "md:ml-64"
-            : ""
+          !isTechnician ? (isCollapsed ? "md:ml-20" : "md:ml-64") : ""
         }`}
       >
-        <div className="h-full flex items-start justify-center">
-          {children}
-        </div>
+        <div className="h-full flex items-start justify-center">{children}</div>
       </main>
     </div>
-  )
+  );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -32,6 +32,13 @@ export function Sidebar({
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  console.log(
+    "Sidebar rendered with userRole:",
+    userRole,
+    "and username:",
+    username,
+  );
 
   const handleLogout = () => {
     // Note: localStorage is used here per existing code

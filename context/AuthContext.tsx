@@ -17,6 +17,7 @@ interface User {
   area?: string;
   city?: string;
   USER_ROLE?: string;
+  // useR_ROLE?: string;
   iS_ACTIVE?: boolean;
   serialNo?: string;
 }
