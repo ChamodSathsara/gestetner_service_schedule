@@ -97,7 +97,9 @@ export default function LoginPage() {
         user.role = "manager"; // Set role for manager
         login(user); // Save user & token in context + localStorage
         router.push(`/dashboard`);
-      } else {
+      } 
+      
+      else {
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_BASE_URL}api/Auth/login`,
           {
@@ -116,14 +118,14 @@ export default function LoginPage() {
 
         const data = await response.json();
 
-        console.log(response);
+        console.log(data);
 
         if (response.ok) {
           if (
-            data.USER_ROLE === "tech" ||
-            data.USER_ROLE === "m_tech" ||
-            data.USER_ROLE === "s_tech" ||
-            data.USER_ROLE === "t_leader"
+            data.useR_ROLE === "tech" ||
+            data.useR_ROLE === "m_tech" ||
+            data.useR_ROLE === "s_tech" ||
+            data.useR_ROLE === "t_leader"
           ) {
             console.log("Technician login successful");
             console.log(data);
