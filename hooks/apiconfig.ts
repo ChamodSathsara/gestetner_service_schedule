@@ -129,9 +129,6 @@ interface CustomerFeedBack {
   companyId: string
 }
 
-  
- 
-
 // Service update payload
 interface ServiceUpdatePayload {
   techCode: string
@@ -143,6 +140,79 @@ interface ServiceUpdatePayload {
   solution?: string
   solutionCategory?:any
 }
+
+// Management side Apis______________________________________________________
+interface GetJobAndServiceCountAndRate {
+  jobCount: number;
+  successCount: number;
+  jobRate: number;
+}
+
+interface JobPercentageItem {
+  name: string;
+  value: number;
+}
+
+type GetCompleteAndPendingJobAndServicePercentage = JobPercentageItem[];
+
+interface LastWeekJobPerformanceItem {
+  date: string;
+  pending: number;
+  completed: number;
+  started: number;
+  cancel: number;
+  total: number;
+}
+
+type GetLastWeekJobPerformence = LastWeekJobPerformanceItem[];
+
+
+interface TechnicianPerformance {
+  tech_id: string;
+  name: string;
+  completedJobs: number;
+  rating: number;
+  services: number;
+  breakdowns: number;
+}
+
+type GetTechniciansPerformance = TechnicianPerformance[];
+
+interface OldestDueJob {
+  djId: string;
+  serialNo: string;
+  machineRefNo: string;
+  customerName: string;
+  customerAddress: string;
+  customerContact: string;
+  customerTelNo: string;
+  teamId: string;
+  teamName: string;
+  djDate: string; // format: YYYY-MM-DD
+  techCode: string;
+  techMobile: string;
+  machineModelId: string;
+  machineModelName: string;
+  customerStatus: string;
+  jobStatus: string;
+  note: string;
+  daysOverdue: string; // coming as string in API (can convert to number if needed)
+}
+
+type GetOldestDueJobs = OldestDueJob[];
+
+interface AreaJobSummary {
+  area: string;
+  ns: number;
+  fs: number;
+  ma: number;
+  ex: number;
+  total: number;
+}
+
+type GetAreaWiseJobSummary = AreaJobSummary[];
+
+
 
 // Breakdown Mapping functions
 const mapCustomerAgreement = (cusStatus: string): string => {
@@ -552,6 +622,51 @@ export const useApiConfig = () => {
       const test = await apiCall('api/helpdesk/helpRequest', 'POST', payload); 
       return test;    
     },
+
+    // Management Side APIs___________________________________________________________________________________________
+    getJobCountAndRate: async (): Promise<GetJobAndServiceCountAndRate> => {
+      const data = await apiCall(`/api/Management/getJobCountAndRate`);
+      return data;
+    } , 
+    getServiceCountAndRate: async (): Promise<GetJobAndServiceCountAndRate> => {
+      const data = await apiCall(`/api/Management/getServiceCountAndRate`);
+      return data;
+    }
+    ,
+    getPendingJobs: async (): Promise<Job[]> => {
+      const data = await apiCall(`/api/Management/getPendingJobs`);
+      return mapBreakdownsToJobs(data);
+    },
+    getPendingServices: async (): Promise<ServiceVisit[]> => {
+      const data = await apiCall(`/api/Management/getPendingServices`);
+      return mapServiceVisits(data);
+    },
+    getCompleteAndPendingJobPercentage: async (): Promise<GetCompleteAndPendingJobAndServicePercentage> => {
+      const data = await apiCall(`/api/Management/getCompleteAndPendingJobPercentage`);
+      return data;
+    },
+    getCompleteAndPendingServicesPercentage: async (): Promise<GetCompleteAndPendingJobAndServicePercentage> => {
+      const data = await apiCall(`/api/Management/getCompleteAndPendingServicePercentage`);
+      return data;
+    },
+    getLastWeekJobPerformence: async (): Promise<GetLastWeekJobPerformence> => {
+      const data = await apiCall(`/api/Management/getLastWeekJobPerformence`);
+      return data;
+    }
+    ,getTechniciansPerformance: async (): Promise<GetTechniciansPerformance> => {
+      const data = await apiCall(`/api/Management/getTechniciansPerformance`);
+      return data;
+    },
+    getOldestDueJobs: async (): Promise<GetOldestDueJobs> => {
+      const data = await apiCall(`/api/Management/getOldestDueJobs`);
+      return data;
+    }
+    ,getCustomerWarranty: async (): Promise<GetAreaWiseJobSummary> => {
+      const data = await apiCall(`/api/Management/getCustomerWarranty`);
+      return data;
+    }
+
+
   }
 }
 
