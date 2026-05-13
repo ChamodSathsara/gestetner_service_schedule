@@ -142,20 +142,21 @@ interface ServiceUpdatePayload {
 }
 
 // Management side Apis______________________________________________________
-interface GetJobAndServiceCountAndRate {
+export interface GetJobAndServiceCountAndRate {
   jobCount: number;
   successCount: number;
   jobRate: number;
 }
 
-interface JobPercentageItem {
+ export interface JobPercentageItem {
+  fill: string | undefined
   name: string;
   value: number;
 }
 
-type GetCompleteAndPendingJobAndServicePercentage = JobPercentageItem[];
+ export type GetCompleteAndPendingJobAndServicePercentage = JobPercentageItem[];
 
-interface LastWeekJobPerformanceItem {
+ export interface LastWeekJobPerformanceItem {
   date: string;
   pending: number;
   completed: number;
@@ -164,7 +165,7 @@ interface LastWeekJobPerformanceItem {
   total: number;
 }
 
-type GetLastWeekJobPerformence = LastWeekJobPerformanceItem[];
+export type GetLastWeekJobPerformence = LastWeekJobPerformanceItem[];
 
 
 interface TechnicianPerformance {
@@ -176,9 +177,9 @@ interface TechnicianPerformance {
   breakdowns: number;
 }
 
-type GetTechniciansPerformance = TechnicianPerformance[];
+export type GetTechniciansPerformance = TechnicianPerformance[];
 
-interface OldestDueJob {
+ export interface OldestDueJob {
   djId: string;
   serialNo: string;
   machineRefNo: string;
@@ -199,7 +200,7 @@ interface OldestDueJob {
   daysOverdue: string; // coming as string in API (can convert to number if needed)
 }
 
-type GetOldestDueJobs = OldestDueJob[];
+export type GetOldestDueJobs = OldestDueJob[];
 
 interface AreaJobSummary {
   area: string;
@@ -210,9 +211,58 @@ interface AreaJobSummary {
   total: number;
 }
 
-type GetAreaWiseJobSummary = AreaJobSummary[];
+export type GetAreaWiseJobSummary = AreaJobSummary[];
 
+// Add this interface near your other interfaces
+export interface PendingJob {
+  id: string;
+  technician: string;
+  jobType: string;
+  location: string;
+  daysLeft: number;
+}
 
+export type Technician = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  zone: string;
+  allJobs: number;
+  pendingJobs: number;
+  jobPerformancePercentage: number;
+  allServices: number;
+  pendingServices: number;
+  servicePerformancePercentage: number;
+};
+
+// Add this mapping function near your other mapping functions
+const mapOldestDueJobsToPendingJobs = (jobs: OldestDueJob[]): PendingJob[] => {
+  return jobs
+    .slice(0, 5) // Select only top 5
+    .map((job) => ({
+      id: job.machineRefNo,
+      technician: job.techCode,
+      jobType: job.teamName,
+      location: job.customerAddress,
+      daysLeft: parseInt(job.daysOverdue, 10) || 0
+    }));
+};
+
+// Add this mapping function near your other mapping functions
+const mapJobPercentageWithColors = (data: GetCompleteAndPendingJobAndServicePercentage): JobPercentageItem[] => {
+  const colorMap: { [key: string]: string } = {
+    'Completed': '#22c55e',  // green
+    'Started': '#3b82f6',     // blue
+    'Pending': '#ef4444',     // red
+    'Cansel': '#f59e0b'       // amber/orange (for cancelled jobs)
+  }
+
+  return data.map(item => ({
+    ...item,
+    fill: colorMap[item.name] || '#6b7280' // default gray if status not found
+  }))
+}
 
 // Breakdown Mapping functions
 const mapCustomerAgreement = (cusStatus: string): string => {
@@ -288,7 +338,7 @@ export const mapJobsBySerialNoJobObj = (item: any): Job => {
 };
 
 const mapJobStatus = (jobStatus: string): string => {
-    console.log("Mapping job status:", jobStatus);
+    // console.log("Mapping job status:", jobStatus);
   const statusMap: { [key: string]: string } = {
     'TECH ALLOCATED': 'pending',
     'STARTED': 'started',
@@ -625,44 +675,62 @@ export const useApiConfig = () => {
 
     // Management Side APIs___________________________________________________________________________________________
     getJobCountAndRate: async (): Promise<GetJobAndServiceCountAndRate> => {
-      const data = await apiCall(`/api/Management/getJobCountAndRate`);
+      console.log("1. Fetching Job Count and Rate...");
+      const data = await apiCall(`api/Management/getJobCountAndRate`);
       return data;
     } , 
     getServiceCountAndRate: async (): Promise<GetJobAndServiceCountAndRate> => {
-      const data = await apiCall(`/api/Management/getServiceCountAndRate`);
+      console.log("2. Fetching Service Count and Rate...");
+      const data = await apiCall(`api/Management/getServiceCountAndRate`);
       return data;
     }
     ,
     getPendingJobs: async (): Promise<Job[]> => {
-      const data = await apiCall(`/api/Management/getPendingJobs`);
+      console.log("3. Fetching Pending Jobs...");
+      const data = await apiCall(`api/Management/getPendingJobs`);
       return mapBreakdownsToJobs(data);
     },
-    getPendingServices: async (): Promise<ServiceVisit[]> => {
-      const data = await apiCall(`/api/Management/getPendingServices`);
-      return mapServiceVisits(data);
-    },
-    getCompleteAndPendingJobPercentage: async (): Promise<GetCompleteAndPendingJobAndServicePercentage> => {
-      const data = await apiCall(`/api/Management/getCompleteAndPendingJobPercentage`);
-      return data;
-    },
-    getCompleteAndPendingServicesPercentage: async (): Promise<GetCompleteAndPendingJobAndServicePercentage> => {
-      const data = await apiCall(`/api/Management/getCompleteAndPendingServicePercentage`);
-      return data;
-    },
+    // getPendingServices: async (): Promise<ServiceVisit[]> => {
+    //   console.log("4. Fetching Pending Services...");
+    //   const data = await apiCall(`api/Management/getPendingServices`);
+    //   return mapServiceVisits(data);
+    // },
+   getCompleteAndPendingJobPercentage: async (): Promise<GetCompleteAndPendingJobAndServicePercentage> => {
+  console.log("5. Fetching Complete and Pending Job Percentage...");
+  const data = await apiCall(`api/Management/getCompleteAndPendingJobPercentage`);
+  return mapJobPercentageWithColors(data);
+},
+
+getCompleteAndPendingServicesPercentage: async (): Promise<GetCompleteAndPendingJobAndServicePercentage> => {
+  console.log("6. Fetching Complete and Pending Services Percentage...");
+  const data = await apiCall(`api/Management/getCompleteAndPendingServicesPercentage`);
+  return mapJobPercentageWithColors(data);
+},
     getLastWeekJobPerformence: async (): Promise<GetLastWeekJobPerformence> => {
-      const data = await apiCall(`/api/Management/getLastWeekJobPerformence`);
+      console.log("7. Fetching Last Week Job Performance...");
+      const data = await apiCall(`api/Management/getLastWeekJobPerformence`);
       return data;
     }
     ,getTechniciansPerformance: async (): Promise<GetTechniciansPerformance> => {
-      const data = await apiCall(`/api/Management/getTechniciansPerformance`);
+      console.log("8. Fetching Technicians Performance...");
+      const data = await apiCall(`api/Management/getTechniciansPerformance`);
       return data;
     },
-    getOldestDueJobs: async (): Promise<GetOldestDueJobs> => {
-      const data = await apiCall(`/api/Management/getOldestDueJobs`);
-      return data;
+    // Update your API call to use the mapping
+    getOldestDueJobs: async (): Promise<PendingJob[]> => {
+      console.log("9. Fetching Oldest Due Jobs...");
+      const data = await apiCall(`api/Management/getOldestDueJobs`);
+      return mapOldestDueJobsToPendingJobs(data);
     }
     ,getCustomerWarranty: async (): Promise<GetAreaWiseJobSummary> => {
-      const data = await apiCall(`/api/Management/getCustomerWarranty`);
+      console.log("10. Fetching Customer Warranty...");
+      const data = await apiCall(`api/Management/getCustomerWarranty`);
+      return data;
+    },
+
+    getTechnitianDetails: async (): Promise<Technician> => {
+      console.log("11. Fetching Technician Details...");
+      const data = await apiCall(`api/Management/getTechnitianDetails`);
       return data;
     }
 

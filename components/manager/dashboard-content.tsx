@@ -22,18 +22,99 @@ import {
 } from "recharts";
 import { Users, CheckCircle2, AlertCircle, TrendingUp } from "lucide-react";
 import { mockDataConfig } from "@/lib/data-config";
+import {
+  GetAreaWiseJobSummary,
+  GetCompleteAndPendingJobAndServicePercentage,
+  GetJobAndServiceCountAndRate,
+  GetLastWeekJobPerformence,
+  GetOldestDueJobs,
+  GetTechniciansPerformance,
+  Job,
+  PendingJob,
+  useApiConfig,
+} from "@/hooks/apiconfig";
+import { useEffect, useState } from "react";
+
+interface JobPercentageItem {
+  name: string;
+  value: number;
+  fill?: string; // Add this line
+}
 
 export function DashboardContent() {
+  const [JobCountAndRate, setJobCountAndRate] =
+    useState<GetJobAndServiceCountAndRate>();
+  const [ServiceCountAndRate, setServiceCountAndRate] =
+    useState<GetJobAndServiceCountAndRate>();
+  const [PendingJobs, setPendingJobs] = useState<Job[]>();
+  const [PendingServices, setPendingServices] = useState<any>();
+  const [CustomerWarranty, setCustomerWarranty] =
+    useState<GetAreaWiseJobSummary>();
+  const [OldestDueJobs, setOldestDueJobs] = useState<PendingJob[]>();
+  const [TechniciansPerformance, setTechniciansPerformance] =
+    useState<GetTechniciansPerformance>();
+  const [LastWeekJobPerformence, setLastWeekJobPerformence] =
+    useState<GetLastWeekJobPerformence>();
+  const [
+    CompleteAndPendingServicesPercentage,
+    setCompleteAndPendingServicesPercentage,
+  ] = useState<JobPercentageItem[]>([]);
+  const [CompleteAndPendingJobPercentage, setCompleteAndPendingJobPercentage] =
+    useState<GetCompleteAndPendingJobAndServicePercentage>();
+
   // Import data from config instead of defining locally
+  const { warrantyDetailsDataNew } = mockDataConfig;
+
   const {
-    monthlyServiceSuccess,
-    monthlyBreakdownSuccess,
-    technicianSummaryData,
-    technicianPerformance,
-    pendingJobs,
-    warrantyDetailsDataNew,
-    warrantySummaryData,
-  } = mockDataConfig;
+    getCustomerWarranty,
+    getOldestDueJobs,
+    getTechniciansPerformance,
+    getLastWeekJobPerformence,
+    getCompleteAndPendingServicesPercentage,
+    getCompleteAndPendingJobPercentage,
+
+    getPendingJobs,
+    getServiceCountAndRate,
+    getJobCountAndRate,
+  } = useApiConfig(); // Placeholder for future API integration
+
+  useEffect(() => {
+    // Example of how to use the API functions - currently just logging results
+    const fetchData = async () => {
+      const jobCountAndRate = await getJobCountAndRate();
+      setJobCountAndRate(jobCountAndRate);
+
+      const serviceCountAndRate = await getServiceCountAndRate();
+      setServiceCountAndRate(serviceCountAndRate);
+
+      const pendingJobs: Job[] = await getPendingJobs();
+      setPendingJobs(pendingJobs);
+
+      const customerWarranty = await getCustomerWarranty();
+      setCustomerWarranty(customerWarranty);
+
+      const oldestDueJobs = await getOldestDueJobs();
+      setOldestDueJobs(oldestDueJobs);
+
+      const techniciansPerformance = await getTechniciansPerformance();
+      setTechniciansPerformance(techniciansPerformance);
+
+      const lastWeekJobPerformence = await getLastWeekJobPerformence();
+      setLastWeekJobPerformence(lastWeekJobPerformence);
+
+      const completeAndPendingServicesPercentage =
+        await getCompleteAndPendingServicesPercentage();
+      setCompleteAndPendingServicesPercentage(
+        completeAndPendingServicesPercentage,
+      );
+
+      const completeAndPendingJobPercentage =
+        await getCompleteAndPendingJobPercentage();
+      setCompleteAndPendingJobPercentage(completeAndPendingJobPercentage);
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <div className="w-full max-w-7xl px-4 md:px-8 py-4 md:py-8 space-y-8">
@@ -53,19 +134,25 @@ export function DashboardContent() {
             <CheckCircle2 className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">432</div>
-            <p className="text-xs text-muted-foreground">94% Success Rate</p>
+            <div className="text-2xl font-bold">
+              {JobCountAndRate?.jobCount || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {JobCountAndRate?.jobRate || 0}% Success Rate
+            </p>
           </CardContent>
         </Card>
 
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Jobs</CardTitle>
+            <CardTitle className="text-sm font-medium">Complete Jobs</CardTitle>
             <AlertCircle className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">47</div>
-            <p className="text-xs text-muted-foreground">Awaiting completion</p>
+            <div className="text-2xl font-bold">
+              {JobCountAndRate?.successCount || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">Last Year Completed</p>
           </CardContent>
         </Card>
 
@@ -77,22 +164,29 @@ export function DashboardContent() {
             <CheckCircle2 className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2345</div>
+            <div className="text-2xl font-bold">
+              {ServiceCountAndRate?.jobCount || 0}
+            </div>
 
-            <p className="text-xs text-muted-foreground"> 45% Success Rate</p>
+            <p className="text-xs text-muted-foreground">
+              {" "}
+              {ServiceCountAndRate?.jobRate || 0}% Success Rate
+            </p>
           </CardContent>
         </Card>
 
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Pending Services
+              Success Services
             </CardTitle>
             <AlertCircle className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">297</div>
-            <p className="text-xs text-muted-foreground">Awaiting completion</p>
+            <div className="text-2xl font-bold">
+              {ServiceCountAndRate?.successCount || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">Last Year Completed</p>
           </CardContent>
         </Card>
       </div>
@@ -109,7 +203,7 @@ export function DashboardContent() {
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
-                  data={monthlyServiceSuccess}
+                  data={CompleteAndPendingServicesPercentage || []}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -118,7 +212,7 @@ export function DashboardContent() {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {monthlyServiceSuccess.map((entry, index) => (
+                  {CompleteAndPendingServicesPercentage?.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
                   ))}
                 </Pie>
@@ -135,29 +229,37 @@ export function DashboardContent() {
             <CardDescription>Last 30 days completion rate</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={monthlyBreakdownSuccess}
+                  data={CompleteAndPendingJobPercentage || []}
                   cx="50%"
-                  cy="50%"
+                  cy="45%"
                   labelLine={false}
-                  label={({ name, value }) => `${name} ${value}%`}
-                  outerRadius={80}
+                  label={({ value }) => (value > 0 ? `${value}%` : "")}
+                  outerRadius={90}
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {monthlyBreakdownSuccess.map((entry, index) => (
+                  {CompleteAndPendingJobPercentage?.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip formatter={(value) => `${value}%`} />
+                <Legend
+                  verticalAlign="bottom"
+                  height={36}
+                  formatter={(value, entry: any) =>
+                    `${value}: ${entry.payload.value}%`
+                  }
+                />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
 
+      {/* Technician Summary Graph */}
       {/* Technician Summary Graph */}
       <Card className="bg-card border-border">
         <CardHeader>
@@ -168,7 +270,7 @@ export function DashboardContent() {
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={technicianSummaryData}>
+            <LineChart data={LastWeekJobPerformence}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
               <XAxis dataKey="date" stroke="rgba(0,0,0,0.5)" />
               <YAxis stroke="rgba(0,0,0,0.5)" />
@@ -183,21 +285,40 @@ export function DashboardContent() {
               <Line
                 type="monotone"
                 dataKey="pending"
-                stroke="#3b82f6"
+                stroke="#ef4444"
+                strokeWidth={2}
                 dot={false}
                 name="Pending Jobs"
               />
               <Line
                 type="monotone"
                 dataKey="completed"
-                stroke="#ef4444"
+                stroke="#22c55e"
+                strokeWidth={2}
                 dot={false}
                 name="Completed Jobs"
               />
               <Line
                 type="monotone"
+                dataKey="started"
+                stroke="#3b82f6"
+                strokeWidth={2}
+                dot={false}
+                name="Started Jobs"
+              />
+              <Line
+                type="monotone"
+                dataKey="cancel"
+                stroke="#f59e0b"
+                strokeWidth={2}
+                dot={false}
+                name="Cancelled Jobs"
+              />
+              <Line
+                type="monotone"
                 dataKey="total"
-                stroke="#22c55e"
+                stroke="#8b5cf6"
+                strokeWidth={2}
                 dot={false}
                 name="Total Jobs"
               />
@@ -216,9 +337,9 @@ export function DashboardContent() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {technicianPerformance.map((tech) => (
+              {TechniciansPerformance?.map((tech) => (
                 <div
-                  key={tech.id}
+                  key={tech.tech_id}
                   className="flex items-center justify-between p-3 bg-secondary rounded-lg"
                 >
                   <div className="flex items-center gap-3">
@@ -254,7 +375,7 @@ export function DashboardContent() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {pendingJobs.map((job) => (
+              {OldestDueJobs?.map((job: PendingJob) => (
                 <div
                   key={job.id}
                   className="p-3 border border-border rounded-lg hover:bg-secondary transition-colors"
@@ -323,12 +444,12 @@ export function DashboardContent() {
                 </tr>
               </thead>
               <tbody>
-                {warrantyDetailsDataNew.map((row, idx) => (
+                {CustomerWarranty?.map((row, idx) => (
                   <tr
                     key={idx}
                     className="border-b border-border hover:bg-secondary transition-colors"
                   >
-                    <td className="p-2 text-foreground">{row.erea}</td>
+                    <td className="p-2 text-foreground">{row.area}</td>
                     <td className="p-2 text-foreground">{row.ns}</td>
                     <td className="p-2 text-foreground">{row.fs}</td>
                     <td className="p-2 text-foreground">{row.ma}</td>
