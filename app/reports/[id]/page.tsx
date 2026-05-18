@@ -1,5 +1,6 @@
 "use client";
 
+
 import { notFound, useParams } from "next/navigation";
 import NsBaseReport from "@/components/manager/reports/NsBaseReport";
 import FsFreeReport from "@/components/manager/reports/FsFreeReport";
@@ -37,6 +38,7 @@ export default function ReportPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+
       <ReportComponent />
     </div>
   );

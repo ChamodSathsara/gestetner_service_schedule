@@ -1,1114 +1,1132 @@
-import React, { useState, useMemo } from "react";
+"use client";
+
+import React, { useState, useMemo, useCallback, useEffect } from "react";
+import { useApiConfig } from "@/hooks/apiconfig";
+
+// ─── Current-year defaults ────────────────────────────────────────────────────
+const CURRENT_YEAR = new Date().getFullYear();
+const DEFAULT_START = `${CURRENT_YEAR}-01-01`;
+const DEFAULT_END = `${CURRENT_YEAR}-12-31`;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+type JobStatus =
+  | "Completed"
+  | "Started"
+  | "Pending"
+  | "Pending Estimate"
+  | "Cancelled"
+  | string;
+type AgreementStatus = "MA" | "FS" | "NS" | "EX" | string;
+type TeamLabel =
+  | "Colombo"
+  | "Outstation"
+  | "Suburb"
+  | "P2P"
+  | "Laptop Repair"
+  | "Electronic"
+  | "POS"
+  | "Unknown"
+  | string;
 
-type AgreementStatus = "MA" | "FS" | "NS";
-type Team = "COL" | "OUT" | "SUB";
-type JobStatus = "Completed" | "Started" | "Pending" | "Cancel";
-
-interface DailyJob {
-  jobNumber: string;
-  jobDate: string;
-  serialNumber: string;
-  machineNumber: string;
-  modelNumber: string;
+interface MappedJob {
+  djId: string;
+  date: string;
+  serialNo: string;
+  machineRef: string;
+  model: string;
   techCode: string;
-  technicianName: string;
-  customerName: string;
-  address1: string;
-  address2: string;
-  address3: string;
-  mobile: string;
-  agreementStatus: AgreementStatus;
-  team: Team;
+  techMobile: string;
+  cusName: string;
+  cusStatus: AgreementStatus;
+  cusType: string;
   jobStatus: JobStatus;
+  team: TeamLabel;
+  addr: string;
+  tel: string;
+  note: string;
+  crBy: string;
+  crDate: string;
+  completedDate: string;
+  completeBy: string;
+  cancelledBy: string;
+  cancelledDate: string;
+  startedDate: string;
+  startedBy: string;
+  cancelReason: string;
+  solutionCat: string;
+  solution: string;
+  recallId: string;
 }
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
+// ─── Mapping helpers ──────────────────────────────────────────────────────────
+const STATUS_MAP: Record<string, string> = {
+  CANCELLED: "Cancelled",
+  COMPLETE: "Completed",
+  COMPLETED: "Completed",
+  "PENDING ESTIMATE": "Pending Estimate",
+  STARTED: "Started",
+  started: "Started",
+  "TECH ALLOCATED": "Pending",
+  COMPLET: "Completed",
+};
 
-const JOB_DATA: DailyJob[] = [
-  {
-    jobNumber: "DJ-0001",
-    jobDate: "2025-03-01",
-    serialNumber: "G617M750002",
-    machineNumber: "Q12669",
-    modelNumber: "MP 2014AD",
-    techCode: "3152",
-    technicianName: "DINESH SANJEEWA",
-    customerName: "CENTRAL CULTURAL FUND",
-    address1: "2ND STAGE, 04TH FLOOR",
-    address2: "SETHSIRIPAYA",
-    address3: "BATTARAMULLA",
-    mobile: "0112186308",
-    agreementStatus: "MA",
-    team: "COL",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0002",
-    jobDate: "2025-03-01",
-    serialNumber: "E336M150121",
-    machineNumber: "Q9712",
-    modelNumber: "MP2501SP",
-    techCode: "3152",
-    technicianName: "DINESH SANJEEWA",
-    customerName: "EMBASSY OF FRANCE",
-    address1: "NO: 89, ROSMEAD PLACE",
-    address2: "COLOMBO 07",
-    address3: "-",
-    mobile: "0112639401",
-    agreementStatus: "MA",
-    team: "COL",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0003",
-    jobDate: "2025-03-02",
-    serialNumber: "G637M340107",
-    machineNumber: "Q98580",
-    modelNumber: "MP 2014D",
-    techCode: "1024",
-    technicianName: "E.M.LAKSHMAN",
-    customerName: "NATURAL RESOURCES MANAGEMENT CENTER",
-    address1: "PERADENIYA",
-    address2: "-",
-    address3: "-",
-    mobile: "0812388155",
-    agreementStatus: "NS",
-    team: "OUT",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0004",
-    jobDate: "2025-03-02",
-    serialNumber: "G635MB40903",
-    machineNumber: "Q9617",
-    modelNumber: "MP 2014D",
-    techCode: "1024",
-    technicianName: "E.M.LAKSHMAN",
-    customerName: "K / TALATUOYA T.M.V",
-    address1: "TALATUOYA",
-    address2: "-",
-    address3: "-",
-    mobile: "0812404264",
-    agreementStatus: "NS",
-    team: "OUT",
-    jobStatus: "Started",
-  },
-  {
-    jobNumber: "DJ-0005",
-    jobDate: "2025-03-03",
-    serialNumber: "D261Z704017",
-    machineNumber: "Q19108",
-    modelNumber: "DD3344",
-    techCode: "3168",
-    technicianName: "VISHARA",
-    customerName: "NATIONAL HOUSING DEVELOPMENT AUTHORITY",
-    address1: "P.O.BOX.1826",
-    address2: "NO.34, SRI CHITTAMPALAM A GARD",
-    address3: "-",
-    mobile: "0342222298",
-    agreementStatus: "MA",
-    team: "SUB",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0006",
-    jobDate: "2025-03-03",
-    serialNumber: "G634Z260230",
-    machineNumber: "Q20202",
-    modelNumber: "MP2014D",
-    techCode: "3180",
-    technicianName: "HARSHA MALSHAN",
-    customerName: "RANGIRI DAMBULLA DEVELOPMENT FOUNDATION",
-    address1: "GOLDEN TEMPLE",
-    address2: "KANDY ROAD",
-    address3: "DAMBULLA",
-    mobile: "0716852449",
-    agreementStatus: "MA",
-    team: "SUB",
-    jobStatus: "Pending",
-  },
-  {
-    jobNumber: "DJ-0007",
-    jobDate: "2025-03-04",
-    serialNumber: "E338MA50080",
-    machineNumber: "Q14384",
-    modelNumber: "MP2501SP",
-    techCode: "3152",
-    technicianName: "DINESH SANJEEWA",
-    customerName: "NATIONAL AUDIT OFFICE",
-    address1: "NO :306/72",
-    address2: "POLDUWA ROAD",
-    address3: "BATTARAMULLA",
-    mobile: "0112887021",
-    agreementStatus: "MA",
-    team: "COL",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0008",
-    jobDate: "2025-03-04",
-    serialNumber: "G631M240179",
-    machineNumber: "Q18672",
-    modelNumber: "MP 2014D",
-    techCode: "3127",
-    technicianName: "FAZLAN AMEEN",
-    customerName: "JUBILEE AGENCIES (PVT) LTD",
-    address1: "NO: 104",
-    address2: "3RD CROSS STREET",
-    address3: "COLOMBO 11",
-    mobile: "0112389745",
-    agreementStatus: "NS",
-    team: "COL",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0009",
-    jobDate: "2025-03-05",
-    serialNumber: "G638M840129",
-    machineNumber: "Q14256",
-    modelNumber: "MP 2014D",
-    techCode: "3107",
-    technicianName: "GAYAN ASIRI",
-    customerName: "KITHSEWANA",
-    address1: "PAHARIYA",
-    address2: "ANURADHAPURA",
-    address3: "-",
-    mobile: "0763803500",
-    agreementStatus: "NS",
-    team: "OUT",
-    jobStatus: "Cancel",
-  },
-  {
-    jobNumber: "DJ-0010",
-    jobDate: "2025-03-05",
-    serialNumber: "G606MA50269",
-    machineNumber: "Q11847",
-    modelNumber: "MP 2014",
-    techCode: "3167",
-    technicianName: "NIRUSHAN",
-    customerName: "KM / SWAMY VIPULANANDA VIDYALAYAM",
-    address1: "MANALCHENAI",
-    address2: "KALMUNAI",
-    address3: "-",
-    mobile: "0774075211",
-    agreementStatus: "FS",
-    team: "OUT",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0011",
-    jobDate: "2025-03-06",
-    serialNumber: "G636M940128",
-    machineNumber: "Q10719",
-    modelNumber: "MP 2014D",
-    techCode: "3135",
-    technicianName: "A.KIRIYUTHAN",
-    customerName: "SEED & PLANTING MATERIAL DEVELOPMENT CENTRE",
-    address1: "DEPARTMENT OF AGRICULTURE",
-    address2: "OLD GALAHA RD",
-    address3: "PERADENIYA",
-    mobile: "081-2388100",
-    agreementStatus: "NS",
-    team: "OUT",
-    jobStatus: "Pending",
-  },
-  {
-    jobNumber: "DJ-0012",
-    jobDate: "2025-03-06",
-    serialNumber: "3081R220242",
-    machineNumber: "Q18564",
-    modelNumber: "IMC2000",
-    techCode: "3136",
-    technicianName: "MALITH SAMEERA",
-    customerName: "WAYAMBA CO-OPERATIVE RURAL BANK",
-    address1: "NO-107",
-    address2: "DAMBULLA ROAD",
-    address3: "KURUNEGALA",
-    mobile: "0372226191",
-    agreementStatus: "NS",
-    team: "OUT",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0013",
-    jobDate: "2025-03-07",
-    serialNumber: "E337M250055",
-    machineNumber: "Q12009",
-    modelNumber: "MP2501SP",
-    techCode: "3157",
-    technicianName: "DAKSHINA PRABATH",
-    customerName: "MINISTRY OF PORTS AND SHIPPING",
-    address1: "NO. 19",
-    address2: "CHAITHYA ROAD",
-    address3: "COLOMBO 01",
-    mobile: "0112320252",
-    agreementStatus: "FS",
-    team: "COL",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0014",
-    jobDate: "2025-03-07",
-    serialNumber: "G634ZA60170",
-    machineNumber: "Q20454",
-    modelNumber: "MP 2014D",
-    techCode: "3129",
-    technicianName: "J.S.RUSHANTH",
-    customerName: "BT/BW/KARAIYAKKANTHIVU GANESHER VIDYALAYA",
-    address1: "KANNANKUDAH",
-    address2: "-",
-    address3: "-",
-    mobile: "0778267702",
-    agreementStatus: "NS",
-    team: "OUT",
-    jobStatus: "Started",
-  },
-  {
-    jobNumber: "DJ-0015",
-    jobDate: "2025-03-08",
-    serialNumber: "D218Z500015",
-    machineNumber: "Q14826",
-    modelNumber: "DX2430",
-    techCode: "3123",
-    technicianName: "SOBAN N.",
-    customerName: "PRIMA (CEYLON) LTD",
-    address1: "NO:50, SRI JAYAWARDHANAPURA",
-    address2: "PARLIAMENT ROAD",
-    address3: "RAJAGIRIYA",
-    mobile: "0262233202",
-    agreementStatus: "NS",
-    team: "OUT",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0016",
-    jobDate: "2025-03-08",
-    serialNumber: "G633ZC60343",
-    machineNumber: "Q19762",
-    modelNumber: "MP2014D",
-    techCode: "3127",
-    technicianName: "FAZLAN AMEEN",
-    customerName: "ST ANTHONY'S T.M.V",
-    address1: "COLOMBO 14",
-    address2: "MAHAWATHTHA ROAD",
-    address3: "COLOMBO 14",
-    mobile: "-",
-    agreementStatus: "NS",
-    team: "COL",
-    jobStatus: "Pending",
-  },
-  {
-    jobNumber: "DJ-0017",
-    jobDate: "2025-03-09",
-    serialNumber: "E337M850358",
-    machineNumber: "Q12904",
-    modelNumber: "MP2501SP",
-    techCode: "8028",
-    technicianName: "DAMITH SANJAYA",
-    customerName: "COLOMBO MUNICIPAL COUNCIL",
-    address1: "PUBLIC HEALTH DEPARTMENT",
-    address2: "TOWN HALL DHARMAPALA MAWATHA",
-    address3: "COLOMBO 07",
-    mobile: "0705052729",
-    agreementStatus: "FS",
-    team: "COL",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0018",
-    jobDate: "2025-03-09",
-    serialNumber: "G630MC40193",
-    machineNumber: "Q17761",
-    modelNumber: "MP 2014D",
-    techCode: "3191",
-    technicianName: "PRADEEP SAMPATH",
-    customerName: "MR.P.B.I.A.K.DAYASIRI",
-    address1: "NO:197",
-    address2: "RATHNAPURA ROAD",
-    address3: "RILHENA, PELMADULLA",
-    mobile: "0718738854",
-    agreementStatus: "NS",
-    team: "OUT",
-    jobStatus: "Cancel",
-  },
-  {
-    jobNumber: "DJ-0019",
-    jobDate: "2025-03-10",
-    serialNumber: "G634ZB60314",
-    machineNumber: "Q20470",
-    modelNumber: "MP 2014D",
-    techCode: "3184",
-    technicianName: "DARSHANA RUKSHAN",
-    customerName: "MR.RANGA DILEEPA",
-    address1: "COOP MEEGOLLEWA",
-    address2: "TRACK 09",
-    address3: "MEDIRIGIRIYA",
-    mobile: "0740471036",
-    agreementStatus: "NS",
-    team: "OUT",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0020",
-    jobDate: "2025-03-10",
-    serialNumber: "G634Z960056",
-    machineNumber: "Q20307",
-    modelNumber: "MP 2014D",
-    techCode: "3154",
-    technicianName: "ARUNRAJ JEYASINGH",
-    customerName: "NATIONAL PEOPLE'S POWER OFFICE",
-    address1: "URUMPIRAI ROAD",
-    address2: "KOPAY JUNCTION",
-    address3: "KOPAY",
-    mobile: "0777539863",
-    agreementStatus: "NS",
-    team: "OUT",
-    jobStatus: "Started",
-  },
-  {
-    jobNumber: "DJ-0021",
-    jobDate: "2025-03-11",
-    serialNumber: "E338MA50087",
-    machineNumber: "Q14380",
-    modelNumber: "MP2501SP",
-    techCode: "8050",
-    technicianName: "LOCHANA MADUWANTHA",
-    customerName: "NATIONAL AUDIT OFFICE",
-    address1: "NO :306/72",
-    address2: "POLDUWA ROAD",
-    address3: "BATTARAMULLA",
-    mobile: "0112887021",
-    agreementStatus: "MA",
-    team: "COL",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0022",
-    jobDate: "2025-03-11",
-    serialNumber: "G618M750148",
-    machineNumber: "Q13897",
-    modelNumber: "MP 2014AD",
-    techCode: "3152",
-    technicianName: "DINESH SANJEEWA",
-    customerName: "MINISTRY OF POWER & RENEWABLE ENERGY",
-    address1: "NO: 72",
-    address2: "NANDA KUMARASWAMY MW",
-    address3: "COLOMBO 07",
-    mobile: "0778881546",
-    agreementStatus: "MA",
-    team: "COL",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0023",
-    jobDate: "2025-03-12",
-    serialNumber: "D261Z704083",
-    machineNumber: "Q18311",
-    modelNumber: "DD3344",
-    techCode: "3152",
-    technicianName: "DINESH SANJEEWA",
-    customerName: "CRIMINAL RECORDS DIVISION",
-    address1: "NO.40 MEDLAND PLACE",
-    address2: "COLOMBO 07",
-    address3: "-",
-    mobile: "0718015517",
-    agreementStatus: "MA",
-    team: "COL",
-    jobStatus: "Pending",
-  },
-  {
-    jobNumber: "DJ-0024",
-    jobDate: "2025-03-12",
-    serialNumber: "G600M950039",
-    machineNumber: "Q17955",
-    modelNumber: "MP 2014",
-    techCode: "3177",
-    technicianName: "RASITHA PERERA",
-    customerName: "REGIONAL DIRECTOR OF HEALTH SERVICES",
-    address1: "KEGALLE",
-    address2: "-",
-    address3: "-",
-    mobile: "0352222549",
-    agreementStatus: "NS",
-    team: "OUT",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0025",
-    jobDate: "2025-03-13",
-    serialNumber: "G630MA40053",
-    machineNumber: "Q17676",
-    modelNumber: "MP 2014D",
-    techCode: "3180",
-    technicianName: "HARSHA MALSHAN",
-    customerName: "RITZ CLOTHING YAPAHUWA (PVT)LTD",
-    address1: "ANURADHAPURA ROAD",
-    address2: "UDUWERIYA",
-    address3: "YAPAHUWWA",
-    mobile: "0768033370",
-    agreementStatus: "NS",
-    team: "OUT",
-    jobStatus: "Started",
-  },
-  {
-    jobNumber: "DJ-0026",
-    jobDate: "2025-03-13",
-    serialNumber: "D217Z300820",
-    machineNumber: "Q12006",
-    modelNumber: "DX2430",
-    techCode: "3188",
-    technicianName: "DULANJA NIROSHAN",
-    customerName: "ST.BENEDICT COLLEGE",
-    address1: "KANJUKKULIYA",
-    address2: "CHILAW",
-    address3: "-",
-    mobile: "0322220555",
-    agreementStatus: "NS",
-    team: "OUT",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0027",
-    jobDate: "2025-03-14",
-    serialNumber: "3281M730750",
-    machineNumber: "Q19175",
-    modelNumber: "M2701",
-    techCode: "8050",
-    technicianName: "LOCHANA MADUWANTHA",
-    customerName: "SRI LANKA SOCIAL SECURITY BOARD",
-    address1: "NO.18, RAJAGIRIYA ROAD",
-    address2: "RAJAGIRIYA",
-    address3: "-",
-    mobile: "0112886584",
-    agreementStatus: "NS",
-    team: "SUB",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0028",
-    jobDate: "2025-03-14",
-    serialNumber: "G618MB50081",
-    machineNumber: "Q14571",
-    modelNumber: "MP 2014AD",
-    techCode: "8036",
-    technicianName: "ASIRI SASANKA",
-    customerName: "DAGONNA WIMALANANDA VIDHYALAYA",
-    address1: "MINUWANGODA",
-    address2: "-",
-    address3: "-",
-    mobile: "0779008471",
-    agreementStatus: "NS",
-    team: "SUB",
-    jobStatus: "Cancel",
-  },
-  {
-    jobNumber: "DJ-0029",
-    jobDate: "2025-03-15",
-    serialNumber: "G611M650004",
-    machineNumber: "Q19149",
-    modelNumber: "MP2014AD",
-    techCode: "8058",
-    technicianName: "SUPUN DILHARA",
-    customerName: "NAVODYA SUPER",
-    address1: "1F1 KANDANA ROAD",
-    address2: "BOLLATHA",
-    address3: "GANEMULLA",
-    mobile: "-",
-    agreementStatus: "NS",
-    team: "SUB",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0030",
-    jobDate: "2025-03-15",
-    serialNumber: "G639M640008",
-    machineNumber: "Q16241",
-    modelNumber: "MP 2014D",
-    techCode: "3162",
-    technicianName: "MAHINDA",
-    customerName: "DEPARTMENT OF AGRICULTURE ENGINEERING",
-    address1: "DIVISION, BEE KEEPING UNIT",
-    address2: "BINDUNUWEWA",
-    address3: "BANDARAWELA",
-    mobile: "081-2388268",
-    agreementStatus: "NS",
-    team: "OUT",
-    jobStatus: "Pending",
-  },
-  {
-    jobNumber: "DJ-0031",
-    jobDate: "2025-03-16",
-    serialNumber: "G637M340063",
-    machineNumber: "Q11721",
-    modelNumber: "MP 2014D",
-    techCode: "3167",
-    technicianName: "NIRUSHAN",
-    customerName: "KM / ST / NAMAGAL VIDYALAYA",
-    address1: "UNIT 07, NAVITHANVELY",
-    address2: "-",
-    address3: "-",
-    mobile: "0767225255",
-    agreementStatus: "FS",
-    team: "OUT",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0032",
-    jobDate: "2025-03-16",
-    serialNumber: "E338MA50108",
-    machineNumber: "Q14379",
-    modelNumber: "MP2501SP",
-    techCode: "3168",
-    technicianName: "VISHARA",
-    customerName: "NATIONAL AUDIT OFFICE",
-    address1: "NO :306/72",
-    address2: "POLDUWA ROAD",
-    address3: "BATTARAMULLA",
-    mobile: "0112887021",
-    agreementStatus: "NS",
-    team: "OUT",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0033",
-    jobDate: "2025-03-17",
-    serialNumber: "3289MC30182",
-    machineNumber: "Q16855",
-    modelNumber: "M2701",
-    techCode: "3168",
-    technicianName: "VISHARA",
-    customerName: "POLICE SUPPLIES DIVISION",
-    address1: "POLICE HEADQUARTERS",
-    address2: "2ND FLOOR",
-    address3: "COLOMBO 01",
-    mobile: "0112421111",
-    agreementStatus: "NS",
-    team: "OUT",
-    jobStatus: "Started",
-  },
-  {
-    jobNumber: "DJ-0034",
-    jobDate: "2025-03-17",
-    serialNumber: "D212Z900685",
-    machineNumber: "Q5082",
-    modelNumber: "DX2430",
-    techCode: "4050",
-    technicianName: "THILINA LAKSHAN",
-    customerName: "KELANIYA ZONAL EDUCATION OFFICE",
-    address1: "MAKOLA",
-    address2: "-",
-    address3: "-",
-    mobile: "0112962025",
-    agreementStatus: "NS",
-    team: "SUB",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0035",
-    jobDate: "2025-03-18",
-    serialNumber: "G634ZA60022",
-    machineNumber: "Q20490",
-    modelNumber: "MP 2014D",
-    techCode: "8034",
-    technicianName: "SENAL KANISHKA",
-    customerName: "JAYA FREIGHT SOLUTIONS (PVT)LTD",
-    address1: "NO.401",
-    address2: "ROBERT GUNAWARDANA",
-    address3: "BATTARAMULLA",
-    mobile: "-",
-    agreementStatus: "NS",
-    team: "SUB",
-    jobStatus: "Cancel",
-  },
-  {
-    jobNumber: "DJ-0036",
-    jobDate: "2025-03-18",
-    serialNumber: "G619M750025",
-    machineNumber: "Q21144",
-    modelNumber: "MP 2014AD",
-    techCode: "3137",
-    technicianName: "KAVINDA LIYANAGE",
-    customerName: "VIN OCEAN SHIPPING LTD",
-    address1: "NO.267/15, GALLE ROAD",
-    address2: "COLOMBO 03",
-    address3: "-",
-    mobile: "0112301476",
-    agreementStatus: "NS",
-    team: "COL",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0037",
-    jobDate: "2025-03-19",
-    serialNumber: "E344MA51296",
-    machineNumber: "Q7667",
-    modelNumber: "MP2001L",
-    techCode: "8029",
-    technicianName: "RASIKA LAKMAL",
-    customerName: "DIVISIONAL SECRETARIAT",
-    address1: "HORANA",
-    address2: "-",
-    address3: "-",
-    mobile: "0343347478",
-    agreementStatus: "NS",
-    team: "SUB",
-    jobStatus: "Pending",
-  },
-  {
-    jobNumber: "DJ-0038",
-    jobDate: "2025-03-19",
-    serialNumber: "G633ZA60055",
-    machineNumber: "Q19625",
-    modelNumber: "MP2014D",
-    techCode: "8036",
-    technicianName: "ASIRI SASANKA",
-    customerName: "NEHAN ADS PRINTING & BOOKSHOP",
-    address1: "295/2 ASGIRIYA",
-    address2: "GAMPAHA",
-    address3: "-",
-    mobile: "-",
-    agreementStatus: "NS",
-    team: "SUB",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0039",
-    jobDate: "2025-03-20",
-    serialNumber: "G618M950133",
-    machineNumber: "Q14539",
-    modelNumber: "MP 2014AD",
-    techCode: "8058",
-    technicianName: "SUPUN DILHARA",
-    customerName: "WP/NG/NIWANDAMA JINARAJA PRIMARY SCHOOL",
-    address1: "NIWANDAMA",
-    address2: "JA ELA",
-    address3: "-",
-    mobile: "0711073685",
-    agreementStatus: "NS",
-    team: "SUB",
-    jobStatus: "Started",
-  },
-  {
-    jobNumber: "DJ-0040",
-    jobDate: "2025-03-20",
-    serialNumber: "3081R121697",
-    machineNumber: "Q18166",
-    modelNumber: "IMC2000",
-    techCode: "3185",
-    technicianName: "THARINDU THATHSARA",
-    customerName: "LANWA SANSTHA CEMENT CORPORATION PVT LTD",
-    address1: "NO:25 ALFRED PLACE",
-    address2: "COLOMBO 03",
-    address3: "-",
-    mobile: "-",
-    agreementStatus: "MA",
-    team: "SUB",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0041",
-    jobDate: "2025-03-21",
-    serialNumber: "G617M750016",
-    machineNumber: "Q12289",
-    modelNumber: "MP 2014AD",
-    techCode: "3162",
-    technicianName: "MAHINDA",
-    customerName: "SPECIAL TASK FORCE",
-    address1: "NO:223",
-    address2: "BAUDDHALOKA MW",
-    address3: "COLOMBO 07",
-    mobile: "0112500471",
-    agreementStatus: "MA",
-    team: "SUB",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0042",
-    jobDate: "2025-03-21",
-    serialNumber: "G633Z660035",
-    machineNumber: "Q19448",
-    modelNumber: "MP 2014D",
-    techCode: "3152",
-    technicianName: "DINESH SANJEEWA",
-    customerName: "BACK TO THE BIBLE BROADCAST",
-    address1: "NO:120 A",
-    address2: "DHARMAPALA MAWATHA",
-    address3: "COLOMBO 07",
-    mobile: "0112695441",
-    agreementStatus: "MA",
-    team: "COL",
-    jobStatus: "Pending",
-  },
-  {
-    jobNumber: "DJ-0043",
-    jobDate: "2025-03-22",
-    serialNumber: "C317R346023",
-    machineNumber: "Q21091",
-    modelNumber: "MP3555",
-    techCode: "3154",
-    technicianName: "ARUNRAJ JEYASINGH",
-    customerName: "GURU PRINTERS",
-    address1: "KONDAVIL",
-    address2: "IRUPALAI JUNCTION",
-    address3: "KOPAY",
-    mobile: "0212214777",
-    agreementStatus: "NS",
-    team: "OUT",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0044",
-    jobDate: "2025-03-22",
-    serialNumber: "L6916350130",
-    machineNumber: "Q3877",
-    modelNumber: "MP1600",
-    techCode: "8049",
-    technicianName: "ISURU GISHANTHA",
-    customerName: "STATE PRINTING CORPORATION",
-    address1: "PANALUWA",
-    address2: "PADUKKA",
-    address3: "-",
-    mobile: "0112757500",
-    agreementStatus: "NS",
-    team: "SUB",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0045",
-    jobDate: "2025-03-23",
-    serialNumber: "G633Z960094",
-    machineNumber: "Q19590",
-    modelNumber: "MP2014D",
-    techCode: "3180",
-    technicianName: "HARSHA MALSHAN",
-    customerName: "D.M.GUNATHILAKA",
-    address1: "NANNERIYA",
-    address2: "NAWAGATHEGAMA",
-    address3: "-",
-    mobile: "-",
-    agreementStatus: "NS",
-    team: "OUT",
-    jobStatus: "Cancel",
-  },
-  {
-    jobNumber: "DJ-0046",
-    jobDate: "2025-03-23",
-    serialNumber: "G616MB50197",
-    machineNumber: "Q10843",
-    modelNumber: "MP 2014AD",
-    techCode: "3168",
-    technicianName: "VISHARA",
-    customerName: "WP / KL / BANDARANAYAKA MAHA VIDYALAYA",
-    address1: "PAYAGALA",
-    address2: "-",
-    address3: "-",
-    mobile: "0342226160",
-    agreementStatus: "NS",
-    team: "OUT",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0047",
-    jobDate: "2025-03-24",
-    serialNumber: "E335MB50159",
-    machineNumber: "Q9158",
-    modelNumber: "MP2501SP",
-    techCode: "3168",
-    technicianName: "VISHARA",
-    customerName: "REWATHA VIDYALAYA",
-    address1: "BALAPITIYA",
-    address2: "-",
-    address3: "-",
-    mobile: "0912258243",
-    agreementStatus: "NS",
-    team: "OUT",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0048",
-    jobDate: "2025-03-24",
-    serialNumber: "G638M540058",
-    machineNumber: "Q98978",
-    modelNumber: "MP 2014D",
-    techCode: "3152",
-    technicianName: "DINESH SANJEEWA",
-    customerName: "MINISTRY OF HIGHER EDUCATION",
-    address1: "NO:18, WARD PLACE",
-    address2: "COLOMBO 07",
-    address3: "-",
-    mobile: "0112694486",
-    agreementStatus: "MA",
-    team: "COL",
-    jobStatus: "Started",
-  },
-  {
-    jobNumber: "DJ-0049",
-    jobDate: "2025-03-25",
-    serialNumber: "G607M750017",
-    machineNumber: "Q12688",
-    modelNumber: "MP 2014",
-    techCode: "3127",
-    technicianName: "FAZLAN AMEEN",
-    customerName: "SANTHOSHI S. HEART ASSOCIATES",
-    address1: "NO : 30,2/1, WILSON STREET",
-    address2: "COLOMBO 12",
-    address3: "-",
-    mobile: "0112473331",
-    agreementStatus: "MA",
-    team: "COL",
-    jobStatus: "Completed",
-  },
-  {
-    jobNumber: "DJ-0050",
-    jobDate: "2025-03-25",
-    serialNumber: "G634ZB60235",
-    machineNumber: "Q20482",
-    modelNumber: "MP 2014D",
-    techCode: "3152",
-    technicianName: "DINESH SANJEEWA",
-    customerName: "JOINT APPAREL ASSOCIATION",
-    address1: "NO:107, HUNUPITIYA LAKE ROAD",
-    address2: "COLOMBO 02",
-    address3: "-",
-    mobile: "0710337765",
-    agreementStatus: "FS",
-    team: "COL",
-    jobStatus: "Pending",
-  },
-];
+const TEAM_MAP: Record<string, TeamLabel> = {
+  COL: "Colombo",
+  OUT: "Outstation",
+  SUB: "Suburb",
+  "ELE OUT": "Electronic",
+  "LPR COL": "Laptop Repair",
+  "LPR OUT": "Laptop Repair",
+  "LPR SUB": "Laptop Repair",
+  our: "Unknown",
+  P2P: "P2P",
+  "P2P COL": "P2P",
+  "P2P OUT": "P2P",
+  "P2P SUB": "P2P",
+  PC: "Unknown",
+  PCS: "Unknown",
+  POS: "POS",
+  PP: "Unknown",
+  CONSUMABLE: "Unknown",
+  DEL: "Unknown",
+  WS: "Unknown",
+  WORKSHOP: "Unknown",
+  "-": "Unknown",
+  "0": "Unknown",
+  "": "Unknown",
+};
 
-// ─── Constants & helpers ──────────────────────────────────────────────────────
+const AGREE_LABEL: Record<string, string> = {
+  MA: "Maintenance Agreement",
+  FS: "Free Service",
+  NS: "No Service",
+  EX: "Extended Service",
+};
 
+function mapStatus(s: string | null | undefined): string {
+  if (!s) return "Pending";
+  return STATUS_MAP[s] ?? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
+function mapTeam(t: string | null | undefined): TeamLabel {
+  if (!t) return "Unknown";
+  return TEAM_MAP[t.trim()] ?? TEAM_MAP[t.trim().toUpperCase()] ?? "Unknown";
+}
+function mapRow(r: any): MappedJob {
+  return {
+    djId: r.dJ_ID ?? r.DJ_ID ?? "",
+    date: r.dJ_DATE ?? r.DJ_DATE ?? "",
+    serialNo: r.seriaL_NO ?? r.SERIAL_NO ?? "",
+    machineRef: r.machinE_REF_NO ?? r.MACHINE_REF_NO ?? "",
+    model: r.machinE_MODEL_NAME ?? r.MACHINE_MODEL_NAME ?? "",
+    techCode: r.tecH_CODE ?? r.TECH_CODE ?? "",
+    techMobile: r.tecH_MOBILE ?? r.TECH_MOBILE ?? "",
+    cusName: r.cuS_NAME ?? r.CUS_NAME ?? "",
+    cusStatus: r.cuS_STATUS ?? r.CUS_STATUS ?? "",
+    cusType: r.cuS_TYPE ?? r.CUS_TYPE ?? "",
+    jobStatus: mapStatus(r.joB_STATUS ?? r.JOB_STATUS),
+    team: mapTeam(r.teaM_NAME ?? r.TEAM_NAME),
+    addr: [
+      r.cuS_ADD1 ?? r.CUS_ADD1,
+      r.cuS_ADD2 ?? r.CUS_ADD2,
+      r.cuS_ADD3 ?? r.CUS_ADD3,
+    ]
+      .filter((a) => a && a !== "-")
+      .join(", "),
+    tel: r.cuS_TEL_NO ?? r.CUS_TEL_NO ?? "",
+    note: r.note ?? r.NOTE ?? "",
+    crBy: r.cR_BY ?? r.CR_BY ?? "",
+    crDate: r.cR_DATE ?? r.CR_DATE ?? "",
+    completedDate: r.completeD_DATE ?? r.COMPLETED_DATE ?? "",
+    completeBy: r.completE_BY ?? r.COMPLETE_BY ?? "",
+    cancelledBy: r.cancelleD_BY ?? r.CANCELLED_BY ?? "",
+    cancelledDate: r.cancelleD_DATE ?? r.CANCELLED_DATE ?? "",
+    startedDate: r.starteD_DATE ?? r.STARTED_DATE ?? "",
+    startedBy: r.starteD_BY ?? r.STARTED_BY ?? "",
+    cancelReason: r.cancelleD_REASON ?? r.CANCELLED_REASON ?? "",
+    solutionCat: r.solutioN_CATEGORY ?? r.SOLUTION_CATEGORY ?? "",
+    solution: r.completE_SOLUTION ?? r.COMPLETE_SOLUTION ?? "",
+    recallId: r.recalL_ID ?? r.RECALL_ID ?? "",
+  };
+}
+
+// ─── Duration helpers ─────────────────────────────────────────────────────────
+
+/** Returns diff in minutes between two ISO date strings, or null */
+function diffMinutes(
+  from: string | null | undefined,
+  to: string | null | undefined,
+): number | null {
+  if (!from || !to) return null;
+  const a = new Date(from).getTime();
+  const b = new Date(to).getTime();
+  if (isNaN(a) || isNaN(b) || b <= a) return null;
+  return Math.round((b - a) / 60000);
+}
+
+/** Format minutes → "Xh Ym" or "Ym" */
+function fmtMins(mins: number | null): string {
+  if (mins === null) return "—";
+  if (mins < 60) return `${mins}m`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+
+/**
+ * Duration badge colour rules:
+ *  ≤ 120 min  → green
+ *  121–180    → blue
+ *  > 180      → red
+ */
+function durationCfg(
+  mins: number | null,
+): { bg: string; color: string; border: string } | null {
+  if (mins === null) return null;
+  if (mins <= 120)
+    return { bg: "#F0FDF4", color: "#166534", border: "#BBF7D0" };
+  if (mins <= 180)
+    return { bg: "#EFF6FF", color: "#1D4ED8", border: "#BFDBFE" };
+  return { bg: "#FEF2F2", color: "#991B1B", border: "#FECACA" };
+}
+
+// ─── Style configs ────────────────────────────────────────────────────────────
 const STATUS_CFG: Record<
-  JobStatus,
-  { bg: string; color: string; dot: string; label: string }
+  string,
+  { bg: string; color: string; dot: string; border: string }
 > = {
   Completed: {
-    bg: "#dcfce7",
-    color: "#15803d",
-    dot: "#22c55e",
-    label: "Completed",
+    bg: "#F0FDF4",
+    color: "#166534",
+    dot: "#22C55E",
+    border: "#BBF7D0",
   },
   Started: {
-    bg: "#dbeafe",
-    color: "#1d4ed8",
-    dot: "#3b82f6",
-    label: "Started",
+    bg: "#EFF6FF",
+    color: "#1D4ED8",
+    dot: "#3B82F6",
+    border: "#BFDBFE",
   },
   Pending: {
-    bg: "#fef9c3",
-    color: "#a16207",
-    dot: "#eab308",
-    label: "Pending",
+    bg: "#FFFBEB",
+    color: "#92400E",
+    dot: "#F59E0B",
+    border: "#FDE68A",
   },
-  Cancel: {
-    bg: "#fee2e2",
-    color: "#b91c1c",
-    dot: "#ef4444",
-    label: "Cancelled",
+  "Pending Estimate": {
+    bg: "#FFFBEB",
+    color: "#92400E",
+    dot: "#F59E0B",
+    border: "#FDE68A",
+  },
+  Cancelled: {
+    bg: "#FEF2F2",
+    color: "#991B1B",
+    dot: "#EF4444",
+    border: "#FECACA",
   },
 };
 
-const AGREE_CFG: Record<AgreementStatus, { bg: string; color: string }> = {
-  MA: { bg: "#d1fae5", color: "#065f46" },
-  FS: { bg: "#dbeafe", color: "#1e40af" },
-  NS: { bg: "#f1f5f9", color: "#475569" },
-};
+const AGREE_CFG: Record<string, { bg: string; color: string; border: string }> =
+  {
+    MA: { bg: "#F0FDF4", color: "#166534", border: "#BBF7D0" },
+    FS: { bg: "#EFF6FF", color: "#1D4ED8", border: "#BFDBFE" },
+    NS: { bg: "#F8FAFC", color: "#475569", border: "#E2E8F0" },
+    EX: { bg: "#F5F3FF", color: "#5B21B6", border: "#DDD6FE" },
+  };
 
-const TEAM_CFG: Record<Team, { bg: string; color: string }> = {
-  COL: { bg: "#ede9fe", color: "#5b21b6" },
-  OUT: { bg: "#dcfce7", color: "#166534" },
-  SUB: { bg: "#fef3c7", color: "#92400e" },
-};
+const TEAM_CFG: Record<string, { bg: string; color: string; border: string }> =
+  {
+    Colombo: { bg: "#F5F3FF", color: "#5B21B6", border: "#DDD6FE" },
+    Outstation: { bg: "#F0FDF4", color: "#166534", border: "#BBF7D0" },
+    Suburb: { bg: "#FFFBEB", color: "#92400E", border: "#FDE68A" },
+    P2P: { bg: "#EFF6FF", color: "#1D4ED8", border: "#BFDBFE" },
+    "Laptop Repair": { bg: "#FDF2F8", color: "#9D174D", border: "#FBCFE8" },
+    Electronic: { bg: "#ECFDF5", color: "#065F46", border: "#A7F3D0" },
+    POS: { bg: "#FFF7ED", color: "#9A3412", border: "#FED7AA" },
+    Unknown: { bg: "#F8FAFC", color: "#475569", border: "#E2E8F0" },
+  };
 
-function fmt(d: string) {
+const STAT_COUNT_CFG = [
+  { key: "ALL", label: "Total", darkColor: "#94A3B8" },
+  { key: "Completed", label: "Completed", darkColor: "#4ADE80" },
+  { key: "Started", label: "Started", darkColor: "#60A5FA" },
+  { key: "Pending", label: "Pending", darkColor: "#FCD34D" },
+  { key: "Cancelled", label: "Cancelled", darkColor: "#F87171" },
+];
+
+const PAGE_SIZE = 15;
+
+// ─── Utility ──────────────────────────────────────────────────────────────────
+function fmtDate(d: string | null | undefined): string {
   if (!d) return "—";
-  const [y, m, day] = d.split("-");
-  return `${day}/${m}/${y}`;
+  try {
+    return new Date(d).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return d;
+  }
 }
-
-function toCSV(data: DailyJob[]): string {
-  const h = [
-    "Job No",
-    "Job Date",
+function fmtDateTime(d: string | null | undefined): string {
+  if (!d) return "—";
+  try {
+    return new Date(d).toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return d;
+  }
+}
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function toCSV(data: MappedJob[]): string {
+  const headers = [
+    "DJ ID",
+    "Date",
     "Serial No",
-    "Q.No",
+    "Machine Ref",
     "Model",
     "Tech Code",
-    "Technician",
     "Customer",
-    "Address 1",
-    "Address 2",
-    "Address 3",
-    "Mobile",
     "Agreement",
     "Team",
-    "Status",
+    "Job Status",
+    "Tel No",
+    "Address",
+    "Created By",
+    "Created Date",
+    "Completed By",
+    "Completed Date",
+    "Started By",
+    "Started Date",
+    "Cancelled By",
+    "Cancelled Date",
+    "Cancel Reason",
+    "Solution Category",
+    "Solution",
   ];
   const rows = data.map((r) => [
-    r.jobNumber,
-    r.jobDate,
-    r.serialNumber,
-    r.machineNumber,
-    r.modelNumber,
+    r.djId,
+    r.date,
+    r.serialNo,
+    r.machineRef,
+    r.model,
     r.techCode,
-    r.technicianName,
-    r.customerName,
-    r.address1,
-    r.address2,
-    r.address3,
-    r.mobile,
-    r.agreementStatus,
+    r.cusName,
+    r.cusStatus,
     r.team,
     r.jobStatus,
+    r.tel,
+    r.addr,
+    r.crBy,
+    r.crDate,
+    r.completeBy,
+    r.completedDate,
+    r.startedBy,
+    r.startedDate,
+    r.cancelledBy,
+    r.cancelledDate,
+    r.cancelReason,
+    r.solutionCat,
+    r.solution,
   ]);
-  return [h, ...rows]
+  return [headers, ...rows]
     .map((row) =>
-      row.map((c) => `"${(c ?? "").replace(/"/g, '""')}"`).join(","),
+      row.map((c) => `"${(c ?? "").toString().replace(/"/g, '""')}"`).join(","),
     )
     .join("\n");
 }
 
-function download(csv: string, name: string) {
-  const b = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const u = URL.createObjectURL(b);
-  const a = document.createElement("a");
-  a.href = u;
-  a.download = name;
-  a.click();
-  URL.revokeObjectURL(u);
+// ─── Small badge ──────────────────────────────────────────────────────────────
+function Badge({
+  children,
+  bg,
+  color,
+  border,
+  dot,
+}: {
+  children: React.ReactNode;
+  bg: string;
+  color: string;
+  border: string;
+  dot?: string;
+}) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        padding: "2px 8px",
+        borderRadius: 20,
+        fontSize: 11,
+        fontWeight: 600,
+        background: bg,
+        color,
+        border: `1px solid ${border}`,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {dot && (
+        <span
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: "50%",
+            background: dot,
+            flexShrink: 0,
+          }}
+        />
+      )}
+      {children}
+    </span>
+  );
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+function StatusBadge({ status }: { status: string }) {
+  const cfg = STATUS_CFG[status];
+  if (!cfg)
+    return (
+      <span style={{ fontSize: 11, color: "#64748B" }}>{status || "—"}</span>
+    );
+  return (
+    <Badge bg={cfg.bg} color={cfg.color} border={cfg.border} dot={cfg.dot}>
+      {status}
+    </Badge>
+  );
+}
+function AgreeBadge({ status }: { status: string }) {
+  const cfg = AGREE_CFG[status];
+  if (!cfg)
+    return (
+      <span style={{ fontSize: 11, color: "#64748B" }}>{status || "—"}</span>
+    );
+  return (
+    <Badge bg={cfg.bg} color={cfg.color} border={cfg.border}>
+      {status}
+    </Badge>
+  );
+}
+function TeamBadge({ team }: { team: string }) {
+  const cfg = TEAM_CFG[team] ?? TEAM_CFG["Unknown"];
+  return (
+    <Badge bg={cfg.bg} color={cfg.color} border={cfg.border}>
+      {team}
+    </Badge>
+  );
+}
+function DurationBadge({
+  mins,
+  label,
+}: {
+  mins: number | null;
+  label: string;
+}) {
+  const cfg = durationCfg(mins);
+  if (!cfg || mins === null)
+    return (
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: 10, color: "#94A3B8", marginBottom: 2 }}>
+          {label}
+        </div>
+        <span style={{ fontSize: 11, color: "#CBD5E1" }}>—</span>
+      </div>
+    );
+  return (
+    <div style={{ textAlign: "center" }}>
+      <div style={{ fontSize: 10, color: "#94A3B8", marginBottom: 2 }}>
+        {label}
+      </div>
+      <Badge bg={cfg.bg} color={cfg.color} border={cfg.border}>
+        {fmtMins(mins)}
+      </Badge>
+    </div>
+  );
+}
 
+function Chip({
+  label,
+  selected,
+  cfg,
+  onClick,
+}: {
+  label: string;
+  selected: boolean;
+  cfg?: { bg: string; color: string; border: string };
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: "5px 13px",
+        borderRadius: 20,
+        border:
+          selected && cfg ? `1px solid ${cfg.border}` : "1px solid #E2E8F0",
+        background: selected ? (cfg?.bg ?? "#0F172A") : "white",
+        color: selected ? (cfg?.color ?? "white") : "#475569",
+        fontSize: 12,
+        fontWeight: 600,
+        cursor: "pointer",
+        transition: "all 0.15s",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+// ─── Timeline section in drawer ───────────────────────────────────────────────
+function TimelineSection({ job }: { job: MappedJob }) {
+  const goSiteMins = diffMinutes(job.crDate, job.startedDate);
+  const completeMins = diffMinutes(job.startedDate, job.completedDate);
+
+  const Step = ({
+    dot,
+    title,
+    by,
+    date,
+    active,
+  }: {
+    dot: string;
+    title: string;
+    by?: string;
+    date?: string;
+    active: boolean;
+  }) => (
+    <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <div
+          style={{
+            width: 12,
+            height: 12,
+            borderRadius: "50%",
+            background: active ? dot : "#E2E8F0",
+            border: `2px solid ${active ? dot : "#E2E8F0"}`,
+            flexShrink: 0,
+            marginTop: 2,
+          }}
+        />
+        <div
+          style={{ width: 2, flex: 1, background: "#F1F5F9", marginTop: 3 }}
+        />
+      </div>
+      <div style={{ paddingBottom: 4 }}>
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color: active ? "#0F172A" : "#94A3B8",
+          }}
+        >
+          {title}
+        </div>
+        {by && (
+          <div style={{ fontSize: 11, color: "#64748B", marginTop: 1 }}>
+            {by}
+          </div>
+        )}
+        {date && (
+          <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 1 }}>
+            {fmtDateTime(date)}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div
+      style={{
+        background: "#F8FAFC",
+        borderRadius: 10,
+        padding: "14px 16px",
+        marginBottom: 16,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: 1,
+          color: "#94A3B8",
+          textTransform: "uppercase",
+          marginBottom: 12,
+        }}
+      >
+        Timeline
+      </div>
+
+      {/* Steps */}
+      <Step
+        dot="#3B82F6"
+        title="Job Created"
+        by={job.crBy}
+        date={job.crDate}
+        active={!!job.crDate}
+      />
+      <Step
+        dot="#F59E0B"
+        title="On-Site / Started"
+        by={job.startedBy}
+        date={job.startedDate}
+        active={!!job.startedDate}
+      />
+      {job.completeBy && (
+        <Step
+          dot="#22C55E"
+          title="Completed"
+          by={job.completeBy}
+          date={job.completedDate}
+          active={!!job.completedDate}
+        />
+      )}
+      {job.cancelledBy && (
+        <Step
+          dot="#EF4444"
+          title="Cancelled"
+          by={job.cancelledBy}
+          date={job.cancelledDate}
+          active={!!job.cancelledDate}
+        />
+      )}
+
+      {/* Duration summary */}
+      {(goSiteMins !== null || completeMins !== null) && (
+        <div
+          style={{
+            display: "flex",
+            gap: 12,
+            marginTop: 8,
+            paddingTop: 12,
+            borderTop: "1px solid #E2E8F0",
+          }}
+        >
+          <DurationBadge mins={goSiteMins} label="Go-Site Time" />
+          <DurationBadge mins={completeMins} label="Complete Time" />
+        </div>
+      )}
+
+      {/* Legend */}
+      <div
+        style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}
+      >
+        {[
+          { label: "≤ 2h", bg: "#F0FDF4", color: "#166534", border: "#BBF7D0" },
+          { label: "2–3h", bg: "#EFF6FF", color: "#1D4ED8", border: "#BFDBFE" },
+          { label: "> 3h", bg: "#FEF2F2", color: "#991B1B", border: "#FECACA" },
+        ].map((l) => (
+          <span
+            key={l.label}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              fontSize: 10,
+              padding: "2px 7px",
+              borderRadius: 10,
+              background: l.bg,
+              color: l.color,
+              border: `1px solid ${l.border}`,
+            }}
+          >
+            {l.label}
+          </span>
+        ))}
+        <span style={{ fontSize: 10, color: "#94A3B8", alignSelf: "center" }}>
+          — duration colour guide
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Detail drawer ────────────────────────────────────────────────────────────
+function JobDetailDrawer({
+  job,
+  onClose,
+}: {
+  job: MappedJob;
+  onClose: () => void;
+}) {
+  const acfg = AGREE_CFG[job.cusStatus];
+
+  const Field = ({ label, value }: { label: string; value?: string }) =>
+    value ? (
+      <div style={{ marginBottom: 10 }}>
+        <div
+          style={{
+            fontSize: 11,
+            color: "#94A3B8",
+            fontWeight: 600,
+            marginBottom: 2,
+          }}
+        >
+          {label}
+        </div>
+        <div style={{ fontSize: 13, color: "#1E293B" }}>{value}</div>
+      </div>
+    ) : null;
+
+  return (
+    <>
+      <div
+        onClick={onClose}
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(15,23,42,0.35)",
+          zIndex: 40,
+        }}
+      />
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: 440,
+          background: "white",
+          zIndex: 50,
+          overflowY: "auto",
+          boxShadow: "-4px 0 24px rgba(0,0,0,0.12)",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            padding: "18px 20px",
+            borderBottom: "1px solid #F1F5F9",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            background: "#F8FAFC",
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#0F172A" }}>
+              {job.djId}
+            </div>
+            <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>
+              {fmtDate(job.date)}
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <StatusBadge status={job.jobStatus} />
+            <button
+              onClick={onClose}
+              style={{
+                border: "1px solid #E2E8F0",
+                background: "white",
+                borderRadius: 8,
+                padding: "5px 10px",
+                cursor: "pointer",
+                fontSize: 16,
+                color: "#64748B",
+                lineHeight: 1,
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <div style={{ padding: "20px", flex: 1 }}>
+          {/* Customer */}
+          <div
+            style={{
+              background: "#F8FAFC",
+              borderRadius: 10,
+              padding: "14px 16px",
+              marginBottom: 16,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: 1,
+                color: "#94A3B8",
+                textTransform: "uppercase",
+                marginBottom: 8,
+              }}
+            >
+              Customer
+            </div>
+            <div
+              style={{
+                fontWeight: 700,
+                fontSize: 14,
+                color: "#0F172A",
+                marginBottom: 4,
+              }}
+            >
+              {job.cusName || "—"}
+            </div>
+            {job.addr && (
+              <div style={{ fontSize: 12, color: "#64748B", marginBottom: 4 }}>
+                {job.addr}
+              </div>
+            )}
+            {job.tel && job.tel !== "-" && (
+              <div style={{ fontSize: 12, color: "#2563EB" }}>{job.tel}</div>
+            )}
+            <div
+              style={{
+                display: "flex",
+                gap: 6,
+                marginTop: 8,
+                flexWrap: "wrap",
+              }}
+            >
+              <AgreeBadge status={job.cusStatus} />
+              {acfg && (
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: "#64748B",
+                    alignSelf: "center",
+                  }}
+                >
+                  {AGREE_LABEL[job.cusStatus] ?? job.cusStatus}
+                </span>
+              )}
+              <TeamBadge team={job.team} />
+            </div>
+          </div>
+
+          {/* Machine */}
+          <div
+            style={{
+              background: "#F8FAFC",
+              borderRadius: 10,
+              padding: "14px 16px",
+              marginBottom: 16,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: 1,
+                color: "#94A3B8",
+                textTransform: "uppercase",
+                marginBottom: 8,
+              }}
+            >
+              Machine
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "8px 16px",
+              }}
+            >
+              <Field label="Machine Ref" value={job.machineRef} />
+              <Field label="Model" value={job.model} />
+              <Field label="Serial No" value={job.serialNo} />
+              <Field label="Cus Type" value={job.cusType} />
+            </div>
+          </div>
+
+          {/* Technician */}
+          <div
+            style={{
+              background: "#F8FAFC",
+              borderRadius: 10,
+              padding: "14px 16px",
+              marginBottom: 16,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: 1,
+                color: "#94A3B8",
+                textTransform: "uppercase",
+                marginBottom: 8,
+              }}
+            >
+              Technician
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "8px 16px",
+              }}
+            >
+              <Field label="Tech Code" value={job.techCode} />
+              <Field label="Mobile" value={job.techMobile} />
+            </div>
+          </div>
+
+          {/* ── Timeline with durations ── */}
+          <TimelineSection job={job} />
+
+          {/* Notes */}
+          {(job.note ||
+            job.cancelReason ||
+            job.solutionCat ||
+            job.solution) && (
+            <div
+              style={{
+                background: "#F8FAFC",
+                borderRadius: 10,
+                padding: "14px 16px",
+                marginBottom: 16,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: 1,
+                  color: "#94A3B8",
+                  textTransform: "uppercase",
+                  marginBottom: 8,
+                }}
+              >
+                Notes & Resolution
+              </div>
+              <Field label="Note" value={job.note} />
+              <Field label="Cancel Reason" value={job.cancelReason} />
+              <Field label="Solution Category" value={job.solutionCat} />
+              <Field label="Solution" value={job.solution} />
+              {job.recallId && <Field label="Recall ID" value={job.recallId} />}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 export default function DailyJobReport() {
-  const [teamFilter, setTeamFilter] = useState<string>("ALL");
-  const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [monthFilter, setMonthFilter] = useState<string>("");
-  const [dateFilter, setDateFilter] = useState<string>("");
-  const [dateFrom, setDateFrom] = useState<string>("");
-  const [dateTo, setDateTo] = useState<string>("");
-  const [search, setSearch] = useState<string>("");
-  const [page, setPage] = useState<number>(1);
-  const [rangeMode, setRangeMode] = useState<boolean>(false);
-  const PAGE_SIZE = 12;
+  const api = useApiConfig();
 
-  const reset = () => setPage(1);
+  const [data, setData] = useState<MappedJob[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [dlLoading, setDlLoading] = useState<"excel" | "pdf" | null>(null);
+  const [selectedJob, setSelectedJob] = useState<MappedJob | null>(null);
 
-  const filtered = useMemo<DailyJob[]>(() => {
-    return JOB_DATA.filter((r) => {
-      const teamOk = teamFilter === "ALL" || r.team === teamFilter;
-      const statusOk = statusFilter === "ALL" || r.jobStatus === statusFilter;
-      const monthOk = !monthFilter || r.jobDate.startsWith(monthFilter);
-      const dateOk = !dateFilter || r.jobDate === dateFilter;
-      const rangeOk =
-        (!dateFrom && !dateTo) ||
-        ((!dateFrom || r.jobDate >= dateFrom) &&
-          (!dateTo || r.jobDate <= dateTo));
-      const q = search.toLowerCase();
-      const searchOk =
-        !search ||
-        r.customerName.toLowerCase().includes(q) ||
-        r.jobNumber.toLowerCase().includes(q) ||
-        r.machineNumber.toLowerCase().includes(q) ||
-        r.technicianName.toLowerCase().includes(q) ||
-        r.serialNumber.toLowerCase().includes(q) ||
-        r.modelNumber.toLowerCase().includes(q);
-      return teamOk && statusOk && monthOk && dateOk && rangeOk && searchOk;
-    });
-  }, [
-    teamFilter,
-    statusFilter,
-    monthFilter,
-    dateFilter,
-    dateFrom,
-    dateTo,
-    search,
-  ]);
+  const [startDate, setStartDate] = useState(DEFAULT_START);
+  const [lastDate, setLastDate] = useState(DEFAULT_END);
 
-  // Summary counts (all data, only team filtered for totals)
-  const counts = useMemo(() => {
-    const base =
-      teamFilter === "ALL"
-        ? JOB_DATA
-        : JOB_DATA.filter((r) => r.team === teamFilter);
-    return {
-      total: base.length,
-      Completed: base.filter((r) => r.jobStatus === "Completed").length,
-      Started: base.filter((r) => r.jobStatus === "Started").length,
-      Pending: base.filter((r) => r.jobStatus === "Pending").length,
-      Cancel: base.filter((r) => r.jobStatus === "Cancel").length,
-    };
-  }, [teamFilter]);
+  // Filters
+  const [teamF, setTeamF] = useState("ALL");
+  const [statusF, setStatusF] = useState("ALL");
+  const [agreeF, setAgreeF] = useState("ALL");
+  const [qnoSearch, setQnoSearch] = useState(""); // Q. No search
+  const [techSearch, setTechSearch] = useState(""); // Tech Code search
+  const [dateF, setDateF] = useState(""); // single date filter
+  const [page, setPage] = useState(1);
 
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  // ── Load ──────────────────────────────────────────────────────────────────
+  const loadData = useCallback(
+    async (sd: string, ld: string) => {
+      if (!sd || !ld) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const raw = await api.GetDailyJobReportData(sd, ld);
+        setData(raw.map(mapRow));
+        setPage(1);
+      } catch (e: any) {
+        setError(e.message ?? "Failed to load data");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [api],
+  );
 
-  const pages = useMemo<number[]>(() => {
-    const total = Math.min(5, totalPages);
-    let s =
-      page <= 3
-        ? 1
-        : page >= totalPages - 2
-          ? Math.max(1, totalPages - 4)
-          : page - 2;
-    return Array.from({ length: total }, (_, i) => s + i);
-  }, [page, totalPages]);
+  useEffect(() => {
+    loadData(DEFAULT_START, DEFAULT_END);
+  }, []); // eslint-disable-line
+
+  // ── Downloads ──────────────────────────────────────────────────────────────
+  const handleExcel = useCallback(async () => {
+    if (!startDate || !lastDate) {
+      setError("Please load data first.");
+      return;
+    }
+    setDlLoading("excel");
+    try {
+      const blob = await api.downloadDailyJobReportExcel(startDate, lastDate);
+      downloadBlob(blob, `DailyJobReport_${startDate}_to_${lastDate}.xlsx`);
+    } catch (e: any) {
+      setError(`Excel download failed: ${e.message}`);
+    } finally {
+      setDlLoading(null);
+    }
+  }, [startDate, lastDate, api]);
+
+  const handlePdf = useCallback(async () => {
+    if (!startDate || !lastDate) {
+      setError("Please load data first.");
+      return;
+    }
+    setDlLoading("pdf");
+    try {
+      const blob = await api.downloadDailyReportReportPdf(startDate, lastDate);
+      downloadBlob(blob, `DailyJobReport_${startDate}_to_${lastDate}.pdf`);
+    } catch (e: any) {
+      setError(`PDF download failed: ${e.message}`);
+    } finally {
+      setDlLoading(null);
+    }
+  }, [startDate, lastDate, api]);
+
+  // ── Filtering ──────────────────────────────────────────────────────────────
+  const filtered = useMemo(
+    () =>
+      data.filter((r) => {
+        if (teamF !== "ALL" && r.team !== teamF) return false;
+        if (agreeF !== "ALL" && r.cusStatus !== agreeF) return false;
+        if (statusF !== "ALL") {
+          if (statusF === "Pending") {
+            if (r.jobStatus !== "Pending" && r.jobStatus !== "Pending Estimate")
+              return false;
+          } else {
+            if (r.jobStatus !== statusF) return false;
+          }
+        }
+        if (dateF && !r.date.startsWith(dateF)) return false;
+        if (
+          qnoSearch &&
+          !r.machineRef.toLowerCase().includes(qnoSearch.toLowerCase())
+        )
+          return false;
+        if (
+          techSearch &&
+          !r.techCode.toLowerCase().includes(techSearch.toLowerCase())
+        )
+          return false;
+        return true;
+      }),
+    [data, teamF, agreeF, statusF, dateF, qnoSearch, techSearch],
+  );
+
+  const counts = useMemo(
+    () => ({
+      total: filtered.length,
+      Completed: filtered.filter((r) => r.jobStatus === "Completed").length,
+      Started: filtered.filter((r) => r.jobStatus === "Started").length,
+      Pending: filtered.filter(
+        (r) => r.jobStatus === "Pending" || r.jobStatus === "Pending Estimate",
+      ).length,
+      Cancelled: filtered.filter((r) => r.jobStatus === "Cancelled").length,
+    }),
+    [filtered],
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageData = filtered.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE,
+  );
+  const pgNums = useMemo(() => {
+    const start = Math.max(1, Math.min(safePage - 2, totalPages - 4));
+    return Array.from({ length: Math.min(5, totalPages) }, (_, i) => start + i);
+  }, [safePage, totalPages]);
+
+  const teams = useMemo(
+    () => [...new Set(data.map((r) => r.team).filter(Boolean))].sort(),
+    [data],
+  );
+  const statuses = useMemo(
+    () => [...new Set(data.map((r) => r.jobStatus).filter(Boolean))].sort(),
+    [data],
+  );
+
+  const hasFilters =
+    teamF !== "ALL" ||
+    statusF !== "ALL" ||
+    agreeF !== "ALL" ||
+    !!qnoSearch ||
+    !!techSearch ||
+    !!dateF;
 
   const clearAll = () => {
-    setTeamFilter("ALL");
-    setStatusFilter("ALL");
-    setMonthFilter("");
-    setDateFilter("");
-    setDateFrom("");
-    setDateTo("");
-    setSearch("");
+    setTeamF("ALL");
+    setStatusF("ALL");
+    setAgreeF("ALL");
+    setQnoSearch("");
+    setTechSearch("");
+    setDateF("");
     setPage(1);
   };
 
-  const hasFilters =
-    teamFilter !== "ALL" ||
-    statusFilter !== "ALL" ||
-    monthFilter ||
-    dateFilter ||
-    dateFrom ||
-    dateTo ||
-    search;
-
-  const handlePrint = () => {
-    const rows = filtered
-      .map(
-        (r) =>
-          `<tr><td>${r.jobNumber}</td><td>${fmt(r.jobDate)}</td><td style="font-family:monospace;font-size:9px">${r.serialNumber}</td><td>${r.machineNumber}</td><td>${r.modelNumber}</td><td>${r.technicianName}</td><td>${r.customerName}</td><td>${r.team}</td><td>${r.agreementStatus}</td><td><b>${r.jobStatus}</b></td></tr>`,
-      )
-      .join("");
-    const w = window.open("", "_blank");
-    if (w) {
-      w.document.write(
-        `<html><head><style>body{font-family:Arial,sans-serif;font-size:9px;margin:16px}h2{font-size:14px;margin:0 0 4px;color:#1e293b}p{font-size:11px;color:#64748b;margin:0 0 10px}table{width:100%;border-collapse:collapse}th{background:#1e293b;color:white;padding:5px 6px;text-align:left;font-size:10px}td{padding:4px 6px;border-bottom:1px solid #e2e8f0}tr:nth-child(even){background:#f8fafc}</style></head><body><h2>Daily Job Report</h2><p>Records: ${filtered.length} &nbsp;|&nbsp; ${new Date().toLocaleDateString()}</p><table><tr><th>Job No</th><th>Date</th><th>Serial No</th><th>Q.No</th><th>Model</th><th>Technician</th><th>Customer</th><th>Team</th><th>Agr.</th><th>Status</th></tr>${rows}</table></body></html>`,
-      );
-      w.document.close();
-      w.print();
-    }
+  const cardStyle: React.CSSProperties = {
+    background: "white",
+    border: "1px solid #F1F5F9",
+    borderRadius: 12,
+    overflow: "hidden",
+    boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
+  };
+  const labelStyle: React.CSSProperties = {
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: 1,
+    color: "#94A3B8",
+    textTransform: "uppercase",
+    marginBottom: 6,
+    display: "block",
+  };
+  const inputStyle: React.CSSProperties = {
+    border: "1px solid #E2E8F0",
+    borderRadius: 8,
+    padding: "6px 10px",
+    fontSize: 12,
+    outline: "none",
+    color: "#1E293B",
+    background: "white",
   };
 
   return (
     <div
       style={{
-        fontFamily: "'Segoe UI',system-ui,sans-serif",
-        background: "#f1f5f9",
+        fontFamily:
+          "'DM Sans','Geist',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
+        background: "#F1F5F9",
         minHeight: "100vh",
       }}
     >
       {/* ── Header ── */}
       <div
         style={{
-          background:
-            "linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#0f172a 100%)",
-          padding: "20px 28px",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+          background: "linear-gradient(135deg,#0F172A 0%,#1E293B 100%)",
+          padding: "20px 28px 16px",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
         }}
       >
         <div
@@ -1116,551 +1134,488 @@ export default function DailyJobReport() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "flex-start",
+            flexWrap: "wrap",
+            gap: 16,
+            marginBottom: 16,
           }}
         >
           <div>
-            <div
+            <p
               style={{
-                color: "#94a3b8",
-                fontSize: "10px",
-                letterSpacing: "3px",
+                color: "#475569",
+                fontSize: 10,
+                letterSpacing: 3,
                 textTransform: "uppercase",
                 fontWeight: 700,
-                marginBottom: "4px",
+                margin: "0 0 4px",
               }}
             >
               Field Operations
-            </div>
+            </p>
             <h1
               style={{
                 color: "white",
-                margin: "0 0 14px",
-                fontSize: "24px",
-                fontWeight: 800,
+                margin: 0,
+                fontSize: 22,
+                fontWeight: 700,
                 letterSpacing: "-0.5px",
               }}
             >
               Daily Job Report
             </h1>
-            {/* Status summary cards */}
-            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-              {(
-                [
-                  {
-                    label: "Total",
-                    val: counts.total,
-                    bg: "rgba(255,255,255,0.1)",
-                    col: "white",
-                    border: "rgba(255,255,255,0.2)",
-                  },
-                  {
-                    label: "Completed",
-                    val: counts.Completed,
-                    bg: "rgba(34,197,94,0.15)",
-                    col: "#4ade80",
-                    border: "rgba(34,197,94,0.3)",
-                  },
-                  {
-                    label: "Started",
-                    val: counts.Started,
-                    bg: "rgba(59,130,246,0.15)",
-                    col: "#60a5fa",
-                    border: "rgba(59,130,246,0.3)",
-                  },
-                  {
-                    label: "Pending",
-                    val: counts.Pending,
-                    bg: "rgba(234,179,8,0.15)",
-                    col: "#fbbf24",
-                    border: "rgba(234,179,8,0.3)",
-                  },
-                  {
-                    label: "Cancelled",
-                    val: counts.Cancel,
-                    bg: "rgba(239,68,68,0.15)",
-                    col: "#f87171",
-                    border: "rgba(239,68,68,0.3)",
-                  },
-                ] as {
-                  label: string;
-                  val: number;
-                  bg: string;
-                  col: string;
-                  border: string;
-                }[]
-              ).map((c) => (
-                <div
-                  key={c.label}
-                  style={{
-                    background: c.bg,
-                    border: `1px solid ${c.border}`,
-                    borderRadius: "10px",
-                    padding: "8px 14px",
-                    minWidth: "80px",
-                    cursor: "pointer",
-                  }}
+            <p style={{ color: "#475569", fontSize: 11, margin: "4px 0 0" }}>
+              {CURRENT_YEAR}
+              {data.length > 0
+                ? ` · ${data.length.toLocaleString()} jobs loaded`
+                : ""}
+            </p>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              alignItems: "flex-end",
+              flexWrap: "wrap",
+            }}
+          >
+            <div>
+              <span style={{ ...labelStyle, color: "#64748B" }}>From</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                style={{
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  background: "rgba(255,255,255,0.08)",
+                  color: "white",
+                  borderRadius: 8,
+                  padding: "7px 10px",
+                  fontSize: 13,
+                  outline: "none",
+                  colorScheme: "dark",
+                }}
+              />
+            </div>
+            <div>
+              <span style={{ ...labelStyle, color: "#64748B" }}>To</span>
+              <input
+                type="date"
+                value={lastDate}
+                onChange={(e) => setLastDate(e.target.value)}
+                style={{
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  background: "rgba(255,255,255,0.08)",
+                  color: "white",
+                  borderRadius: 8,
+                  padding: "7px 10px",
+                  fontSize: 13,
+                  outline: "none",
+                  colorScheme: "dark",
+                }}
+              />
+            </div>
+            <button
+              onClick={() => loadData(startDate, lastDate)}
+              disabled={loading || !startDate || !lastDate}
+              style={{
+                background: loading ? "#334155" : "#3B82F6",
+                color: "white",
+                border: "none",
+                borderRadius: 8,
+                padding: "8px 20px",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: loading ? "not-allowed" : "pointer",
+                height: 36,
+              }}
+            >
+              {loading ? "⟳ Loading…" : "⟳ Load"}
+            </button>
+            <button
+              onClick={handleExcel}
+              disabled={dlLoading === "excel" || data.length === 0}
+              style={{
+                background:
+                  dlLoading === "excel" || data.length === 0
+                    ? "#334155"
+                    : "#16A34A",
+                color: "white",
+                border: "none",
+                borderRadius: 8,
+                padding: "8px 16px",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor:
+                  dlLoading === "excel" || data.length === 0
+                    ? "not-allowed"
+                    : "pointer",
+                height: 36,
+              }}
+            >
+              {dlLoading === "excel" ? "…" : "↓ Excel"}
+            </button>
+            <button
+              onClick={handlePdf}
+              disabled={dlLoading === "pdf" || data.length === 0}
+              style={{
+                background:
+                  dlLoading === "pdf" || data.length === 0
+                    ? "#334155"
+                    : "#DC2626",
+                color: "white",
+                border: "none",
+                borderRadius: 8,
+                padding: "8px 16px",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor:
+                  dlLoading === "pdf" || data.length === 0
+                    ? "not-allowed"
+                    : "pointer",
+                height: 36,
+              }}
+            >
+              {dlLoading === "pdf" ? "…" : "↓ PDF"}
+            </button>
+            <button
+              onClick={() =>
+                downloadBlob(
+                  new Blob([toCSV(filtered)], {
+                    type: "text/csv;charset=utf-8;",
+                  }),
+                  `DailyJobs_${startDate}_${lastDate}.csv`,
+                )
+              }
+              disabled={filtered.length === 0}
+              style={{
+                background: "rgba(255,255,255,0.08)",
+                color: filtered.length === 0 ? "#334155" : "#94A3B8",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 8,
+                padding: "8px 16px",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: filtered.length === 0 ? "not-allowed" : "pointer",
+                height: 36,
+              }}
+            >
+              ↓ CSV
+            </button>
+          </div>
+        </div>
+
+        {/* Stat cards */}
+        {data.length > 0 && (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {STAT_COUNT_CFG.map((c) => {
+              const val =
+                c.key === "ALL"
+                  ? counts.total
+                  : (counts[c.key as keyof typeof counts] ?? 0);
+              const isActive =
+                c.key === "ALL" ? statusF === "ALL" : statusF === c.key;
+              return (
+                <button
+                  key={c.key}
                   onClick={() => {
-                    setStatusFilter(
-                      c.label === "Total"
-                        ? "ALL"
-                        : c.label === "Cancelled"
-                          ? "Cancel"
-                          : c.label,
-                    );
-                    reset();
+                    setStatusF(c.key === "ALL" ? "ALL" : c.key);
+                    setPage(1);
+                  }}
+                  style={{
+                    background: isActive
+                      ? "rgba(255,255,255,0.12)"
+                      : "rgba(255,255,255,0.05)",
+                    border: isActive
+                      ? "1px solid rgba(255,255,255,0.25)"
+                      : "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: 10,
+                    padding: "8px 16px",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    minWidth: 80,
                   }}
                 >
                   <div
                     style={{
-                      color: c.col,
-                      fontSize: "20px",
-                      fontWeight: 800,
+                      color: c.darkColor,
+                      fontSize: 20,
+                      fontWeight: 700,
                       lineHeight: 1,
                     }}
                   >
-                    {c.val}
+                    {val.toLocaleString()}
                   </div>
                   <div
                     style={{
-                      color: c.col,
-                      fontSize: "10px",
-                      opacity: 0.8,
-                      marginTop: "2px",
+                      color: "#64748B",
+                      fontSize: 10,
+                      marginTop: 2,
                       fontWeight: 600,
                     }}
                   >
                     {c.label}
                   </div>
-                </div>
-              ))}
-            </div>
+                </button>
+              );
+            })}
           </div>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "8px",
-              alignItems: "flex-end",
-            }}
-          >
-            <button
-              onClick={() => download(toCSV(filtered), "Daily_Jobs.csv")}
-              style={{
-                background: "#16a34a",
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                padding: "9px 18px",
-                cursor: "pointer",
-                fontWeight: 700,
-                fontSize: "13px",
-              }}
-            >
-              ⬇ Export CSV
-            </button>
-            <button
-              onClick={handlePrint}
-              style={{
-                background: "rgba(255,255,255,0.1)",
-                color: "white",
-                border: "1px solid rgba(255,255,255,0.25)",
-                borderRadius: "8px",
-                padding: "8px 18px",
-                cursor: "pointer",
-                fontWeight: 600,
-                fontSize: "12px",
-              }}
-            >
-              🖨 Print PDF
-            </button>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* ── Filters Panel ── */}
-      <div
-        style={{
-          background: "white",
-          padding: "14px 28px",
-          borderBottom: "1px solid #e2e8f0",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-        }}
-      >
+      {/* ── Loading ── */}
+      {loading && (
         <div
           style={{
-            display: "flex",
-            gap: "16px",
-            alignItems: "flex-start",
-            flexWrap: "wrap",
+            margin: "16px 28px",
+            background: "white",
+            borderRadius: 12,
+            padding: "32px",
+            textAlign: "center",
+            color: "#94A3B8",
+            fontSize: 13,
+            border: "1px solid #F1F5F9",
           }}
         >
-          {/* Team */}
-          <div>
-            <div
-              style={{
-                fontSize: "10px",
-                fontWeight: 700,
-                color: "#94a3b8",
-                letterSpacing: "1px",
-                textTransform: "uppercase",
-                marginBottom: "6px",
-              }}
-            >
-              Team
-            </div>
-            <div style={{ display: "flex", gap: "5px" }}>
-              {(["ALL", "COL", "OUT", "SUB"] as string[]).map((v) => (
-                <button
-                  key={v}
-                  onClick={() => {
-                    setTeamFilter(v);
-                    reset();
-                  }}
-                  style={{
-                    padding: "6px 13px",
-                    borderRadius: "18px",
-                    border: "none",
-                    cursor: "pointer",
-                    fontWeight: 700,
-                    fontSize: "12px",
-                    background: teamFilter === v ? "#0f172a" : "#f1f5f9",
-                    color: teamFilter === v ? "white" : "#475569",
-                    transition: "all 0.15s",
-                  }}
-                >
-                  {v === "ALL" ? "All" : v}
-                </button>
-              ))}
-            </div>
-          </div>
+          <div style={{ fontSize: 24, marginBottom: 8 }}>⟳</div>Loading{" "}
+          {CURRENT_YEAR} jobs…
+        </div>
+      )}
 
-          {/* Status */}
-          <div>
-            <div
-              style={{
-                fontSize: "10px",
-                fontWeight: 700,
-                color: "#94a3b8",
-                letterSpacing: "1px",
-                textTransform: "uppercase",
-                marginBottom: "6px",
-              }}
-            >
-              Job Status
-            </div>
-            <div style={{ display: "flex", gap: "5px" }}>
-              {(
-                ["ALL", "Completed", "Started", "Pending", "Cancel"] as string[]
-              ).map((v) => {
-                const cfg = v !== "ALL" ? STATUS_CFG[v as JobStatus] : null;
-                return (
-                  <button
-                    key={v}
-                    onClick={() => {
-                      setStatusFilter(v);
-                      reset();
-                    }}
-                    style={{
-                      padding: "6px 13px",
-                      borderRadius: "18px",
-                      border: "none",
-                      cursor: "pointer",
-                      fontWeight: 700,
-                      fontSize: "12px",
-                      background:
-                        statusFilter === v ? (cfg?.bg ?? "#0f172a") : "#f1f5f9",
-                      color:
-                        statusFilter === v
-                          ? (cfg?.color ?? "white")
-                          : "#475569",
-                      transition: "all 0.15s",
-                    }}
-                  >
-                    {v === "ALL" ? "All" : v === "Cancel" ? "Cancelled" : v}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+      {/* ── Error ── */}
+      {error && (
+        <div
+          style={{
+            margin: "12px 28px",
+            padding: "10px 16px",
+            background: "#FEF2F2",
+            border: "1px solid #FECACA",
+            borderRadius: 8,
+            color: "#991B1B",
+            fontSize: 13,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <span>⚠ {error}</span>
+          <button
+            onClick={() => setError(null)}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#991B1B",
+              cursor: "pointer",
+              fontSize: 16,
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
-          {/* Date filters */}
-          <div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                marginBottom: "6px",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "10px",
-                  fontWeight: 700,
-                  color: "#94a3b8",
-                  letterSpacing: "1px",
-                  textTransform: "uppercase",
-                }}
-              >
-                Date Filter
-              </div>
-              <button
-                onClick={() => {
-                  setRangeMode(!rangeMode);
-                  setDateFilter("");
-                  setMonthFilter("");
-                  setDateFrom("");
-                  setDateTo("");
-                  reset();
-                }}
-                style={{
-                  fontSize: "10px",
-                  fontWeight: 700,
-                  color: "#6366f1",
-                  background: "#eef2ff",
-                  border: "none",
-                  borderRadius: "10px",
-                  padding: "2px 8px",
-                  cursor: "pointer",
-                }}
-              >
-                {rangeMode ? "← Single" : "Range →"}
-              </button>
-            </div>
-            {!rangeMode ? (
-              <div
-                style={{ display: "flex", gap: "8px", alignItems: "center" }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "2px",
-                  }}
-                >
-                  <span style={{ fontSize: "10px", color: "#94a3b8" }}>
-                    Month
-                  </span>
-                  <input
-                    type="month"
-                    value={monthFilter}
-                    onChange={(e) => {
-                      setMonthFilter(e.target.value);
-                      setDateFilter("");
-                      reset();
-                    }}
-                    style={{
-                      border: "1px solid #e2e8f0",
-                      borderRadius: "7px",
-                      padding: "6px 10px",
-                      fontSize: "12px",
-                      outline: "none",
-                      color: "#333",
-                    }}
-                  />
-                </div>
-                <div
-                  style={{
-                    fontSize: "12px",
-                    color: "#cbd5e1",
-                    paddingTop: "16px",
-                  }}
-                >
-                  or
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "2px",
-                  }}
-                >
-                  <span style={{ fontSize: "10px", color: "#94a3b8" }}>
-                    Exact Date
-                  </span>
-                  <input
-                    type="date"
-                    value={dateFilter}
-                    onChange={(e) => {
-                      setDateFilter(e.target.value);
-                      setMonthFilter("");
-                      reset();
-                    }}
-                    style={{
-                      border: "1px solid #e2e8f0",
-                      borderRadius: "7px",
-                      padding: "6px 10px",
-                      fontSize: "12px",
-                      outline: "none",
-                      color: "#333",
-                    }}
-                  />
-                </div>
-                {(monthFilter || dateFilter) && (
-                  <button
-                    onClick={() => {
-                      setMonthFilter("");
-                      setDateFilter("");
-                      reset();
-                    }}
-                    style={{
-                      background: "#ef4444",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "6px",
-                      padding: "5px 10px",
-                      cursor: "pointer",
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      marginTop: "14px",
-                    }}
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div
-                style={{ display: "flex", gap: "8px", alignItems: "center" }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "2px",
-                  }}
-                >
-                  <span style={{ fontSize: "10px", color: "#94a3b8" }}>
-                    From
-                  </span>
-                  <input
-                    type="date"
-                    value={dateFrom}
-                    onChange={(e) => {
-                      setDateFrom(e.target.value);
-                      reset();
-                    }}
-                    style={{
-                      border: "1px solid #e2e8f0",
-                      borderRadius: "7px",
-                      padding: "6px 10px",
-                      fontSize: "12px",
-                      outline: "none",
-                      color: "#333",
-                    }}
-                  />
-                </div>
-                <div
-                  style={{
-                    fontSize: "16px",
-                    color: "#cbd5e1",
-                    paddingTop: "14px",
-                  }}
-                >
-                  →
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "2px",
-                  }}
-                >
-                  <span style={{ fontSize: "10px", color: "#94a3b8" }}>To</span>
-                  <input
-                    type="date"
-                    value={dateTo}
-                    onChange={(e) => {
-                      setDateTo(e.target.value);
-                      reset();
-                    }}
-                    style={{
-                      border: "1px solid #e2e8f0",
-                      borderRadius: "7px",
-                      padding: "6px 10px",
-                      fontSize: "12px",
-                      outline: "none",
-                      color: "#333",
-                    }}
-                  />
-                </div>
-                {(dateFrom || dateTo) && (
-                  <button
-                    onClick={() => {
-                      setDateFrom("");
-                      setDateTo("");
-                      reset();
-                    }}
-                    style={{
-                      background: "#ef4444",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "6px",
-                      padding: "5px 10px",
-                      cursor: "pointer",
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      marginTop: "14px",
-                    }}
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Search + clear */}
+      {/* ── Filters + Table ── */}
+      {data.length > 0 && !loading && (
+        <>
+          {/* Row 1 — Team / Agreement / Status */}
           <div
             style={{
-              marginLeft: "auto",
+              background: "white",
+              borderBottom: "1px solid #F1F5F9",
+              padding: "12px 28px",
               display: "flex",
-              flexDirection: "column",
-              gap: "6px",
+              gap: 20,
+              flexWrap: "wrap",
               alignItems: "flex-end",
             }}
           >
-            <input
-              placeholder="Search job, customer, Q.No, technician…"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                reset();
-              }}
+            <div>
+              <span style={labelStyle}>Team</span>
+              <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                <Chip
+                  label="All"
+                  selected={teamF === "ALL"}
+                  onClick={() => {
+                    setTeamF("ALL");
+                    setPage(1);
+                  }}
+                />
+                {teams.map((t) => (
+                  <Chip
+                    key={t}
+                    label={t}
+                    selected={teamF === t}
+                    cfg={TEAM_CFG[t] ?? TEAM_CFG["Unknown"]}
+                    onClick={() => {
+                      setTeamF(t);
+                      setPage(1);
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div>
+              <span style={labelStyle}>Agreement</span>
+              <div style={{ display: "flex", gap: 5 }}>
+                {["ALL", "MA", "FS", "NS", "EX"].map((a) => (
+                  <Chip
+                    key={a}
+                    label={a === "ALL" ? "All" : a}
+                    selected={agreeF === a}
+                    cfg={a !== "ALL" ? AGREE_CFG[a] : undefined}
+                    onClick={() => {
+                      setAgreeF(a);
+                      setPage(1);
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div>
+              <span style={labelStyle}>Job Status</span>
+              <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                <Chip
+                  label="All"
+                  selected={statusF === "ALL"}
+                  onClick={() => {
+                    setStatusF("ALL");
+                    setPage(1);
+                  }}
+                />
+                {statuses.map((s) => (
+                  <Chip
+                    key={s}
+                    label={s}
+                    selected={
+                      statusF === s ||
+                      (statusF === "Pending" && s === "Pending Estimate")
+                    }
+                    cfg={
+                      STATUS_CFG[s]
+                        ? {
+                            bg: STATUS_CFG[s].bg,
+                            color: STATUS_CFG[s].color,
+                            border: STATUS_CFG[s].border,
+                          }
+                        : undefined
+                    }
+                    onClick={() => {
+                      setStatusF(s);
+                      setPage(1);
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Row 2 — Q.No search / Tech Code search / Date / count */}
+          <div
+            style={{
+              background: "white",
+              borderBottom: "1px solid #F1F5F9",
+              padding: "10px 28px",
+              display: "flex",
+              gap: 16,
+              alignItems: "flex-end",
+              flexWrap: "wrap",
+            }}
+          >
+            {/* Q. No */}
+            <div>
+              <span style={labelStyle}>Q. No</span>
+              <input
+                type="search"
+                value={qnoSearch}
+                onChange={(e) => {
+                  setQnoSearch(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search Q. No…"
+                style={{ ...inputStyle, width: 160 }}
+              />
+            </div>
+            {/* Tech Code */}
+            <div>
+              <span style={labelStyle}>Tech Code</span>
+              <input
+                type="search"
+                value={techSearch}
+                onChange={(e) => {
+                  setTechSearch(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search tech code…"
+                style={{ ...inputStyle, width: 160 }}
+              />
+            </div>
+            {/* Single date filter */}
+            <div>
+              <span style={labelStyle}>Date</span>
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <input
+                  type="date"
+                  value={dateF}
+                  onChange={(e) => {
+                    setDateF(e.target.value);
+                    setPage(1);
+                  }}
+                  style={inputStyle}
+                />
+                {dateF && (
+                  <button
+                    onClick={() => {
+                      setDateF("");
+                      setPage(1);
+                    }}
+                    style={{
+                      background: "#FEF2F2",
+                      color: "#991B1B",
+                      border: "1px solid #FECACA",
+                      borderRadius: 7,
+                      padding: "5px 9px",
+                      fontSize: 12,
+                      cursor: "pointer",
+                      fontWeight: 700,
+                    }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div
               style={{
-                border: "1px solid #e2e8f0",
-                borderRadius: "8px",
-                padding: "8px 14px",
-                fontSize: "12px",
-                width: "260px",
-                outline: "none",
+                marginLeft: "auto",
+                display: "flex",
+                gap: 10,
+                alignItems: "center",
               }}
-            />
-            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            >
               <span
                 style={{
-                  background: "#0f172a",
+                  background: "#0F172A",
                   color: "white",
-                  padding: "4px 12px",
-                  borderRadius: "8px",
-                  fontSize: "12px",
-                  fontWeight: 800,
+                  padding: "4px 14px",
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 700,
                 }}
               >
-                {filtered.length} records
+                {filtered.length.toLocaleString()} records
               </span>
               {hasFilters && (
                 <button
                   onClick={clearAll}
                   style={{
-                    background: "#fee2e2",
-                    color: "#b91c1c",
-                    border: "none",
-                    borderRadius: "7px",
+                    background: "#FEF2F2",
+                    color: "#991B1B",
+                    border: "1px solid #FECACA",
+                    borderRadius: 8,
                     padding: "5px 12px",
-                    cursor: "pointer",
-                    fontSize: "11px",
+                    fontSize: 12,
                     fontWeight: 700,
+                    cursor: "pointer",
                   }}
                 >
                   ✕ Clear All
@@ -1668,492 +1623,430 @@ export default function DailyJobReport() {
               )}
             </div>
           </div>
-        </div>
 
-        {/* Active filter chips */}
-        {hasFilters && (
-          <div
-            style={{
-              display: "flex",
-              gap: "6px",
-              flexWrap: "wrap",
-              marginTop: "10px",
-              paddingTop: "10px",
-              borderTop: "1px solid #f1f5f9",
-            }}
-          >
-            {teamFilter !== "ALL" && (
-              <span
-                style={{
-                  background: "#ede9fe",
-                  color: "#5b21b6",
-                  padding: "3px 10px",
-                  borderRadius: "12px",
-                  fontSize: "11px",
-                  fontWeight: 700,
-                }}
-              >
-                Team: {teamFilter}
-              </span>
-            )}
-            {statusFilter !== "ALL" && (
-              <span
-                style={{
-                  background: "#dbeafe",
-                  color: "#1d4ed8",
-                  padding: "3px 10px",
-                  borderRadius: "12px",
-                  fontSize: "11px",
-                  fontWeight: 700,
-                }}
-              >
-                Status: {statusFilter}
-              </span>
-            )}
-            {monthFilter && (
-              <span
-                style={{
-                  background: "#f0fdf4",
-                  color: "#15803d",
-                  padding: "3px 10px",
-                  borderRadius: "12px",
-                  fontSize: "11px",
-                  fontWeight: 700,
-                }}
-              >
-                Month: {monthFilter}
-              </span>
-            )}
-            {dateFilter && (
-              <span
-                style={{
-                  background: "#fef3c7",
-                  color: "#92400e",
-                  padding: "3px 10px",
-                  borderRadius: "12px",
-                  fontSize: "11px",
-                  fontWeight: 700,
-                }}
-              >
-                Date: {fmt(dateFilter)}
-              </span>
-            )}
-            {(dateFrom || dateTo) && (
-              <span
-                style={{
-                  background: "#fce7f3",
-                  color: "#9d174d",
-                  padding: "3px 10px",
-                  borderRadius: "12px",
-                  fontSize: "11px",
-                  fontWeight: 700,
-                }}
-              >
-                Range: {fmt(dateFrom)} → {fmt(dateTo)}
-              </span>
-            )}
-            {search && (
-              <span
-                style={{
-                  background: "#f1f5f9",
-                  color: "#475569",
-                  padding: "3px 10px",
-                  borderRadius: "12px",
-                  fontSize: "11px",
-                  fontWeight: 700,
-                }}
-              >
-                "{search}"
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* ── Table ── */}
-      <div
-        style={{
-          margin: "16px 28px 28px",
-          background: "white",
-          borderRadius: "14px",
-          boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
-          overflow: "hidden",
-        }}
-      >
-        <div style={{ overflowX: "auto" }}>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              fontSize: "12px",
-              minWidth: "1200px",
-            }}
-          >
-            <thead>
-              <tr style={{ background: "#0f172a" }}>
-                {[
-                  "#",
-                  "Job No",
-                  "Date",
-                  "Serial No",
-                  "Q.No",
-                  "Model",
-                  "Tech Code",
-                  "Technician",
-                  "Customer",
-                  "Team",
-                  "Agreement",
-                  "Job Status",
-                  "Mobile",
-                  "Address",
-                ].map((h) => (
-                  <th
-                    key={h}
+          {/* Active chips */}
+          {hasFilters && (
+            <div
+              style={{
+                padding: "8px 28px",
+                display: "flex",
+                gap: 6,
+                flexWrap: "wrap",
+                background: "white",
+                borderBottom: "1px solid #F1F5F9",
+              }}
+            >
+              {[
+                teamF !== "ALL" && {
+                  label: `Team: ${teamF}`,
+                  clr: () => {
+                    setTeamF("ALL");
+                    setPage(1);
+                  },
+                },
+                statusF !== "ALL" && {
+                  label: `Status: ${statusF}`,
+                  clr: () => {
+                    setStatusF("ALL");
+                    setPage(1);
+                  },
+                },
+                agreeF !== "ALL" && {
+                  label: `Agr: ${agreeF}`,
+                  clr: () => {
+                    setAgreeF("ALL");
+                    setPage(1);
+                  },
+                },
+                qnoSearch && {
+                  label: `Q.No: ${qnoSearch}`,
+                  clr: () => {
+                    setQnoSearch("");
+                    setPage(1);
+                  },
+                },
+                techSearch && {
+                  label: `Tech: ${techSearch}`,
+                  clr: () => {
+                    setTechSearch("");
+                    setPage(1);
+                  },
+                },
+                dateF && {
+                  label: `Date: ${fmtDate(dateF)}`,
+                  clr: () => {
+                    setDateF("");
+                    setPage(1);
+                  },
+                },
+              ]
+                .filter(Boolean)
+                .map((chip: any, i) => (
+                  <span
+                    key={i}
                     style={{
-                      padding: "12px 10px",
-                      color: "#94a3b8",
-                      fontWeight: 700,
-                      textAlign: "left",
-                      fontSize: "11px",
-                      whiteSpace: "nowrap",
-                      letterSpacing: "0.4px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      fontSize: 11,
+                      padding: "3px 10px 3px 12px",
+                      borderRadius: 12,
+                      background: "#F1F5F9",
+                      color: "#475569",
+                      border: "1px solid #E2E8F0",
                     }}
                   >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {pageData.map((r, i) => {
-                const idx = (page - 1) * PAGE_SIZE + i + 1;
-                const scfg = STATUS_CFG[r.jobStatus];
-                const acfg = AGREE_CFG[r.agreementStatus];
-                const tcfg = TEAM_CFG[r.team];
-                const addr = [r.address1, r.address2, r.address3]
-                  .filter((a) => a && a !== "-")
-                  .join(", ");
-                return (
-                  <tr
-                    key={r.jobNumber}
-                    style={{
-                      background: i % 2 === 0 ? "white" : "#f8fafc",
-                      borderBottom: "1px solid #f1f5f9",
-                      transition: "background 0.1s",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.background = "#f0f9ff")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.background =
-                        i % 2 === 0 ? "white" : "#f8fafc")
-                    }
-                  >
-                    <td
-                      style={{
-                        padding: "10px 10px",
-                        color: "#cbd5e1",
-                        fontWeight: 700,
-                        fontSize: "11px",
-                      }}
-                    >
-                      {idx}
-                    </td>
-                    <td
-                      style={{
-                        padding: "10px 10px",
-                        fontWeight: 800,
-                        color: "#1e293b",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {r.jobNumber}
-                    </td>
-                    <td
-                      style={{
-                        padding: "10px 10px",
-                        color: "#475569",
-                        whiteSpace: "nowrap",
-                        fontSize: "11px",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {fmt(r.jobDate)}
-                    </td>
-                    <td
-                      style={{
-                        padding: "10px 10px",
-                        color: "#94a3b8",
-                        fontSize: "10px",
-                        fontFamily: "monospace",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {r.serialNumber}
-                    </td>
-                    <td
-                      style={{
-                        padding: "10px 10px",
-                        color: "#2563eb",
-                        fontWeight: 700,
-                      }}
-                    >
-                      {r.machineNumber}
-                    </td>
-                    <td
-                      style={{
-                        padding: "10px 10px",
-                        color: "#334155",
-                        whiteSpace: "nowrap",
-                        fontSize: "11px",
-                      }}
-                    >
-                      {r.modelNumber}
-                    </td>
-                    <td
-                      style={{
-                        padding: "10px 10px",
-                        color: "#64748b",
-                        fontSize: "11px",
-                      }}
-                    >
-                      {r.techCode}
-                    </td>
-                    <td
-                      style={{
-                        padding: "10px 10px",
-                        color: "#1e293b",
-                        fontWeight: 600,
-                        whiteSpace: "nowrap",
-                        fontSize: "11px",
-                      }}
-                    >
-                      {r.technicianName}
-                    </td>
-                    <td
-                      style={{
-                        padding: "10px 10px",
-                        fontWeight: 600,
-                        color: "#0f172a",
-                        maxWidth: "170px",
-                        fontSize: "11px",
-                      }}
-                    >
-                      {r.customerName}
-                    </td>
-                    <td style={{ padding: "10px 10px" }}>
-                      <span
-                        style={{
-                          padding: "2px 9px",
-                          borderRadius: "10px",
-                          fontSize: "10px",
-                          fontWeight: 700,
-                          ...tcfg,
-                        }}
-                      >
-                        {r.team}
-                      </span>
-                    </td>
-                    <td style={{ padding: "10px 10px" }}>
-                      <span
-                        style={{
-                          padding: "2px 9px",
-                          borderRadius: "10px",
-                          fontSize: "10px",
-                          fontWeight: 700,
-                          ...acfg,
-                        }}
-                      >
-                        {r.agreementStatus}
-                      </span>
-                    </td>
-                    <td style={{ padding: "10px 10px" }}>
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "5px",
-                          padding: "3px 10px",
-                          borderRadius: "10px",
-                          fontSize: "11px",
-                          fontWeight: 700,
-                          background: scfg.bg,
-                          color: scfg.color,
-                        }}
-                      >
-                        <span
-                          style={{
-                            width: "6px",
-                            height: "6px",
-                            borderRadius: "50%",
-                            background: scfg.dot,
-                            flexShrink: 0,
-                          }}
-                        />
-                        {r.jobStatus}
-                      </span>
-                    </td>
-                    <td
-                      style={{
-                        padding: "10px 10px",
-                        fontSize: "11px",
-                        color: "#2563eb",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {r.mobile !== "-" ? r.mobile : "—"}
-                    </td>
-                    <td
-                      style={{
-                        padding: "10px 10px",
-                        fontSize: "11px",
-                        color: "#64748b",
-                        maxWidth: "160px",
-                      }}
-                    >
-                      {addr}
-                    </td>
-                  </tr>
-                );
-              })}
-              {pageData.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={14}
-                    style={{ padding: "60px", textAlign: "center" }}
-                  >
-                    <div style={{ fontSize: "36px", marginBottom: "10px" }}>
-                      🔍
-                    </div>
-                    <div
-                      style={{
-                        color: "#cbd5e1",
-                        fontSize: "14px",
-                        fontWeight: 600,
-                      }}
-                    >
-                      No jobs match the current filters.
-                    </div>
+                    {chip.label}
                     <button
-                      onClick={clearAll}
+                      onClick={chip.clr}
                       style={{
-                        marginTop: "12px",
-                        background: "#0f172a",
-                        color: "white",
+                        background: "none",
                         border: "none",
-                        borderRadius: "8px",
-                        padding: "8px 18px",
+                        padding: 0,
                         cursor: "pointer",
-                        fontWeight: 700,
-                        fontSize: "12px",
+                        color: "#94A3B8",
+                        fontSize: 13,
+                        lineHeight: 1,
                       }}
                     >
-                      Clear Filters
+                      ×
                     </button>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                  </span>
+                ))}
+            </div>
+          )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div
-            style={{
-              padding: "13px 20px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              borderTop: "1px solid #f1f5f9",
-              background: "#fafbfd",
-            }}
-          >
-            <span style={{ fontSize: "12px", color: "#94a3b8" }}>
-              Showing{" "}
-              <strong style={{ color: "#0f172a" }}>
-                {(page - 1) * PAGE_SIZE + 1}
-              </strong>
-              –
-              <strong style={{ color: "#0f172a" }}>
-                {Math.min(page * PAGE_SIZE, filtered.length)}
-              </strong>{" "}
-              of <strong style={{ color: "#0f172a" }}>{filtered.length}</strong>
-            </span>
-            <div style={{ display: "flex", gap: "5px" }}>
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "7px",
-                  border: "1px solid #e2e8f0",
-                  background: "white",
-                  cursor: page === 1 ? "not-allowed" : "pointer",
-                  color: page === 1 ? "#cbd5e1" : "#0f172a",
-                  fontWeight: 700,
-                }}
-              >
-                ‹
-              </button>
-              {pages.map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPage(p)}
+          {/* Table */}
+          <div style={{ margin: "16px 28px 0" }}>
+            <div style={cardStyle}>
+              <div style={{ overflowX: "auto" }}>
+                <table
                   style={{
-                    padding: "6px 11px",
-                    borderRadius: "7px",
-                    border: "1px solid #e2e8f0",
-                    background: p === page ? "#0f172a" : "white",
-                    color: p === page ? "white" : "#0f172a",
-                    cursor: "pointer",
-                    fontWeight: 700,
-                    minWidth: "34px",
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    fontSize: 12,
+                    minWidth: 1100,
                   }}
                 >
-                  {p}
-                </button>
-              ))}
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "7px",
-                  border: "1px solid #e2e8f0",
-                  background: "white",
-                  cursor: page === totalPages ? "not-allowed" : "pointer",
-                  color: page === totalPages ? "#cbd5e1" : "#0f172a",
-                  fontWeight: 700,
-                }}
-              >
-                ›
-              </button>
+                  <thead>
+                    <tr style={{ background: "#0F172A" }}>
+                      {[
+                        "#",
+                        "DJ ID",
+                        "Date",
+                        "Serial No",
+                        "Q. No",
+                        "Model",
+                        "Tech",
+                        "Customer",
+                        "Agreement",
+                        "Team",
+                        "Job Status",
+                        "Tel No",
+                        "Address",
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          style={{
+                            padding: "11px 10px",
+                            color: "#64748B",
+                            fontWeight: 600,
+                            textAlign: "left",
+                            fontSize: 11,
+                            whiteSpace: "nowrap",
+                            letterSpacing: 0.3,
+                          }}
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pageData.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={13}
+                          style={{
+                            padding: "60px",
+                            textAlign: "center",
+                            color: "#94A3B8",
+                            fontSize: 13,
+                          }}
+                        >
+                          <div style={{ fontSize: 32, marginBottom: 8 }}>
+                            🔍
+                          </div>
+                          No jobs match the current filters.
+                          <br />
+                          <button
+                            onClick={clearAll}
+                            style={{
+                              marginTop: 10,
+                              background: "#0F172A",
+                              color: "white",
+                              border: "none",
+                              borderRadius: 8,
+                              padding: "7px 16px",
+                              cursor: "pointer",
+                              fontSize: 12,
+                              fontWeight: 700,
+                            }}
+                          >
+                            Clear Filters
+                          </button>
+                        </td>
+                      </tr>
+                    )}
+                    {pageData.map((r, i) => (
+                      <tr
+                        key={r.djId + i}
+                        onClick={() => setSelectedJob(r)}
+                        style={{
+                          background: i % 2 === 0 ? "white" : "#FAFBFD",
+                          borderBottom: "1px solid #F1F5F9",
+                          cursor: "pointer",
+                          transition: "background 0.1s",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background = "#F0F9FF")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background =
+                            i % 2 === 0 ? "white" : "#FAFBFD")
+                        }
+                      >
+                        <td
+                          style={{
+                            padding: "9px 10px",
+                            color: "#CBD5E1",
+                            fontSize: 11,
+                            fontWeight: 600,
+                          }}
+                        >
+                          {(safePage - 1) * PAGE_SIZE + i + 1}
+                        </td>
+                        <td
+                          style={{
+                            padding: "9px 10px",
+                            fontWeight: 700,
+                            color: "#0F172A",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {r.djId}
+                        </td>
+                        <td
+                          style={{
+                            padding: "9px 10px",
+                            color: "#475569",
+                            whiteSpace: "nowrap",
+                            fontSize: 11,
+                          }}
+                        >
+                          {fmtDate(r.date)}
+                        </td>
+                        <td
+                          style={{
+                            padding: "9px 10px",
+                            fontFamily: "monospace",
+                            fontSize: 10,
+                            color: "#94A3B8",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {r.serialNo || "—"}
+                        </td>
+                        <td
+                          style={{
+                            padding: "9px 10px",
+                            color: "#2563EB",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {r.machineRef || "—"}
+                        </td>
+                        <td
+                          style={{
+                            padding: "9px 10px",
+                            fontSize: 11,
+                            color: "#334155",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {r.model || "—"}
+                        </td>
+                        <td
+                          style={{
+                            padding: "9px 10px",
+                            fontSize: 11,
+                            color: "#64748B",
+                          }}
+                        >
+                          {r.techCode || "—"}
+                        </td>
+                        <td
+                          style={{
+                            padding: "9px 10px",
+                            fontWeight: 600,
+                            color: "#0F172A",
+                            maxWidth: 160,
+                            fontSize: 11,
+                          }}
+                        >
+                          {r.cusName || "—"}
+                        </td>
+                        <td style={{ padding: "9px 10px" }}>
+                          <AgreeBadge status={r.cusStatus} />
+                        </td>
+                        <td style={{ padding: "9px 10px" }}>
+                          <TeamBadge team={r.team} />
+                        </td>
+                        <td style={{ padding: "9px 10px" }}>
+                          <StatusBadge status={r.jobStatus} />
+                        </td>
+                        <td
+                          style={{
+                            padding: "9px 10px",
+                            fontSize: 11,
+                            color: "#2563EB",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {r.tel && r.tel !== "-" ? r.tel : "—"}
+                        </td>
+                        <td
+                          style={{
+                            padding: "9px 10px",
+                            fontSize: 11,
+                            color: "#64748B",
+                            maxWidth: 150,
+                          }}
+                        >
+                          {r.addr || "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div
+                  style={{
+                    padding: "12px 16px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    borderTop: "1px solid #F1F5F9",
+                    background: "#FAFBFD",
+                  }}
+                >
+                  <span style={{ fontSize: 12, color: "#94A3B8" }}>
+                    Showing{" "}
+                    <strong style={{ color: "#0F172A" }}>
+                      {(safePage - 1) * PAGE_SIZE + 1}
+                    </strong>
+                    –
+                    <strong style={{ color: "#0F172A" }}>
+                      {Math.min(safePage * PAGE_SIZE, filtered.length)}
+                    </strong>{" "}
+                    of{" "}
+                    <strong style={{ color: "#0F172A" }}>
+                      {filtered.length.toLocaleString()}
+                    </strong>
+                  </span>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <button
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={safePage === 1}
+                      style={{
+                        padding: "5px 11px",
+                        borderRadius: 7,
+                        border: "1px solid #E2E8F0",
+                        background: "white",
+                        cursor: safePage === 1 ? "not-allowed" : "pointer",
+                        color: safePage === 1 ? "#CBD5E1" : "#0F172A",
+                        fontWeight: 700,
+                        fontSize: 13,
+                      }}
+                    >
+                      ‹
+                    </button>
+                    {pgNums.map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setPage(p)}
+                        style={{
+                          padding: "5px 10px",
+                          minWidth: 32,
+                          borderRadius: 7,
+                          border: "1px solid #E2E8F0",
+                          background: p === safePage ? "#0F172A" : "white",
+                          color: p === safePage ? "white" : "#0F172A",
+                          cursor: "pointer",
+                          fontWeight: 700,
+                          fontSize: 12,
+                        }}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() =>
+                        setPage((p) => Math.min(totalPages, p + 1))
+                      }
+                      disabled={safePage === totalPages}
+                      style={{
+                        padding: "5px 11px",
+                        borderRadius: 7,
+                        border: "1px solid #E2E8F0",
+                        background: "white",
+                        cursor:
+                          safePage === totalPages ? "not-allowed" : "pointer",
+                        color: safePage === totalPages ? "#CBD5E1" : "#0F172A",
+                        fontWeight: 700,
+                        fontSize: 13,
+                      }}
+                    >
+                      ›
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        )}
-      </div>
 
-      {/* Footer */}
-      <div
-        style={{
-          padding: "0 28px 20px",
-          fontSize: "11px",
-          color: "#94a3b8",
-          display: "flex",
-          gap: "20px",
-          flexWrap: "wrap",
-        }}
-      >
-        <span>
-          MA = Machine Agreement &nbsp;·&nbsp; FS = Full Service &nbsp;·&nbsp;
-          NS = No Service
-        </span>
-        <span style={{ marginLeft: "auto" }}>
-          Click summary cards to quick-filter by status · CSV exports current
-          filter
-        </span>
-      </div>
+          {/* Footer */}
+          <div
+            style={{
+              padding: "10px 28px 24px",
+              fontSize: 11,
+              color: "#94A3B8",
+              display: "flex",
+              gap: 20,
+              flexWrap: "wrap",
+            }}
+          >
+            <span>
+              MA = Maintenance Agreement · FS = Free Service · NS = No Service ·
+              EX = Extended Service
+            </span>
+            <span style={{ marginLeft: "auto" }}>
+              Click any row to view full job details & timeline
+            </span>
+          </div>
+        </>
+      )}
+
+      {/* Detail drawer */}
+      {selectedJob && (
+        <JobDetailDrawer
+          job={selectedJob}
+          onClose={() => setSelectedJob(null)}
+        />
+      )}
     </div>
   );
 }

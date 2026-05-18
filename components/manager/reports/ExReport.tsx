@@ -1,271 +1,114 @@
-import React, { useState, useMemo } from "react";
+"use client";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { useApiConfig } from "@/hooks/apiconfig";
 
-type Grade = "A" | "E" | "H" | "";
-type Team = "COL" | "OUT" | "SUB";
-type MachineType = "MFP" | "MPC" | "DCP" | "";
+// ── Types ─────────────────────────────────────────────────────────────────────
 
-interface ExRecord {
-  customer: string;
-  model: string;
-  serialNo: string;
-  qNo: string;
-  date: string;
-  mainTechCode: string;
-  grade: Grade;
-  team: Team;
-  status: "EX";
-  maStart: string;
-  maEnd: string;
-  installDate: string;
-  to: string;
-  technicianName: string;
-  visitCode: string;
-  type: MachineType;
-  mInvNo: string;
-  address1: string;
-  address2: string;
-  address3: string;
-  mobile: string;
+interface ExRow {
+  comId?: string;
+  serialNo?: string;
+  cusCode?: string;
+  cusName?: string;
+  invAdd1?: string;
+  invAdd2?: string;
+  invAdd3?: string;
+  telNo?: string;
+  cusGrade?: string;
+  machineRefCode?: string;
+  machineCode?: string;
+  machineDesc?: string;
+  mLocContactName?: string;
+  mLocContactNo?: string;
+  mfpCity?: string;
+  tOfficerCode?: string;
+  tOfficerName?: string;
+  mInvNo?: string;
+  mInvDate?: string;
+  mInsDate?: string;
+  mWarrantyEndDate?: string;
+  laborWarranty?: string;
+  partsWarranty?: string;
+  cusStatus?: string;
+  visitsPerYear?: number;
+  invNoTc?: string;
+  team?: string;
+  maPeriodStart?: string;
+  maPeriodEnd?: string;
+  repCode?: string;
+  repName?: string;
+  toCode?: string;
+  toName?: string;
+  dealerName?: string;
+  serviceDate?: string;
+  visitCode?: string;
+  warrantyTypeDesc?: string;
+  machineType?: string;
+  cusType?: string;
+  consComment?: string;
+  cusEmail?: string;
+  warrantyYears?: number;
+  cnNo?: string;
+  mLocTelephone?: string;
 }
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-const RAW_DATA: ExRecord[] = [
-  {
-    customer: "LIKVID SPACES PVT LTD",
-    model: "IMC2000",
-    serialNo: "3082RC21174",
-    qNo: "Q19383",
-    date: "2024-08-11",
-    mainTechCode: "3157",
-    grade: "A",
-    team: "COL",
-    status: "EX",
-    maStart: "2025-11-02",
-    maEnd: "2026-11-01",
-    installDate: "2023-08-11",
-    to: "3157",
-    technicianName: "DAKSHINA PRABATH",
-    visitCode: "-",
-    type: "MPC",
-    mInvNo: "MC02355",
-    address1: "ONE GALLEFACE",
-    address2: "12TH FLOOR",
-    address3: "COLOMBO 01",
-    mobile: "0123456789",
-  },
-  {
-    customer: "CARE LOGISTICS (PVT ) LTD",
-    model: "MP1800L2",
-    serialNo: "L6926550635",
-    qNo: "Q4669",
-    date: "",
-    mainTechCode: "4043",
-    grade: "A",
-    team: "COL",
-    status: "EX",
-    maStart: "2025-12-02",
-    maEnd: "2026-12-01",
-    installDate: "2017-07-30",
-    to: "3152",
-    technicianName: "DINESH SANJEEWA",
-    visitCode: "-",
-    type: "MFP",
-    mInvNo: "MC 31622",
-    address1: "618,1/2,",
-    address2: "GALLE ROAD,",
-    address3: "COLOMBO 03",
-    mobile: "0114514253",
-  },
-  {
-    customer: "SPECIAL TASK FORCE",
-    model: "MP 2014AD",
-    serialNo: "G617M750034",
-    qNo: "Q12271",
-    date: "2018-10-09",
-    mainTechCode: "8033",
-    grade: "A",
-    team: "COL",
-    status: "EX",
-    maStart: "2025-08-01",
-    maEnd: "2026-07-31",
-    installDate: "2017-10-09",
-    to: "8050",
-    technicianName: "LOCHANA MADUWANTHA",
-    visitCode: "",
-    type: "MFP",
-    mInvNo: "MC004664",
-    address1: "NO:223 ,",
-    address2: "BAUDDHALOKA MW,",
-    address3: "COLOMBO 07",
-    mobile: "0112500471",
-  },
-  {
-    customer: "CU BOOKSHOP",
-    model: "MP2014D",
-    serialNo: "G634Z260170",
-    qNo: "Q20001",
-    date: "2025-12-24",
-    mainTechCode: "3137",
-    grade: "A",
-    team: "OUT",
-    status: "EX",
-    maStart: "2025-05-24",
-    maEnd: "2026-05-24",
-    installDate: "2024-12-24",
-    to: "3137",
-    technicianName: "KAVINDA LIYANAGE",
-    visitCode: "",
-    type: "MFP",
-    mInvNo: "MC03329",
-    address1: "GALLE UDUGAMA ROAD",
-    address2: "PINNADUWA",
-    address3: "-",
-    mobile: "0740886085 / 0768351318",
-  },
-  {
-    customer: "DEPARTMENT OF SOCIAL WELFARE -SOUTHERN",
-    model: "MP 2014D",
-    serialNo: "G635MB40160",
-    qNo: "Q9340",
-    date: "",
-    mainTechCode: "3137",
-    grade: "A",
-    team: "OUT",
-    status: "EX",
-    maStart: "2025-10-01",
-    maEnd: "2026-09-30",
-    installDate: "2017-02-17",
-    to: "3137",
-    technicianName: "KAVINDA LIYANAGE",
-    visitCode: "-",
-    type: "MFP",
-    mInvNo: "MC001813",
-    address1: "5TH FLOOR",
-    address2: "DISTRICT SECRETARIAT",
-    address3: "GALLE",
-    mobile: "0912227129",
-  },
-  {
-    customer: "MAPA / VIL / MEDAKANDA KANISHTA VIDYALAYA",
-    model: "MP 2014",
-    serialNo: "G606M750221",
-    qNo: "Q11012",
-    date: "2018-02-15",
-    mainTechCode: "3176",
-    grade: "A",
-    team: "OUT",
-    status: "EX",
-    maStart: "2025-08-01",
-    maEnd: "2026-07-31",
-    installDate: "2017-02-15",
-    to: "3184",
-    technicianName: "DARSHANA RUKSHAN",
-    visitCode: "LMV",
-    type: "MFP",
-    mInvNo: "MC003483",
-    address1: "DUNUWILAPITIYA",
-    address2: "MEDAKANDA",
-    address3: "MATALE",
-    mobile: "071-4410196",
-  },
-  {
-    customer: "SPECIAL TASK FORCE",
-    model: "MP2001L",
-    serialNo: "E343M751159",
-    qNo: "Q5552",
-    date: "",
-    mainTechCode: "3167",
-    grade: "A",
-    team: "SUB",
-    status: "EX",
-    maStart: "2025-02-01",
-    maEnd: "2026-07-31",
-    installDate: "2017-09-19",
-    to: "3167",
-    technicianName: "NIRUSHAN",
-    visitCode: "-",
-    type: "MFP",
-    mInvNo: "MC 70924",
-    address1: "NO:223 ,",
-    address2: "BAUDDHALOKA MW,",
-    address3: "COLOMBO 07",
-    mobile: "0112500471",
-  },
-  {
-    customer: "MR SARATH SAMARAWEERA",
-    model: "MP 2014",
-    serialNo: "G601M650046",
-    qNo: "Q20275",
-    date: "2026-01-10",
-    mainTechCode: "4042",
-    grade: "A",
-    team: "SUB",
-    status: "EX",
-    maStart: "2026-01-10",
-    maEnd: "2026-07-10",
-    installDate: "2025-01-10",
-    to: "8034",
-    technicianName: "SENAL KANISHKA",
-    visitCode: "",
-    type: "MFP",
-    mInvNo: "MC01934",
-    address1: "159/5/B NIDAHAS MAWATHA,",
-    address2: "ROBBERT GUNAWARDHANA MW.",
-    address3: "BATTARAMULLA",
-    mobile: "-",
-  },
-  {
-    customer: "WP/NG G.B.SENANAYAKE MAHA VIDYALAYA",
-    model: "M2701",
-    serialNo: "3281M730233",
-    qNo: "Q18408",
-    date: "2023-01-19",
-    mainTechCode: "8047",
-    grade: "A",
-    team: "SUB",
-    status: "EX",
-    maStart: "2025-05-15",
-    maEnd: "2026-05-14",
-    installDate: "2022-01-19",
-    to: "8058",
-    technicianName: "SUPUN DILHARA",
-    visitCode: "-",
-    type: "MPC",
-    mInvNo: "MC01543",
-    address1: "EKALA",
-    address2: "JA-ELA",
-    address3: "-",
-    mobile: "0112243054",
-  },
-  {
-    customer: "VEEKESY SLIPPERS LANKA (PVT)LTD",
-    model: "MP2014D",
-    serialNo: "G634Z160152",
-    qNo: "Q19818",
-    date: "2025-04-26",
-    mainTechCode: "8047",
-    grade: "A",
-    team: "SUB",
-    status: "EX",
-    maStart: "2026-01-01",
-    maEnd: "2026-12-31",
-    installDate: "2024-04-26",
-    to: "8058",
-    technicianName: "SUPUN DILHARA",
-    visitCode: "",
-    type: "MFP",
-    mInvNo: "MC03021",
-    address1: "NO.41,PARK LANE,ETHUKALA",
-    address2: "NEGOMBO",
-    address3: "-",
-    mobile: "0763423446",
-  },
-];
+/** Returns the "effective date" for filtering / display */
+function getEffectiveDate(row: ExRow): string {
+  if (row.maPeriodEnd && row.maPeriodEnd.trim()) return row.maPeriodEnd;
+  if (row.mWarrantyEndDate && row.mWarrantyEndDate.trim())
+    return row.mWarrantyEndDate;
+  return "";
+}
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+function isUsingWarrantyDate(row: ExRow): boolean {
+  return !row.maPeriodEnd || !row.maPeriodEnd.trim();
+}
+
+/** Team → display label + zone key */
+const TEAM_MAP: Record<
+  string,
+  { label: string; zone: "COL" | "OUT" | "SUB" | "P2P" | "UNKNOWN" }
+> = {
+  SUB: { label: "Suburbs", zone: "SUB" },
+  OUT: { label: "Outstation", zone: "OUT" },
+  "E COL": { label: "Unknown", zone: "UNKNOWN" },
+  "P2P SUB": { label: "P2P", zone: "P2P" },
+  "-": { label: "Unknown", zone: "UNKNOWN" },
+  "`": { label: "Unknown", zone: "UNKNOWN" },
+  PCS: { label: "Technical Electronic", zone: "UNKNOWN" },
+  "P2P OUT": { label: "P2P", zone: "P2P" },
+  EXM: { label: "Unknown", zone: "UNKNOWN" },
+  COL: { label: "Colombo", zone: "COL" },
+  NO: { label: "Unknown", zone: "UNKNOWN" },
+  NULL: { label: "Unknown", zone: "UNKNOWN" },
+  NAS: { label: "Unknown", zone: "UNKNOWN" },
+  "AC SUB": { label: "Unknown", zone: "UNKNOWN" },
+  C: { label: "Unknown", zone: "UNKNOWN" },
+  POS: { label: "Unknown", zone: "UNKNOWN" },
+  "P2P COL": { label: "P2P", zone: "P2P" },
+  P2P: { label: "P2P", zone: "P2P" },
+};
+
+function resolveTeam(team?: string): {
+  label: string;
+  zone: "COL" | "OUT" | "SUB" | "P2P" | "UNKNOWN";
+} {
+  if (!team) return { label: "Unknown", zone: "UNKNOWN" };
+  return TEAM_MAP[team.trim()] ?? { label: "Unknown", zone: "UNKNOWN" };
+}
+
+function getAddress(row: ExRow): string {
+  return [row.invAdd1, row.invAdd2, row.invAdd3]
+    .filter((a) => a && a.trim() && a.trim() !== "-")
+    .join(", ");
+}
+
+function formatDate(d?: string): string {
+  if (!d) return "—";
+  return d.slice(0, 10);
+}
 
 const MONTHS = [
   "Jan",
@@ -280,175 +123,192 @@ const MONTHS = [
   "Oct",
   "Nov",
   "Dec",
-] as const;
+];
 
-const TEAM_STYLE: Record<Team, React.CSSProperties> = {
-  COL: { background: "#dbeafe", color: "#1e40af" },
-  OUT: { background: "#dcfce7", color: "#166534" },
-  SUB: { background: "#fef9c3", color: "#854d0e" },
+const ZONE_COLORS: Record<string, { bg: string; color: string }> = {
+  COL: { bg: "#dbeafe", color: "#1d4ed8" },
+  OUT: { bg: "#d1fae5", color: "#065f46" },
+  SUB: { bg: "#fef3c7", color: "#92400e" },
+  P2P: { bg: "#ede9fe", color: "#5b21b6" },
+  UNKNOWN: { bg: "#f1f5f9", color: "#64748b" },
 };
 
-const TYPE_STYLE: Record<string, React.CSSProperties> = {
-  MFP: { background: "#ede9fe", color: "#5b21b6" },
-  MPC: { background: "#dbeafe", color: "#1d4ed8" },
-  DCP: { background: "#fce7f3", color: "#9d174d" },
-};
+const PAGE_SIZE = 20;
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ── Component ─────────────────────────────────────────────────────────────────
 
-type ActiveTab = "table" | "chart";
+export default function ExBaseReport() {
+  const { GetExReportData, downloadEXReportExcel, downloadEXReportPdf } =
+    useApiConfig();
 
-export default function ExReport() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>("table");
-  const [teamFilter, setTeamFilter] = useState<string>("ALL");
-  const [monthFilter, setMonthFilter] = useState<string>("");
-  const [search, setSearch] = useState<string>("");
-  const [page, setPage] = useState<number>(1);
-  const PAGE_SIZE = 10;
+  // ── State ──────────────────────────────────────────────────────────────────
+  const [data, setData] = useState<ExRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [dlLoading, setDlLoading] = useState<"excel" | "pdf" | null>(null);
 
-  const filtered = useMemo<ExRecord[]>(() => {
-    return RAW_DATA.filter((r) => {
-      const teamOk = teamFilter === "ALL" || r.team === teamFilter;
-      const monthOk = !monthFilter || r.maEnd.startsWith(monthFilter);
-      const q = search.toLowerCase();
-      const searchOk =
-        !search ||
-        r.customer.toLowerCase().includes(q) ||
-        r.qNo.toLowerCase().includes(q) ||
-        r.technicianName.toLowerCase().includes(q) ||
-        r.model.toLowerCase().includes(q) ||
-        r.serialNo.toLowerCase().includes(q);
-      return teamOk && monthOk && searchOk;
+  const currentYear = new Date().getFullYear();
+  const [startDate, setStartDate] = useState(`${currentYear}-01-01`);
+  const [lastDate, setLastDate] = useState(`${currentYear}-12-31`);
+  const [zoneFilter, setZoneFilter] = useState<
+    "ALL" | "COL" | "OUT" | "SUB" | "P2P" | "UNKNOWN"
+  >("ALL");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [activeTab, setActiveTab] = useState<"table" | "chart">("table");
+
+  // Chart state — year filter + selected month drilldown
+  const [chartYear, setChartYear] = useState<number>(currentYear);
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null); // 0-based
+
+  // ── Fetch ──────────────────────────────────────────────────────────────────
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await GetExReportData(startDate, lastDate);
+      setData(Array.isArray(res) ? res : []);
+      setPage(1);
+      setSelectedMonth(null);
+    } catch (e: any) {
+      setError(e?.message ?? "Failed to load report data");
+    } finally {
+      setLoading(false);
+    }
+  }, [startDate, lastDate, GetExReportData]);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // ── Downloads ──────────────────────────────────────────────────────────────
+  const handleExcelDownload = async () => {
+    setDlLoading("excel");
+    try {
+      const blob: Blob = await downloadEXReportExcel(startDate, lastDate);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `EX_Report_${startDate}_to_${lastDate}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      alert("Excel download failed: " + (e?.message ?? "Unknown error"));
+    } finally {
+      setDlLoading(null);
+    }
+  };
+
+  const handlePdfDownload = async () => {
+    setDlLoading("pdf");
+    try {
+      const blob: Blob = await downloadEXReportPdf(startDate, lastDate);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `EX_Report_${startDate}_to_${lastDate}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      alert("PDF download failed: " + (e?.message ?? "Unknown error"));
+    } finally {
+      setDlLoading(null);
+    }
+  };
+
+  // ── Filtered table data ────────────────────────────────────────────────────
+  const filtered = useMemo(() => {
+    return data.filter((row) => {
+      // Zone filter
+      if (zoneFilter !== "ALL" && resolveTeam(row.team).zone !== zoneFilter)
+        return false;
+      // Search
+      if (search) {
+        const q = search.toLowerCase();
+        const hit =
+          (row.cusName ?? "").toLowerCase().includes(q) ||
+          (row.machineRefCode ?? "").toLowerCase().includes(q) ||
+          (row.tOfficerName ?? "").toLowerCase().includes(q) ||
+          (row.machineDesc ?? "").toLowerCase().includes(q) ||
+          (row.serialNo ?? "").toLowerCase().includes(q);
+        if (!hit) return false;
+      }
+      return true;
     });
-  }, [teamFilter, monthFilter, search]);
+  }, [data, zoneFilter, search]);
 
-  const monthlyData = useMemo<number[]>(() => {
-    const counts = Array(12).fill(0);
-    RAW_DATA.filter(
-      (r) => teamFilter === "ALL" || r.team === teamFilter,
-    ).forEach((r) => {
-      if (!r.maEnd) return;
-      const m = parseInt(r.maEnd.split("-")[1], 10) - 1;
-      if (m >= 0 && m < 12) counts[m]++;
-    });
-    return counts;
-  }, [teamFilter]);
-
-  const maxCount = Math.max(...monthlyData, 1);
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const teamCounts = useMemo(
-    () => ({
-      COL: RAW_DATA.filter((r) => r.team === "COL").length,
-      OUT: RAW_DATA.filter((r) => r.team === "OUT").length,
-      SUB: RAW_DATA.filter((r) => r.team === "SUB").length,
-    }),
-    [],
-  );
+  // ── Chart data ─────────────────────────────────────────────────────────────
+  // All unique years present in the dataset
+  const availableYears = useMemo(() => {
+    const ys = new Set<number>();
+    data.forEach((row) => {
+      const d = getEffectiveDate(row);
+      if (d) {
+        const y = parseInt(d.slice(0, 4), 10);
+        if (!isNaN(y)) ys.add(y);
+      }
+    });
+    const arr = Array.from(ys).sort();
+    return arr.length > 0 ? arr : [currentYear];
+  }, [data, currentYear]);
 
-  const downloadCSV = () => {
-    const headers = [
-      "Customer",
-      "Model",
-      "Serial No",
-      "Q.No",
-      "Date",
-      "Main Tech Code",
-      "Grade",
-      "Team",
-      "Status",
-      "MA Start",
-      "MA End",
-      "Install Date",
-      "TO",
-      "Technician",
-      "Visit Code",
-      "Type",
-      "M_INV_NO",
-      "Address 1",
-      "Address 2",
-      "Address 3",
-      "Mobile",
-    ];
-    const rows = filtered.map((r) => [
-      r.customer,
-      r.model,
-      r.serialNo,
-      r.qNo,
-      r.date,
-      r.mainTechCode,
-      r.grade,
-      r.team,
-      r.status,
-      r.maStart,
-      r.maEnd,
-      r.installDate,
-      r.to,
-      r.technicianName,
-      r.visitCode,
-      r.type,
-      r.mInvNo,
-      r.address1,
-      r.address2,
-      r.address3,
-      r.mobile,
-    ]);
-    const csv = [headers, ...rows]
-      .map((row) =>
-        row.map((c) => `"${(c ?? "").replace(/"/g, '""')}"`).join(","),
-      )
-      .join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "EX_Report.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  // Monthly counts for the selected chart year (respects zone filter)
+  const monthlyData = useMemo(() => {
+    const counts = Array(12).fill(0);
+    data.forEach((row) => {
+      if (zoneFilter !== "ALL" && resolveTeam(row.team).zone !== zoneFilter)
+        return;
+      const d = getEffectiveDate(row);
+      if (!d) return;
+      const y = parseInt(d.slice(0, 4), 10);
+      if (y !== chartYear) return;
+      const m = parseInt(d.slice(5, 7), 10) - 1;
+      if (m >= 0 && m < 12) counts[m]++;
+    });
+    return counts;
+  }, [data, chartYear, zoneFilter]);
 
-  const printPDF = () => {
-    const content = `<html><head><style>
-      body{font-family:Arial,sans-serif;font-size:8.5px;margin:18px;}
-      h2{font-size:15px;margin:0 0 3px;color:#7c1d1d;}
-      .sub{font-size:11px;color:#666;margin:0 0 12px;}
-      table{width:100%;border-collapse:collapse;}
-      th{background:#7c1d1d;color:white;padding:5px 6px;text-align:left;font-size:10px;}
-      td{padding:4px 6px;border-bottom:1px solid #f0e0e0;}
-      tr:nth-child(even){background:#fff5f5;}
-    </style></head><body>
-    <h2>EX Report — Expired Agreements</h2>
-    <p class="sub">Team: ${teamFilter === "ALL" ? "All" : teamFilter} &nbsp;|&nbsp; Records: ${filtered.length} &nbsp;|&nbsp; ${new Date().toLocaleDateString()}</p>
-    <table>
-      <tr><th>Customer</th><th>Model</th><th>Serial No</th><th>Q.No</th><th>Team</th><th>MA Start</th><th>MA End</th><th>Technician</th><th>Type</th><th>Mobile</th></tr>
-      ${filtered.map((r) => `<tr><td>${r.customer}</td><td>${r.model}</td><td>${r.serialNo}</td><td>${r.qNo}</td><td>${r.team}</td><td>${r.maStart || "—"}</td><td>${r.maEnd || "—"}</td><td>${r.technicianName}</td><td>${r.type || "—"}</td><td>${r.mobile}</td></tr>`).join("")}
-    </table></body></html>`;
-    const w = window.open("", "_blank");
-    if (w) {
-      w.document.write(content);
-      w.document.close();
-      w.print();
-    }
-  };
+  // Rows for the selected month drilldown
+  const monthDrilldown = useMemo(() => {
+    if (selectedMonth === null) return [];
+    return data.filter((row) => {
+      if (zoneFilter !== "ALL" && resolveTeam(row.team).zone !== zoneFilter)
+        return false;
+      const d = getEffectiveDate(row);
+      if (!d) return false;
+      const y = parseInt(d.slice(0, 4), 10);
+      const m = parseInt(d.slice(5, 7), 10) - 1;
+      return y === chartYear && m === selectedMonth;
+    });
+  }, [data, chartYear, selectedMonth, zoneFilter]);
 
-  const paginationPages = useMemo<number[]>(() => {
-    const total = Math.min(5, totalPages);
-    let start = 1;
-    if (totalPages > 5) {
-      if (page <= 3) start = 1;
-      else if (page >= totalPages - 2) start = totalPages - 4;
-      else start = page - 2;
-    }
-    return Array.from({ length: total }, (_, i) => start + i);
-  }, [page, totalPages]);
+  const maxCount = Math.max(...monthlyData, 1);
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // ── Zone summary ───────────────────────────────────────────────────────────
+  const zoneSummary = useMemo(() => {
+    const counts: Record<string, number> = {
+      COL: 0,
+      OUT: 0,
+      SUB: 0,
+      P2P: 0,
+      UNKNOWN: 0,
+    };
+    filtered.forEach((row) => {
+      counts[resolveTeam(row.team).zone]++;
+    });
+    return counts;
+  }, [filtered]);
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+
   return (
     <div
       style={{
-        fontFamily: "'Segoe UI', system-ui, sans-serif",
-        background: "#fdf4f4",
+        fontFamily: "'Segoe UI', Tahoma, sans-serif",
+        background: "#f0f4f8",
         minHeight: "100vh",
       }}
     >
@@ -457,284 +317,253 @@ export default function ExReport() {
         style={{
           background:
             "linear-gradient(135deg, #7c1d1d 0%, #991b1b 40%, #b91c1c 100%)",
-          padding: "22px 28px",
+          padding: "18px 28px",
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "flex-start",
-          boxShadow: "0 4px 20px rgba(185,28,28,0.3)",
+          alignItems: "center",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
         }}
       >
         <div>
           <div
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              marginBottom: "10px",
+              color: "#f87171",
+              fontSize: "10px",
+              letterSpacing: "3px",
+              textTransform: "uppercase",
+              fontWeight: 700,
             }}
           >
-            <div
-              style={{
-                width: "44px",
-                height: "44px",
-                borderRadius: "12px",
-                background: "rgba(255,255,255,0.15)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "22px",
-                border: "1px solid rgba(255,255,255,0.25)",
-              }}
-            >
-              ⚠️
-            </div>
-            <div>
-              <div
-                style={{
-                  color: "#fca5a5",
-                  fontSize: "10px",
-                  letterSpacing: "3px",
-                  textTransform: "uppercase",
-                  fontWeight: 700,
-                }}
-              >
-                Agreement Status
-              </div>
-              <h1
-                style={{
-                  color: "white",
-                  margin: "2px 0 0",
-                  fontSize: "24px",
-                  fontWeight: 800,
-                  letterSpacing: "-0.5px",
-                }}
-              >
-                EX Report
-              </h1>
-            </div>
+            Service Management
           </div>
-          {/* Team breakdown pills */}
-          <div style={{ display: "flex", gap: "10px", marginLeft: "56px" }}>
-            {(["COL", "OUT", "SUB"] as Team[]).map((t) => (
-              <div
-                key={t}
-                style={{
-                  background: "rgba(255,255,255,0.13)",
-                  borderRadius: "8px",
-                  padding: "5px 12px",
-                  display: "flex",
-                  gap: "8px",
-                  alignItems: "center",
-                  border: "1px solid rgba(255,255,255,0.2)",
-                }}
-              >
-                <span
-                  style={{
-                    color: "#fecaca",
-                    fontSize: "11px",
-                    fontWeight: 700,
-                  }}
-                >
-                  {t}
-                </span>
-                <span
-                  style={{ color: "white", fontSize: "15px", fontWeight: 800 }}
-                >
-                  {teamCounts[t]}
-                </span>
-              </div>
-            ))}
-            <div
-              style={{
-                background: "rgba(255,255,255,0.2)",
-                borderRadius: "8px",
-                padding: "5px 14px",
-                display: "flex",
-                gap: "8px",
-                alignItems: "center",
-              }}
-            >
-              <span
-                style={{ color: "#fde68a", fontSize: "11px", fontWeight: 700 }}
-              >
-                TOTAL
-              </span>
-              <span
-                style={{ color: "white", fontSize: "15px", fontWeight: 800 }}
-              >
-                {RAW_DATA.length}
-              </span>
-            </div>
+          <h1
+            style={{
+              color: "white",
+              margin: "4px 0 0",
+              fontSize: "20px",
+              fontWeight: 800,
+              letterSpacing: "0.3px",
+            }}
+          >
+            EX Base Report
+          </h1>
+          <div style={{ color: "#fca5a5", fontSize: "11px", marginTop: "2px" }}>
+            {loading
+              ? "Loading…"
+              : `${filtered.length.toLocaleString()} records`}
           </div>
         </div>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-            alignItems: "flex-end",
-          }}
-        >
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <button
-            onClick={downloadCSV}
+            onClick={handleExcelDownload}
+            disabled={dlLoading !== null || loading}
             style={{
-              background: "#15803d",
+              background: dlLoading === "excel" ? "#166534" : "#16a34a",
               color: "white",
               border: "none",
-              borderRadius: "8px",
+              borderRadius: "7px",
               padding: "9px 18px",
-              cursor: "pointer",
+              cursor: dlLoading !== null ? "wait" : "pointer",
               fontWeight: 700,
-              fontSize: "13px",
+              fontSize: "12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              opacity: dlLoading !== null ? 0.75 : 1,
+              transition: "all 0.2s",
+              boxShadow: "0 2px 8px rgba(22,163,74,0.35)",
             }}
           >
-            ⬇ Export CSV
+            {dlLoading === "excel" ? "⏳" : "⬇"} Excel
           </button>
           <button
-            onClick={printPDF}
+            onClick={handlePdfDownload}
+            disabled={dlLoading !== null || loading}
             style={{
-              background: "rgba(255,255,255,0.15)",
+              background: dlLoading === "pdf" ? "#991b1b" : "#dc2626",
               color: "white",
-              border: "1px solid rgba(255,255,255,0.35)",
-              borderRadius: "8px",
-              padding: "8px 18px",
-              cursor: "pointer",
-              fontWeight: 600,
+              border: "none",
+              borderRadius: "7px",
+              padding: "9px 18px",
+              cursor: dlLoading !== null ? "wait" : "pointer",
+              fontWeight: 700,
               fontSize: "12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              opacity: dlLoading !== null ? 0.75 : 1,
+              transition: "all 0.2s",
+              boxShadow: "0 2px 8px rgba(220,38,38,0.35)",
             }}
           >
-            🖨 Print PDF
+            {dlLoading === "pdf" ? "⏳" : "⬇"} PDF
           </button>
         </div>
       </div>
 
-      {/* ── Filters ── */}
+      {/* ── Date Range + Fetch ── */}
       <div
         style={{
           background: "white",
-          padding: "13px 28px",
+          padding: "12px 28px",
           display: "flex",
-          gap: "14px",
+          gap: "12px",
           alignItems: "center",
           flexWrap: "wrap",
-          borderBottom: "1px solid #fce7e7",
+          borderBottom: "1px solid #e2e8f0",
           boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
         }}
       >
-        <div style={{ display: "flex", gap: "6px" }}>
-          {(
-            [
-              ["ALL", "All"],
-              ["COL", "Colombo"],
-              ["OUT", "Outstation"],
-              ["SUB", "Suburbs"],
-            ] as [string, string][]
-          ).map(([v, l]) => (
-            <button
-              key={v}
-              onClick={() => {
-                setTeamFilter(v);
-                setPage(1);
-              }}
-              style={{
-                padding: "7px 15px",
-                borderRadius: "20px",
-                border: "none",
-                cursor: "pointer",
-                fontWeight: 700,
-                fontSize: "12px",
-                background: teamFilter === v ? "#991b1b" : "#fef2f2",
-                color: teamFilter === v ? "white" : "#7c1d1d",
-                transition: "all 0.15s",
-              }}
-            >
-              {l}
-            </button>
-          ))}
+        <label style={{ fontSize: "12px", fontWeight: 700, color: "#334155" }}>
+          Date Range:
+        </label>
+        <input
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          style={{
+            border: "1px solid #cbd5e1",
+            borderRadius: "6px",
+            padding: "6px 10px",
+            fontSize: "12px",
+            outline: "none",
+          }}
+        />
+        <span style={{ color: "#94a3b8", fontWeight: 700 }}>→</span>
+        <input
+          type="date"
+          value={lastDate}
+          onChange={(e) => setLastDate(e.target.value)}
+          style={{
+            border: "1px solid #cbd5e1",
+            borderRadius: "6px",
+            padding: "6px 10px",
+            fontSize: "12px",
+            outline: "none",
+          }}
+        />
+        <button
+          onClick={fetchData}
+          disabled={loading}
+          style={{
+            background: "#b91c1c",
+            color: "white",
+            border: "none",
+            borderRadius: "7px",
+            padding: "8px 18px",
+            cursor: loading ? "wait" : "pointer",
+            fontWeight: 700,
+            fontSize: "12px",
+          }}
+        >
+          {loading ? "Loading…" : "🔍 Fetch"}
+        </button>
+        {error && (
+          <span style={{ color: "#dc2626", fontSize: "12px", fontWeight: 600 }}>
+            ⚠ {error}
+          </span>
+        )}
+      </div>
+
+      {/* ── Zone Filter + Search + Summary ── */}
+      <div
+        style={{
+          background: "white",
+          padding: "10px 28px",
+          display: "flex",
+          gap: "10px",
+          alignItems: "center",
+          flexWrap: "wrap",
+          borderBottom: "2px solid #e2e8f0",
+        }}
+      >
+        {/* Zone pills */}
+        <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
+          {(["ALL", "COL", "OUT", "SUB", "P2P", "UNKNOWN"] as const).map(
+            (z) => {
+              const col =
+                z === "ALL"
+                  ? { bg: "#b91c1c", color: "white" }
+                  : ZONE_COLORS[z];
+              const active = zoneFilter === z;
+              const count = z === "ALL" ? filtered.length : zoneSummary[z];
+              return (
+                <button
+                  key={z}
+                  onClick={() => {
+                    setZoneFilter(z);
+                    setPage(1);
+                  }}
+                  style={{
+                    padding: "5px 12px",
+                    borderRadius: "20px",
+                    border: "none",
+                    cursor: "pointer",
+                    fontWeight: 700,
+                    fontSize: "11px",
+                    background: active
+                      ? z === "ALL"
+                        ? "#b91c1c"
+                        : col.bg
+                      : "#f1f5f9",
+                    color: active
+                      ? z === "ALL"
+                        ? "white"
+                        : col.color
+                      : "#64748b",
+                    transition: "all 0.18s",
+                    outline: active
+                      ? `2px solid ${z === "ALL" ? "#b91c1c" : col.color}`
+                      : "none",
+                  }}
+                >
+                  {z === "ALL" ? "All" : z === "UNKNOWN" ? "Unknown" : z}{" "}
+                  {count > 0 && (
+                    <span style={{ opacity: 0.75 }}>({count})</span>
+                  )}
+                </button>
+              );
+            },
+          )}
         </div>
 
-        <div style={{ width: "1px", height: "28px", background: "#fce7e7" }} />
-
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <label
-            style={{
-              fontSize: "12px",
-              color: "#991b1b",
-              fontWeight: 700,
-              whiteSpace: "nowrap",
-            }}
-          >
-            MA End:
-          </label>
+        {/* Search */}
+        <div style={{ marginLeft: "auto" }}>
           <input
-            type="month"
-            value={monthFilter}
+            placeholder="Search name, serial, model, technician…"
+            value={search}
             onChange={(e) => {
-              setMonthFilter(e.target.value);
+              setSearch(e.target.value);
               setPage(1);
             }}
             style={{
-              border: "1px solid #fca5a5",
+              border: "1px solid #cbd5e1",
               borderRadius: "7px",
-              padding: "6px 10px",
+              padding: "7px 14px",
               fontSize: "12px",
+              width: "260px",
               outline: "none",
-              color: "#333",
-              background: "#fff5f5",
             }}
           />
-          {monthFilter && (
-            <button
-              onClick={() => {
-                setMonthFilter("");
-                setPage(1);
-              }}
+        </div>
+
+        {/* Zone chips summary */}
+        <div style={{ display: "flex", gap: "6px" }}>
+          {(["COL", "OUT", "SUB", "P2P"] as const).map((z) => (
+            <div
+              key={z}
               style={{
-                background: "#b91c1c",
-                color: "white",
-                border: "none",
-                borderRadius: "5px",
-                padding: "5px 10px",
-                cursor: "pointer",
+                background: ZONE_COLORS[z].bg,
+                color: ZONE_COLORS[z].color,
+                borderRadius: "6px",
+                padding: "3px 10px",
                 fontSize: "11px",
                 fontWeight: 700,
               }}
             >
-              ✕
-            </button>
-          )}
-        </div>
-
-        <input
-          placeholder="Search customer, Q.No, model, technician…"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          style={{
-            marginLeft: "auto",
-            border: "1px solid #fca5a5",
-            borderRadius: "8px",
-            padding: "7px 14px",
-            fontSize: "12px",
-            width: "260px",
-            outline: "none",
-            background: "#fff5f5",
-          }}
-        />
-        <div
-          style={{
-            background: "#fef2f2",
-            color: "#991b1b",
-            padding: "6px 14px",
-            borderRadius: "8px",
-            fontSize: "12px",
-            fontWeight: 800,
-            border: "1px solid #fca5a5",
-          }}
-        >
-          {filtered.length} records
+              {z}: {zoneSummary[z]}
+            </div>
+          ))}
         </div>
       </div>
 
@@ -742,199 +571,77 @@ export default function ExReport() {
       <div
         style={{
           background: "white",
+          borderBottom: "2px solid #e2e8f0",
+          padding: "0 28px",
           display: "flex",
-          margin: "16px 28px 0",
-          borderRadius: "12px 12px 0 0",
-          overflow: "hidden",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
         }}
       >
         {(
           [
             ["table", "📋 Report Table"],
             ["chart", "📊 Monthly Chart"],
-          ] as [ActiveTab, string][]
-        ).map(([t, l]) => (
+          ] as const
+        ).map(([tab, label]) => (
           <button
-            key={t}
-            onClick={() => setActiveTab(t)}
+            key={tab}
+            onClick={() => setActiveTab(tab as any)}
             style={{
-              flex: 1,
-              padding: "13px 20px",
+              padding: "11px 20px",
               border: "none",
-              background: activeTab === t ? "#991b1b" : "white",
-              color: activeTab === t ? "white" : "#888",
+              background: "transparent",
               cursor: "pointer",
               fontWeight: 700,
               fontSize: "13px",
+              color: activeTab === tab ? "#b91c1c" : "#94a3b8",
+              borderBottom:
+                activeTab === tab
+                  ? "3px solid #b91c1c"
+                  : "3px solid transparent",
               transition: "all 0.15s",
             }}
           >
-            {l}
+            {label}
           </button>
         ))}
       </div>
 
-      {/* ── Content ── */}
-      <div style={{ margin: "0 28px 28px" }}>
-        {/* Chart */}
-        {activeTab === "chart" && (
+      {/* ── Loading skeleton ── */}
+      {loading && (
+        <div style={{ padding: "40px 28px", textAlign: "center" }}>
+          <div style={{ fontSize: "14px", color: "#64748b", fontWeight: 600 }}>
+            Fetching report data…
+          </div>
           <div
             style={{
-              background: "white",
-              borderRadius: "0 0 14px 14px",
-              padding: "28px 28px 24px",
-              boxShadow: "0 2px 10px rgba(0,0,0,0.07)",
+              margin: "16px auto",
+              width: "200px",
+              height: "4px",
+              background: "#e2e8f0",
+              borderRadius: "2px",
+              overflow: "hidden",
             }}
           >
-            <h3
-              style={{
-                margin: "0 0 4px",
-                color: "#7c1d1d",
-                fontSize: "17px",
-                fontWeight: 800,
-              }}
-            >
-              MA End — Monthly Expiry Count
-            </h3>
-            <p style={{ margin: "0 0 28px", color: "#aaa", fontSize: "12px" }}>
-              Agreements expiring per month · filtered by team
-            </p>
-
-            {/* Bar chart */}
             <div
               style={{
-                display: "flex",
-                alignItems: "flex-end",
-                gap: "10px",
-                height: "240px",
-                paddingBottom: "30px",
-                borderBottom: "2px solid #fee2e2",
-                position: "relative",
+                height: "100%",
+                width: "40%",
+                background: "#b91c1c",
+                borderRadius: "2px",
+                animation: "slide 1.2s ease-in-out infinite",
               }}
-            >
-              {/* Y-axis hint lines */}
-              {[25, 50, 75, 100].map((p) => (
-                <div
-                  key={p}
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    right: 0,
-                    bottom: `${30 + (p / 100) * 200}px`,
-                    borderTop: "1px dashed #fecaca",
-                    zIndex: 0,
-                  }}
-                />
-              ))}
-              {MONTHS.map((m, i) => {
-                const count = monthlyData[i];
-                const barH =
-                  count === 0 ? 4 : Math.max(20, (count / maxCount) * 200);
-                return (
-                  <div
-                    key={m}
-                    style={{
-                      flex: 1,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: "5px",
-                      zIndex: 1,
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: "11px",
-                        fontWeight: 800,
-                        color: count > 0 ? "#991b1b" : "#fca5a5",
-                        minHeight: "16px",
-                      }}
-                    >
-                      {count > 0 ? count : ""}
-                    </div>
-                    <div
-                      title={`${m}: ${count} expired`}
-                      style={{
-                        width: "100%",
-                        height: `${barH}px`,
-                        background:
-                          count > 0
-                            ? "linear-gradient(180deg, #f87171 0%, #991b1b 100%)"
-                            : "#fee2e2",
-                        borderRadius: "5px 5px 0 0",
-                        transition: "height 0.4s ease",
-                        cursor: "default",
-                      }}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-            <div style={{ display: "flex", gap: "10px", paddingTop: "8px" }}>
-              {MONTHS.map((m) => (
-                <div
-                  key={m}
-                  style={{
-                    flex: 1,
-                    textAlign: "center",
-                    fontSize: "11px",
-                    color: "#888",
-                    fontWeight: 600,
-                  }}
-                >
-                  {m}
-                </div>
-              ))}
-            </div>
-
-            {/* Summary pills */}
-            <div
-              style={{
-                marginTop: "22px",
-                display: "flex",
-                gap: "10px",
-                flexWrap: "wrap",
-              }}
-            >
-              {MONTHS.map(
-                (m, i) =>
-                  monthlyData[i] > 0 && (
-                    <div
-                      key={m}
-                      style={{
-                        background: "#fff5f5",
-                        border: "1px solid #fca5a5",
-                        borderRadius: "8px",
-                        padding: "7px 14px",
-                        fontSize: "12px",
-                      }}
-                    >
-                      <span style={{ fontWeight: 800, color: "#991b1b" }}>
-                        {m}:
-                      </span>
-                      <span style={{ color: "#555", marginLeft: "5px" }}>
-                        {monthlyData[i]} expir
-                        {monthlyData[i] === 1 ? "y" : "ies"}
-                      </span>
-                    </div>
-                  ),
-              )}
-              {monthlyData.every((c) => c === 0) && (
-                <span style={{ color: "#fca5a5", fontSize: "13px" }}>
-                  No data for current filter.
-                </span>
-              )}
-            </div>
+            />
           </div>
-        )}
+          <style>{`@keyframes slide { 0%{transform:translateX(-250%)} 100%{transform:translateX(600%)} }`}</style>
+        </div>
+      )}
 
-        {/* Table */}
-        {activeTab === "table" && (
+      <div style={{ padding: "18px 28px" }}>
+        {/* ════════════ TABLE TAB ════════════ */}
+        {!loading && activeTab === "table" && (
           <div
             style={{
               background: "white",
-              borderRadius: "0 0 14px 14px",
+              borderRadius: "12px",
               boxShadow: "0 2px 10px rgba(0,0,0,0.07)",
               overflow: "hidden",
             }}
@@ -944,8 +651,8 @@ export default function ExReport() {
                 style={{
                   width: "100%",
                   borderCollapse: "collapse",
-                  fontSize: "12px",
-                  minWidth: "1180px",
+                  fontSize: "11.5px",
+                  minWidth: "1200px",
                 }}
               >
                 <thead>
@@ -959,28 +666,28 @@ export default function ExReport() {
                       "Customer",
                       "Model",
                       "Serial No",
-                      "Q.No",
-                      "Team",
+                      "Q.No / Inv",
+                      "Zone",
                       "Grade",
+                      "Eff. Date",
                       "MA Start",
                       "MA End",
-                      "Install Date",
+                      "Warranty End",
                       "Technician",
                       "Type",
-                      "M_INV_NO",
                       "Address",
                       "Mobile",
                     ].map((h) => (
                       <th
                         key={h}
                         style={{
-                          padding: "11px 10px",
-                          color: "#fecaca",
+                          padding: "10px 10px",
+                          color: "white",
                           fontWeight: 700,
                           textAlign: "left",
-                          fontSize: "11px",
+                          fontSize: "10.5px",
                           whiteSpace: "nowrap",
-                          letterSpacing: "0.3px",
+                          letterSpacing: "0.4px",
                         }}
                       >
                         {h}
@@ -989,242 +696,229 @@ export default function ExReport() {
                   </tr>
                 </thead>
                 <tbody>
-                  {pageData.map((r, i) => {
+                  {pageData.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={15}
+                        style={{
+                          padding: "48px",
+                          textAlign: "center",
+                          color: "#94a3b8",
+                          fontSize: "14px",
+                        }}
+                      >
+                        {data.length === 0
+                          ? "No data — click Fetch to load."
+                          : "No records match the current filters."}
+                      </td>
+                    </tr>
+                  )}
+                  {pageData.map((row, i) => {
+                    const effDate = getEffectiveDate(row);
+                    const isWarr = isUsingWarrantyDate(row);
+                    const zone = resolveTeam(row.team);
+                    const zoneStyle = ZONE_COLORS[zone.zone];
                     const idx = (page - 1) * PAGE_SIZE + i + 1;
-                    const addr = [r.address1, r.address2, r.address3]
-                      .filter((a) => a && a !== "-")
-                      .join(", ");
+
                     return (
                       <tr
-                        key={`${r.qNo}-${i}`}
+                        key={`${row.serialNo}-${i}`}
                         style={{
-                          background: i % 2 === 0 ? "white" : "#fff5f5",
-                          borderBottom: "1px solid #fef2f2",
+                          background: i % 2 === 0 ? "white" : "#f8fafc",
+                          borderBottom: "1px solid #f1f5f9",
+                          transition: "background 0.12s",
                         }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background = "#fff5f5")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background =
+                            i % 2 === 0 ? "white" : "#f8fafc")
+                        }
                       >
                         <td
                           style={{
-                            padding: "9px 10px",
-                            color: "#d4a5a5",
-                            fontWeight: 700,
+                            padding: "8px 10px",
+                            color: "#94a3b8",
+                            fontWeight: 600,
                             fontSize: "11px",
                           }}
                         >
                           {idx}
                         </td>
-
                         <td
                           style={{
-                            padding: "9px 10px",
+                            padding: "8px 10px",
                             fontWeight: 700,
-                            color: "#1a202c",
+                            color: "#1e293b",
                             maxWidth: "180px",
+                            lineHeight: 1.3,
                           }}
                         >
-                          {r.customer}
+                          {row.cusName || "—"}
                         </td>
-
                         <td
                           style={{
-                            padding: "9px 10px",
-                            color: "#4a5568",
+                            padding: "8px 10px",
+                            color: "#475569",
                             whiteSpace: "nowrap",
-                            fontSize: "11px",
                           }}
                         >
-                          {r.model}
+                          {row.machineDesc || "—"}
                         </td>
-
                         <td
                           style={{
-                            padding: "9px 10px",
-                            color: "#718096",
-                            fontSize: "10px",
+                            padding: "8px 10px",
+                            color: "#64748b",
+                            fontSize: "10.5px",
                             fontFamily: "monospace",
-                            whiteSpace: "nowrap",
                           }}
                         >
-                          {r.serialNo}
+                          {row.serialNo || "—"}
                         </td>
-
                         <td
                           style={{
-                            padding: "9px 10px",
+                            padding: "8px 10px",
+                            color: "#b91c1c",
                             fontWeight: 700,
-                            color: "#991b1b",
                           }}
                         >
-                          {r.qNo}
+                          {row.machineRefCode || row.mInvNo || "—"}
                         </td>
-
-                        <td style={{ padding: "9px 10px" }}>
+                        <td style={{ padding: "8px 10px" }}>
                           <span
                             style={{
-                              padding: "2px 9px",
+                              padding: "2px 8px",
                               borderRadius: "10px",
                               fontSize: "10px",
                               fontWeight: 700,
-                              ...TEAM_STYLE[r.team],
+                              background: zoneStyle.bg,
+                              color: zoneStyle.color,
                             }}
                           >
-                            {r.team}
+                            {zone.zone}
                           </span>
                         </td>
-
                         <td
-                          style={{ padding: "9px 10px", textAlign: "center" }}
+                          style={{ padding: "8px 10px", textAlign: "center" }}
                         >
-                          {r.grade ? (
+                          <span
+                            style={{
+                              padding: "2px 8px",
+                              borderRadius: "10px",
+                              fontSize: "10px",
+                              fontWeight: 700,
+                              background:
+                                row.cusGrade === "A" ? "#dcfce7" : "#fee2e2",
+                              color:
+                                row.cusGrade === "A" ? "#166534" : "#991b1b",
+                            }}
+                          >
+                            {row.cusGrade || "—"}
+                          </span>
+                        </td>
+                        <td
+                          style={{ padding: "8px 10px", whiteSpace: "nowrap" }}
+                        >
+                          {effDate ? (
                             <span
                               style={{
-                                padding: "2px 8px",
-                                borderRadius: "10px",
-                                fontSize: "10px",
+                                color: isWarr ? "#b91c1c" : "#15803d",
                                 fontWeight: 700,
-                                background: "#f3f4f6",
-                                color: "#374151",
-                              }}
-                            >
-                              {r.grade}
-                            </span>
-                          ) : (
-                            <span style={{ color: "#ccc" }}>—</span>
-                          )}
-                        </td>
-
-                        <td
-                          style={{
-                            padding: "9px 10px",
-                            fontSize: "11px",
-                            color: "#555",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {r.maStart || "—"}
-                        </td>
-
-                        <td
-                          style={{ padding: "9px 10px", whiteSpace: "nowrap" }}
-                        >
-                          {r.maEnd ? (
-                            <span
-                              style={{
-                                color: "#991b1b",
-                                fontWeight: 800,
                                 fontSize: "11px",
-                                background: "#fff5f5",
-                                padding: "2px 7px",
-                                borderRadius: "6px",
-                                border: "1px solid #fca5a5",
                               }}
                             >
-                              {r.maEnd}
+                              {formatDate(effDate)}
+                              {isWarr ? " 🔒" : ""}
                             </span>
                           ) : (
-                            <span style={{ color: "#ccc" }}>—</span>
+                            <span style={{ color: "#cbd5e1" }}>—</span>
                           )}
                         </td>
-
                         <td
                           style={{
-                            padding: "9px 10px",
+                            padding: "8px 10px",
                             fontSize: "11px",
-                            color: "#718096",
+                            color: "#64748b",
                             whiteSpace: "nowrap",
                           }}
                         >
-                          {r.installDate || "—"}
+                          {formatDate(row.maPeriodStart)}
                         </td>
-
                         <td
                           style={{
-                            padding: "9px 10px",
-                            color: "#2d3748",
-                            fontWeight: 600,
-                            whiteSpace: "nowrap",
+                            padding: "8px 10px",
                             fontSize: "11px",
+                            color: "#64748b",
+                            whiteSpace: "nowrap",
                           }}
                         >
-                          {r.technicianName}
+                          {formatDate(row.maPeriodEnd)}
                         </td>
-
-                        <td style={{ padding: "9px 10px" }}>
-                          {r.type ? (
+                        <td
+                          style={{
+                            padding: "8px 10px",
+                            fontSize: "11px",
+                            color: "#94a3b8",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {formatDate(row.mWarrantyEndDate)}
+                        </td>
+                        <td
+                          style={{
+                            padding: "8px 10px",
+                            color: "#475569",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {row.tOfficerName || row.repName || "—"}
+                        </td>
+                        <td style={{ padding: "8px 10px" }}>
+                          {row.machineType ? (
                             <span
                               style={{
-                                padding: "2px 8px",
+                                background: "#ede9fe",
+                                color: "#5b21b6",
+                                padding: "2px 7px",
                                 borderRadius: "8px",
                                 fontSize: "10px",
                                 fontWeight: 700,
-                                ...(TYPE_STYLE[r.type] ?? {
-                                  background: "#e2e8f0",
-                                  color: "#4a5568",
-                                }),
                               }}
                             >
-                              {r.type}
+                              {row.machineType}
                             </span>
                           ) : (
-                            <span style={{ color: "#ccc" }}>—</span>
+                            "—"
                           )}
                         </td>
-
                         <td
                           style={{
-                            padding: "9px 10px",
-                            fontSize: "10px",
-                            color: "#999",
+                            padding: "8px 10px",
+                            fontSize: "11px",
+                            color: "#64748b",
+                            maxWidth: "160px",
+                          }}
+                        >
+                          {getAddress(row) || "—"}
+                        </td>
+                        <td
+                          style={{
+                            padding: "8px 10px",
+                            fontSize: "11px",
+                            color: "#2563eb",
                             whiteSpace: "nowrap",
                           }}
                         >
-                          {r.mInvNo || "—"}
-                        </td>
-
-                        <td
-                          style={{
-                            padding: "9px 10px",
-                            fontSize: "11px",
-                            color: "#666",
-                            maxWidth: "170px",
-                          }}
-                        >
-                          {addr}
-                        </td>
-
-                        <td
-                          style={{
-                            padding: "9px 10px",
-                            fontSize: "11px",
-                            color: "#1d4ed8",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {r.mobile && r.mobile !== "-" ? r.mobile : "—"}
+                          {row.mLocTelephone && row.mLocTelephone !== "-"
+                            ? row.mLocTelephone
+                            : row.telNo && row.telNo !== "-"
+                              ? row.telNo
+                              : "—"}
                         </td>
                       </tr>
                     );
                   })}
-                  {pageData.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={15}
-                        style={{ padding: "60px", textAlign: "center" }}
-                      >
-                        <div style={{ fontSize: "32px", marginBottom: "10px" }}>
-                          🔍
-                        </div>
-                        <div
-                          style={{
-                            color: "#ccc",
-                            fontSize: "14px",
-                            fontWeight: 600,
-                          }}
-                        >
-                          No expired records match the current filters.
-                        </div>
-                      </td>
-                    </tr>
-                  )}
                 </tbody>
               </table>
             </div>
@@ -1233,100 +927,519 @@ export default function ExReport() {
             {totalPages > 1 && (
               <div
                 style={{
-                  padding: "13px 20px",
+                  padding: "12px 20px",
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  borderTop: "1px solid #fef2f2",
-                  background: "#fffbfb",
+                  borderTop: "1px solid #f1f5f9",
+                  background: "#fafbfc",
                 }}
               >
-                <span style={{ fontSize: "12px", color: "#999" }}>
-                  Showing{" "}
-                  <strong style={{ color: "#991b1b" }}>
-                    {(page - 1) * PAGE_SIZE + 1}
-                  </strong>
-                  –
-                  <strong style={{ color: "#991b1b" }}>
-                    {Math.min(page * PAGE_SIZE, filtered.length)}
-                  </strong>{" "}
-                  of{" "}
-                  <strong style={{ color: "#991b1b" }}>
-                    {filtered.length}
-                  </strong>
+                <span style={{ fontSize: "12px", color: "#64748b" }}>
+                  Showing {(page - 1) * PAGE_SIZE + 1}–
+                  {Math.min(page * PAGE_SIZE, filtered.length)} of{" "}
+                  {filtered.length}
                 </span>
                 <div style={{ display: "flex", gap: "5px" }}>
-                  <button
+                  <PaginationBtn
+                    label="‹"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    style={{
-                      padding: "6px 12px",
-                      borderRadius: "7px",
-                      border: "1px solid #fca5a5",
-                      background: "white",
-                      cursor: page === 1 ? "not-allowed" : "pointer",
-                      color: page === 1 ? "#fca5a5" : "#991b1b",
-                      fontWeight: 700,
-                    }}
-                  >
-                    ‹
-                  </button>
-                  {paginationPages.map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => setPage(p)}
-                      style={{
-                        padding: "6px 11px",
-                        borderRadius: "7px",
-                        border: "1px solid #fca5a5",
-                        background: p === page ? "#991b1b" : "white",
-                        color: p === page ? "white" : "#991b1b",
-                        cursor: "pointer",
-                        fontWeight: 700,
-                        minWidth: "34px",
-                      }}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                  <button
+                  />
+                  {paginationRange(page, totalPages).map((p, i) =>
+                    p === "…" ? (
+                      <span
+                        key={`e${i}`}
+                        style={{ padding: "6px 4px", color: "#94a3b8" }}
+                      >
+                        …
+                      </span>
+                    ) : (
+                      <PaginationBtn
+                        key={p}
+                        label={String(p)}
+                        onClick={() => setPage(Number(p))}
+                        active={p === page}
+                      />
+                    ),
+                  )}
+                  <PaginationBtn
+                    label="›"
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    style={{
-                      padding: "6px 12px",
-                      borderRadius: "7px",
-                      border: "1px solid #fca5a5",
-                      background: "white",
-                      cursor: page === totalPages ? "not-allowed" : "pointer",
-                      color: page === totalPages ? "#fca5a5" : "#991b1b",
-                      fontWeight: 700,
-                    }}
-                  >
-                    ›
-                  </button>
+                  />
                 </div>
               </div>
             )}
           </div>
         )}
+
+        {/* ════════════ CHART TAB ════════════ */}
+        {!loading && activeTab === "chart" && (
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+          >
+            {/* Year selector */}
+            <div
+              style={{
+                background: "white",
+                borderRadius: "12px",
+                padding: "16px 22px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                flexWrap: "wrap",
+              }}
+            >
+              <span
+                style={{ fontSize: "13px", fontWeight: 700, color: "#334155" }}
+              >
+                Year:
+              </span>
+              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                {availableYears.map((y) => (
+                  <button
+                    key={y}
+                    onClick={() => {
+                      setChartYear(y);
+                      setSelectedMonth(null);
+                    }}
+                    style={{
+                      padding: "6px 16px",
+                      borderRadius: "20px",
+                      border: "none",
+                      cursor: "pointer",
+                      fontWeight: 700,
+                      fontSize: "13px",
+                      background: chartYear === y ? "#b91c1c" : "#f1f5f9",
+                      color: chartYear === y ? "white" : "#475569",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    {y}
+                  </button>
+                ))}
+              </div>
+              {selectedMonth !== null && (
+                <button
+                  onClick={() => setSelectedMonth(null)}
+                  style={{
+                    marginLeft: "auto",
+                    padding: "6px 14px",
+                    borderRadius: "8px",
+                    border: "1px solid #e2e8f0",
+                    background: "white",
+                    cursor: "pointer",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    color: "#64748b",
+                  }}
+                >
+                  ← Back to Year View
+                </button>
+              )}
+            </div>
+
+            {/* Bar chart */}
+            <div
+              style={{
+                background: "white",
+                borderRadius: "12px",
+                padding: "24px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+              }}
+            >
+              <div style={{ marginBottom: "4px" }}>
+                <h3
+                  style={{
+                    margin: 0,
+                    color: "#7c1d1d",
+                    fontSize: "15px",
+                    fontWeight: 800,
+                  }}
+                >
+                  {selectedMonth !== null
+                    ? `${MONTHS[selectedMonth]} ${chartYear} — ${monthDrilldown.length} records`
+                    : `Monthly Expiry Count — ${chartYear}`}
+                </h3>
+                <p
+                  style={{
+                    margin: "4px 0 20px",
+                    color: "#94a3b8",
+                    fontSize: "11px",
+                  }}
+                >
+                  Effective date = MA End Date when set, otherwise Warranty End
+                  Date.
+                  {selectedMonth === null &&
+                    " Click a bar to drill into that month."}
+                </p>
+              </div>
+
+              {selectedMonth === null ? (
+                /* ── Year view: bar chart ── */
+                <>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-end",
+                      gap: "8px",
+                      height: "240px",
+                      paddingBottom: "0",
+                    }}
+                  >
+                    {MONTHS.map((m, i) => {
+                      const count = monthlyData[i];
+                      const height =
+                        count === 0
+                          ? 4
+                          : Math.max(18, (count / maxCount) * 210);
+                      const isHot =
+                        count === Math.max(...monthlyData) && count > 0;
+                      return (
+                        <div
+                          key={m}
+                          style={{
+                            flex: 1,
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: "11px",
+                              fontWeight: 700,
+                              color: count > 0 ? "#7c1d1d" : "#cbd5e1",
+                              minHeight: "16px",
+                            }}
+                          >
+                            {count || ""}
+                          </div>
+                          <div
+                            onClick={() => count > 0 && setSelectedMonth(i)}
+                            style={{
+                              width: "100%",
+                              height: `${height}px`,
+                              background: isHot
+                                ? "linear-gradient(180deg, #f59e0b 0%, #d97706 100%)"
+                                : count > 0
+                                  ? "linear-gradient(180deg, #f87171 0%, #b91c1c 100%)"
+                                  : "#f1f5f9",
+                              borderRadius: "5px 5px 0 0",
+                              cursor: count > 0 ? "pointer" : "default",
+                              transition: "filter 0.15s, transform 0.15s",
+                              boxShadow:
+                                count > 0
+                                  ? "0 2px 6px rgba(185,28,28,0.2)"
+                                  : "none",
+                            }}
+                            onMouseEnter={(e) => {
+                              if (count > 0) {
+                                (e.target as HTMLElement).style.filter =
+                                  "brightness(1.15)";
+                                (e.target as HTMLElement).style.transform =
+                                  "scaleY(1.03)";
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.target as HTMLElement).style.filter = "";
+                              (e.target as HTMLElement).style.transform = "";
+                            }}
+                            title={`${m} ${chartYear}: ${count} records — click to view`}
+                          />
+                          <div
+                            style={{
+                              fontSize: "10.5px",
+                              color: "#64748b",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {m}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {/* Legend */}
+                  <div
+                    style={{
+                      marginTop: "20px",
+                      display: "flex",
+                      gap: "12px",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    {MONTHS.map(
+                      (m, i) =>
+                        monthlyData[i] > 0 && (
+                          <div
+                            key={m}
+                            onClick={() => setSelectedMonth(i)}
+                            style={{
+                              background: "#fff5f5",
+                              borderRadius: "8px",
+                              padding: "6px 12px",
+                              fontSize: "11.5px",
+                              cursor: "pointer",
+                              border: "1px solid #fecaca",
+                            }}
+                          >
+                            <span style={{ fontWeight: 700, color: "#b91c1c" }}>
+                              {m}:
+                            </span>{" "}
+                            <span style={{ color: "#334155" }}>
+                              {monthlyData[i]} record
+                              {monthlyData[i] !== 1 ? "s" : ""}
+                            </span>
+                          </div>
+                        ),
+                    )}
+                  </div>
+                </>
+              ) : (
+                /* ── Month drilldown: mini table ── */
+                <div style={{ overflowX: "auto" }}>
+                  {monthDrilldown.length === 0 ? (
+                    <div
+                      style={{
+                        padding: "32px",
+                        textAlign: "center",
+                        color: "#94a3b8",
+                      }}
+                    >
+                      No records for this month.
+                    </div>
+                  ) : (
+                    <table
+                      style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        fontSize: "11.5px",
+                        minWidth: "900px",
+                      }}
+                    >
+                      <thead>
+                        <tr
+                          style={{
+                            background:
+                              "linear-gradient(135deg, #7c1d1d, #b91c1c)",
+                          }}
+                        >
+                          {[
+                            "#",
+                            "Customer",
+                            "Model",
+                            "Serial No",
+                            "Zone",
+                            "Eff. Date",
+                            "Technician",
+                            "Type",
+                            "Mobile",
+                          ].map((h) => (
+                            <th
+                              key={h}
+                              style={{
+                                padding: "8px 10px",
+                                color: "white",
+                                fontWeight: 700,
+                                textAlign: "left",
+                                fontSize: "10.5px",
+                              }}
+                            >
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {monthDrilldown.map((row, i) => {
+                          const zone = resolveTeam(row.team);
+                          const zs = ZONE_COLORS[zone.zone];
+                          const eff = getEffectiveDate(row);
+                          return (
+                            <tr
+                              key={`${row.serialNo}-${i}`}
+                              style={{
+                                background: i % 2 === 0 ? "white" : "#f8fafc",
+                                borderBottom: "1px solid #f1f5f9",
+                              }}
+                            >
+                              <td
+                                style={{
+                                  padding: "7px 10px",
+                                  color: "#94a3b8",
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {i + 1}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "7px 10px",
+                                  fontWeight: 700,
+                                  color: "#1e293b",
+                                }}
+                              >
+                                {row.cusName || "—"}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "7px 10px",
+                                  color: "#475569",
+                                }}
+                              >
+                                {row.machineDesc || "—"}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "7px 10px",
+                                  color: "#64748b",
+                                  fontFamily: "monospace",
+                                  fontSize: "10.5px",
+                                }}
+                              >
+                                {row.serialNo || "—"}
+                              </td>
+                              <td style={{ padding: "7px 10px" }}>
+                                <span
+                                  style={{
+                                    padding: "2px 7px",
+                                    borderRadius: "9px",
+                                    fontSize: "10px",
+                                    fontWeight: 700,
+                                    background: zs.bg,
+                                    color: zs.color,
+                                  }}
+                                >
+                                  {zone.zone}
+                                </span>
+                              </td>
+                              <td
+                                style={{
+                                  padding: "7px 10px",
+                                  fontWeight: 700,
+                                  color: isUsingWarrantyDate(row)
+                                    ? "#b91c1c"
+                                    : "#15803d",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {formatDate(eff)}
+                                {isUsingWarrantyDate(row) ? " 🔒" : ""}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "7px 10px",
+                                  color: "#475569",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {row.tOfficerName || "—"}
+                              </td>
+                              <td style={{ padding: "7px 10px" }}>
+                                {row.machineType ? (
+                                  <span
+                                    style={{
+                                      background: "#ede9fe",
+                                      color: "#5b21b6",
+                                      padding: "2px 6px",
+                                      borderRadius: "7px",
+                                      fontSize: "10px",
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    {row.machineType}
+                                  </span>
+                                ) : (
+                                  "—"
+                                )}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "7px 10px",
+                                  fontSize: "11px",
+                                  color: "#2563eb",
+                                }}
+                              >
+                                {row.mLocTelephone && row.mLocTelephone !== "-"
+                                  ? row.mLocTelephone
+                                  : row.telNo && row.telNo !== "-"
+                                    ? row.telNo
+                                    : "—"}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Footer */}
+      {/* Legend */}
       <div
-        style={{
-          padding: "0 28px 20px",
-          fontSize: "11px",
-          color: "#d4a5a5",
-          display: "flex",
-          gap: "20px",
-        }}
+        style={{ padding: "6px 28px 20px", fontSize: "11px", color: "#94a3b8" }}
       >
-        <span>EX = Expired Agreement</span>
-        <span>MA End date used for monthly chart</span>
-        <span style={{ marginLeft: "auto" }}>
-          CSV exports apply active Team &amp; Month filters
-        </span>
+        🔒 = Warranty End Date used as effective date &nbsp;|&nbsp; Otherwise MA
+        Period End Date is used
       </div>
     </div>
   );
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function PaginationBtn({
+  label,
+  onClick,
+  disabled,
+  active,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  active?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        padding: "6px 10px",
+        borderRadius: "6px",
+        border: "1px solid #e2e8f0",
+        background: active ? "#b91c1c" : "white",
+        color: active ? "white" : disabled ? "#cbd5e1" : "#334155",
+        cursor: disabled ? "not-allowed" : "pointer",
+        fontWeight: 700,
+        minWidth: "32px",
+        fontSize: "12px",
+        transition: "all 0.12s",
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function paginationRange(current: number, total: number): (number | "…")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages: (number | "…")[] = [1];
+  if (current > 3) pages.push("…");
+  for (
+    let p = Math.max(2, current - 1);
+    p <= Math.min(total - 1, current + 1);
+    p++
+  )
+    pages.push(p);
+  if (current < total - 2) pages.push("…");
+  pages.push(total);
+  return pages;
 }

@@ -1,1306 +1,1422 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { useApiConfig } from "@/hooks/apiconfig";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface ReportRow {
-  customer: string;
-  model: string;
-  serialNo: string;
-  qNo: string;
-  date: string;
-  tOfficer: string;
-  grade: string;
-  team: string;
-  status: string;
-  maStart: string;
-  maEnd: string;
-  installDate: string;
-  toCode: string;
-  toName: string;
-  vcType: string;
-  mInvNo: string;
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface FsRow {
+  // DB column names come back camelCased from the C# DTO
+  comId?: string;
+  serialNo?: string;
+  cusCode?: string;
+  cusName?: string;
+  invAdd1?: string;
+  invAdd2?: string;
+  invAdd3?: string;
+  telNo?: string;
+  cusGrade?: string;
+  machineRefCode?: string;
+  machineCode?: string;
+  machineDesc?: string;
+  mLocContactName?: string;
+  mLocContactNo?: string;
+  mfpCity?: string;
+  tOfficerCode?: string;
+  tOfficerName?: string;
+  mInvNo?: string;
+  mInvDate?: string;
+  mInsDate?: string;
+  mWarrantyEndDate?: string;
+  laborWarranty?: string;
+  partsWarranty?: string;
+  cusStatus?: string;
+  visitsPerYear?: number;
+  invNoTc?: string;
+  team?: string;
+  maPeriodStart?: string;
+  maPeriodEnd?: string;
+  repCode?: string;
+  repName?: string;
+  toCode?: string;
+  toName?: string;
+  dealerName?: string;
+  serviceDate?: string;
+  visitCode?: string;
+  warrantyTypeDesc?: string;
+  machineType?: string;
+  cusType?: string;
+  consComment?: string;
+  cusEmail?: string;
+  warrantyYears?: number;
+  cnNo?: string;
+  mLocTelephone?: string;
 }
-type TeamOption = "ALL" | "Colombo" | "Outstation" | "Suburbs";
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
-const SAMPLE_DATA: ReportRow[] = [
-  {
-    customer: "VARNERS",
-    model: "MPC2004SP",
-    serialNo: "G746RC50405",
-    qNo: "Q11636",
-    date: "",
-    tOfficer: "3092",
-    grade: "A",
-    team: "Colombo",
-    status: "NS",
-    maStart: "2025-03-02",
-    maEnd: "2026-03-01",
-    installDate: "2017-03-28",
-    toCode: "3092",
-    toName: "SUGATH SILVA",
-    vcType: "-",
-    mInvNo: "MC003979",
-  },
-  {
-    customer: "CARGILLS",
-    model: "MPC2500",
-    serialNo: "H821AB60112",
-    qNo: "Q11820",
-    date: "2025-01-10",
-    tOfficer: "2041",
-    grade: "B",
-    team: "Suburbs",
-    status: "FS",
-    maStart: "2025-01-10",
-    maEnd: "2026-01-09",
-    installDate: "2019-06-15",
-    toCode: "2041",
-    toName: "ROHAN PERERA",
-    vcType: "VCT1",
-    mInvNo: "MC004010",
-  },
-  {
-    customer: "HEMAS",
-    model: "MP3500",
-    serialNo: "K933CD70231",
-    qNo: "Q12005",
-    date: "2024-11-20",
-    tOfficer: "1750",
-    grade: "A",
-    team: "Outstation",
-    status: "FS",
-    maStart: "2024-11-20",
-    maEnd: "2025-11-19",
-    installDate: "2020-02-10",
-    toCode: "1750",
-    toName: "NIMAL JAYASURIYA",
-    vcType: "-",
-    mInvNo: "MC003810",
-  },
-  {
-    customer: "JOHN KEELLS",
-    model: "MPC2004SP",
-    serialNo: "G900EF80344",
-    qNo: "Q12300",
-    date: "2025-02-01",
-    tOfficer: "3092",
-    grade: "A",
-    team: "Colombo",
-    status: "NS",
-    maStart: "2025-02-01",
-    maEnd: "2026-01-31",
-    installDate: "2018-09-20",
-    toCode: "3092",
-    toName: "SUGATH SILVA",
-    vcType: "-",
-    mInvNo: "MC004100",
-  },
-  {
-    customer: "MAS HOLDINGS",
-    model: "IR3500",
-    serialNo: "L112GH90457",
-    qNo: "Q12410",
-    date: "2025-03-15",
-    tOfficer: "2200",
-    grade: "C",
-    team: "Suburbs",
-    status: "FS",
-    maStart: "2025-03-15",
-    maEnd: "2026-03-14",
-    installDate: "2021-07-05",
-    toCode: "2200",
-    toName: "CHAMINDA W.",
-    vcType: "VCT2",
-    mInvNo: "MC004220",
-  },
-  {
-    customer: "AITKEN SPENCE",
-    model: "MPC2500",
-    serialNo: "M223IJ01568",
-    qNo: "Q12550",
-    date: "2025-04-01",
-    tOfficer: "1750",
-    grade: "B",
-    team: "Outstation",
-    status: "NS",
-    maStart: "2025-04-01",
-    maEnd: "2026-03-31",
-    installDate: "2016-12-01",
-    toCode: "1750",
-    toName: "NIMAL JAYASURIYA",
-    vcType: "-",
-    mInvNo: "MC004330",
-  },
-  {
-    customer: "DIALOG",
-    model: "MP3500",
-    serialNo: "N334KL12679",
-    qNo: "Q12700",
-    date: "2025-05-10",
-    tOfficer: "3092",
-    grade: "A",
-    team: "Colombo",
-    status: "FS",
-    maStart: "2025-05-10",
-    maEnd: "2026-05-09",
-    installDate: "2022-03-18",
-    toCode: "3092",
-    toName: "SUGATH SILVA",
-    vcType: "VCT1",
-    mInvNo: "MC004450",
-  },
-  {
-    customer: "SLT MOBITEL",
-    model: "MPC2004SP",
-    serialNo: "O445MN23780",
-    qNo: "Q12860",
-    date: "2025-06-20",
-    tOfficer: "2041",
-    grade: "B",
-    team: "Colombo",
-    status: "NS",
-    maStart: "2025-06-20",
-    maEnd: "2026-06-19",
-    installDate: "2023-01-09",
-    toCode: "2041",
-    toName: "ROHAN PERERA",
-    vcType: "-",
-    mInvNo: "MC004560",
-  },
-  {
-    customer: "NESTLE LANKA",
-    model: "IR3500",
-    serialNo: "P556NO34891",
-    qNo: "Q13010",
-    date: "2025-07-05",
-    tOfficer: "2200",
-    grade: "A",
-    team: "Suburbs",
-    status: "FS",
-    maStart: "2025-07-05",
-    maEnd: "2026-07-04",
-    installDate: "2021-11-22",
-    toCode: "2200",
-    toName: "CHAMINDA W.",
-    vcType: "VCT1",
-    mInvNo: "MC004700",
-  },
-  {
-    customer: "UNILEVER SL",
-    model: "MPC2500",
-    serialNo: "Q667PQ45902",
-    qNo: "Q13120",
-    date: "2025-08-18",
-    tOfficer: "1750",
-    grade: "B",
-    team: "Outstation",
-    status: "NS",
-    maStart: "2025-08-18",
-    maEnd: "2026-08-17",
-    installDate: "2019-04-30",
-    toCode: "1750",
-    toName: "NIMAL JAYASURIYA",
-    vcType: "-",
-    mInvNo: "MC004810",
-  },
-];
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-const fmtDate = (s: string) => {
-  if (!s) return "-";
-  const d = new Date(s);
-  return isNaN(d.getTime())
-    ? s
-    : d.toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      });
-};
-const monthKey = (s: string) => {
-  if (!s) return "Unknown";
-  const d = new Date(s);
-  return isNaN(d.getTime())
-    ? "Unknown"
-    : d.toLocaleDateString("en-GB", { month: "short", year: "numeric" });
-};
-const COLS = [
-  "Customer",
-  "Model",
-  "Serial No",
-  "Q.No",
-  "Date",
-  "T.Officer",
-  "Grade",
-  "Team",
-  "Status",
-  "MA Start",
-  "MA End",
-  "Install Date",
-  "TO Code",
-  "TO Name",
-  "VC Type",
-  "M_INV_NO",
-];
-const COL_KEYS: (keyof ReportRow)[] = [
-  "customer",
-  "model",
-  "serialNo",
-  "qNo",
-  "date",
-  "tOfficer",
-  "grade",
-  "team",
-  "status",
-  "maStart",
-  "maEnd",
-  "installDate",
-  "toCode",
-  "toName",
-  "vcType",
-  "mInvNo",
-];
-const CHART_PALETTE = [
-  "#3b82f6",
-  "#6366f1",
-  "#10b981",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#14b8a6",
-  "#f97316",
-  "#ec4899",
-  "#84cc16",
-];
+/** Returns the M_WARRANTY_END_DATE for FS report */
+function getEffectiveDate(row: FsRow): string {
+  return row.mWarrantyEndDate?.trim() || "";
+}
 
-// ─── Custom Tooltip ───────────────────────────────────────────────────────────
-const ChartTooltip = ({ active, payload, label }: any) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div
-      style={{
-        background: "#0f172a",
-        border: "1px solid #334155",
-        borderRadius: 10,
-        padding: "10px 16px",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-      }}
-    >
-      <div
-        style={{
-          color: "#94a3b8",
-          fontSize: 11,
-          marginBottom: 4,
-          letterSpacing: 1,
-        }}
-      >
-        {label}
-      </div>
-      <div
-        style={{
-          color: "#f1f5f9",
-          fontSize: 22,
-          fontWeight: 800,
-          lineHeight: 1,
-        }}
-      >
-        {payload[0].value}
-        <span
-          style={{
-            fontSize: 12,
-            color: "#64748b",
-            fontWeight: 400,
-            marginLeft: 6,
-          }}
-        >
-          records
-        </span>
-      </div>
-    </div>
-  );
+/** Team → display label + zone key */
+const TEAM_MAP: Record<
+  string,
+  { label: string; zone: "COL" | "OUT" | "SUB" | "P2P" | "UNKNOWN" }
+> = {
+  SUB: { label: "Suburbs", zone: "SUB" },
+  OUT: { label: "Outstation", zone: "OUT" },
+  "E COL": { label: "Unknown", zone: "UNKNOWN" },
+  "P2P SUB": { label: "P2P", zone: "P2P" },
+  "-": { label: "Unknown", zone: "UNKNOWN" },
+  "`": { label: "Unknown", zone: "UNKNOWN" },
+  PCS: { label: "Technical Electronic", zone: "UNKNOWN" },
+  "P2P OUT": { label: "P2P", zone: "P2P" },
+  EXM: { label: "Unknown", zone: "UNKNOWN" },
+  COL: { label: "Colombo", zone: "COL" },
+  NO: { label: "Unknown", zone: "UNKNOWN" },
+  NULL: { label: "Unknown", zone: "UNKNOWN" },
+  NAS: { label: "Unknown", zone: "UNKNOWN" },
+  "AC SUB": { label: "Unknown", zone: "UNKNOWN" },
+  C: { label: "Unknown", zone: "UNKNOWN" },
+  POS: { label: "Unknown", zone: "UNKNOWN" },
+  "P2P COL": { label: "P2P", zone: "P2P" },
+  P2P: { label: "P2P", zone: "P2P" },
 };
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-export default function FsFreeReport() {
-  const [team, setTeam] = useState<TeamOption>("ALL");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [sortCol, setSortCol] = useState<keyof ReportRow | null>(null);
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+function resolveTeam(team?: string): {
+  label: string;
+  zone: "COL" | "OUT" | "SUB" | "P2P" | "UNKNOWN";
+} {
+  if (!team) return { label: "Unknown", zone: "UNKNOWN" };
+  return TEAM_MAP[team.trim()] ?? { label: "Unknown", zone: "UNKNOWN" };
+}
 
-  // ── Filter
+function getAddress(row: FsRow): string {
+  return [row.invAdd1, row.invAdd2, row.invAdd3]
+    .filter((a) => a && a.trim() && a.trim() !== "-")
+    .join(", ");
+}
+
+function formatDate(d?: string): string {
+  if (!d) return "—";
+  return d.slice(0, 10);
+}
+
+const MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+const ZONE_COLORS: Record<string, { bg: string; color: string }> = {
+  COL: { bg: "#dbeafe", color: "#1d4ed8" },
+  OUT: { bg: "#d1fae5", color: "#065f46" },
+  SUB: { bg: "#fef3c7", color: "#92400e" },
+  P2P: { bg: "#ede9fe", color: "#5b21b6" },
+  UNKNOWN: { bg: "#f1f5f9", color: "#64748b" },
+};
+
+const PAGE_SIZE = 20;
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
+export default function FsBaseReport() {
+  const { getFSReportData, downloadFSReportExcel, downloadFSReportPdf } =
+    useApiConfig();
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  const [data, setData] = useState<FsRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [dlLoading, setDlLoading] = useState<"excel" | "pdf" | null>(null);
+
+  // Filter state
+  const currentYear = new Date().getFullYear();
+  const [startDate, setStartDate] = useState(`${currentYear}-01-01`);
+  const [lastDate, setLastDate] = useState(`${currentYear}-12-31`);
+  const [zoneFilter, setZoneFilter] = useState<
+    "ALL" | "COL" | "OUT" | "SUB" | "P2P" | "UNKNOWN"
+  >("ALL");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [activeTab, setActiveTab] = useState<"table" | "chart">("table");
+
+  // Chart state — year filter + selected month drilldown
+  const [chartYear, setChartYear] = useState<number>(currentYear);
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null); // 0-based
+
+  // ── Fetch ──────────────────────────────────────────────────────────────────
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await getFSReportData(startDate, lastDate);
+      setData(Array.isArray(res) ? res : []);
+      setPage(1);
+      setSelectedMonth(null);
+    } catch (e: any) {
+      setError(e?.message ?? "Failed to load report data");
+    } finally {
+      setLoading(false);
+    }
+  }, [startDate, lastDate, getFSReportData]);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // ── Downloads ──────────────────────────────────────────────────────────────
+  const handleExcelDownload = async () => {
+    setDlLoading("excel");
+    try {
+      const blob: Blob = await downloadFSReportExcel(startDate, lastDate);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `FS_Report_${startDate}_to_${lastDate}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      alert("Excel download failed: " + (e?.message ?? "Unknown error"));
+    } finally {
+      setDlLoading(null);
+    }
+  };
+
+  const handlePdfDownload = async () => {
+    setDlLoading("pdf");
+    try {
+      const blob: Blob = await downloadFSReportPdf(startDate, lastDate);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `FS_Report_${startDate}_to_${lastDate}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      alert("PDF download failed: " + (e?.message ?? "Unknown error"));
+    } finally {
+      setDlLoading(null);
+    }
+  };
+
+  // ── Filtered table data ────────────────────────────────────────────────────
   const filtered = useMemo(() => {
-    return SAMPLE_DATA.filter((r) => {
-      if (team !== "ALL" && r.team !== team) return false;
-      const me = r.maEnd ? new Date(r.maEnd) : null;
-      if (startDate && me && me < new Date(startDate)) return false;
-      if (endDate && me && me > new Date(endDate)) return false;
+    return data.filter((row) => {
+      // Zone filter
+      if (zoneFilter !== "ALL" && resolveTeam(row.team).zone !== zoneFilter)
+        return false;
+      // Search
+      if (search) {
+        const q = search.toLowerCase();
+        const hit =
+          (row.cusName ?? "").toLowerCase().includes(q) ||
+          (row.machineRefCode ?? "").toLowerCase().includes(q) ||
+          (row.tOfficerName ?? "").toLowerCase().includes(q) ||
+          (row.machineDesc ?? "").toLowerCase().includes(q) ||
+          (row.serialNo ?? "").toLowerCase().includes(q);
+        if (!hit) return false;
+      }
       return true;
     });
-  }, [team, startDate, endDate]);
+  }, [data, zoneFilter, search]);
 
-  // ── Sort
-  const sorted = useMemo(() => {
-    if (!sortCol) return filtered;
-    return [...filtered].sort((a, b) => {
-      const av = a[sortCol] ?? "";
-      const bv = b[sortCol] ?? "";
-      return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
-    });
-  }, [filtered, sortCol, sortDir]);
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  // ── Chart data
-  const chartData = useMemo(() => {
-    const c: Record<string, number> = {};
-    filtered.forEach((r) => {
-      const k = monthKey(r.maEnd);
-      c[k] = (c[k] || 0) + 1;
+  // ── Chart data ─────────────────────────────────────────────────────────────
+  // All unique years present in the dataset
+  const availableYears = useMemo(() => {
+    const ys = new Set<number>();
+    data.forEach((row) => {
+      const d = getEffectiveDate(row);
+      if (d) {
+        const y = parseInt(d.slice(0, 4), 10);
+        if (!isNaN(y)) ys.add(y);
+      }
     });
-    return Object.entries(c)
-      .map(([month, count]) => ({ month, count }))
-      .sort(
-        (a, b) => new Date(a.month).getTime() - new Date(b.month).getTime(),
-      );
+    const arr = Array.from(ys).sort();
+    return arr.length > 0 ? arr : [currentYear];
+  }, [data]);
+
+  // Monthly counts for the selected chart year (respects zone filter)
+  const monthlyData = useMemo(() => {
+    const counts = Array(12).fill(0);
+    data.forEach((row) => {
+      if (zoneFilter !== "ALL" && resolveTeam(row.team).zone !== zoneFilter)
+        return;
+      const d = getEffectiveDate(row);
+      if (!d) return;
+      const y = parseInt(d.slice(0, 4), 10);
+      if (y !== chartYear) return;
+      const m = parseInt(d.slice(5, 7), 10) - 1;
+      if (m >= 0 && m < 12) counts[m]++;
+    });
+    return counts;
+  }, [data, chartYear, zoneFilter]);
+
+  // Rows for the selected month drilldown
+  const monthDrilldown = useMemo(() => {
+    if (selectedMonth === null) return [];
+    return data.filter((row) => {
+      if (zoneFilter !== "ALL" && resolveTeam(row.team).zone !== zoneFilter)
+        return false;
+      const d = getEffectiveDate(row);
+      if (!d) return false;
+      const y = parseInt(d.slice(0, 4), 10);
+      const m = parseInt(d.slice(5, 7), 10) - 1;
+      return y === chartYear && m === selectedMonth;
+    });
+  }, [data, chartYear, selectedMonth, zoneFilter]);
+
+  const maxCount = Math.max(...monthlyData, 1);
+
+  // ── Zone summary ───────────────────────────────────────────────────────────
+  const zoneSummary = useMemo(() => {
+    const counts: Record<string, number> = {
+      COL: 0,
+      OUT: 0,
+      SUB: 0,
+      P2P: 0,
+      UNKNOWN: 0,
+    };
+    filtered.forEach((row) => {
+      counts[resolveTeam(row.team).zone]++;
+    });
+    return counts;
   }, [filtered]);
 
-  // ── Stats
-  const stats = useMemo(
-    () => ({
-      total: filtered.length,
-      ns: filtered.filter((r) => r.status === "NS").length,
-      fs: filtered.filter((r) => r.status === "FS").length,
-      gradeA: filtered.filter((r) => r.grade === "A").length,
-    }),
-    [filtered],
-  );
-
-  const handleSort = (col: keyof ReportRow) => {
-    if (sortCol === col) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else {
-      setSortCol(col);
-      setSortDir("asc");
-    }
-  };
-
-  // ── Export Excel (TSV → .xls)
-  const downloadExcel = () => {
-    const header = COLS.join("\t");
-    const rows = filtered.map((r) =>
-      [
-        r.customer,
-        r.model,
-        r.serialNo,
-        r.qNo,
-        r.date,
-        r.tOfficer,
-        r.grade,
-        r.team,
-        r.status,
-        r.maStart,
-        r.maEnd,
-        r.installDate,
-        r.toCode,
-        r.toName,
-        r.vcType,
-        r.mInvNo,
-      ].join("\t"),
-    );
-    const blob = new Blob([[header, ...rows].join("\n")], {
-      type: "application/vnd.ms-excel;charset=utf-8;",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "FsFreeReport.xls";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  // ── Export PDF (print window)
-  const downloadPDF = () => {
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>FS Report</title>
-    <style>
-      @page { margin: 15mm; }
-      * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: 'Segoe UI', sans-serif; font-size: 10.5px; color: #1e293b; background: #fff; }
-      .hdr { background: linear-gradient(135deg,#0f172a,#1d4ed8); color: #fff; padding: 20px 24px 18px; margin-bottom: 18px; border-radius: 0; }
-      .hdr h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
-      .hdr .sub { font-size: 11px; opacity: 0.55; margin-top: 3px; }
-      .stats { display: flex; gap: 10px; margin-bottom: 18px; padding: 0 24px; }
-      .stat { flex: 1; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 16px; }
-      .stat-v { font-size: 24px; font-weight: 800; color: #0f172a; line-height: 1; }
-      .stat-l { font-size: 9px; color: #94a3b8; font-weight: 700; letter-spacing: 1.2px; margin-top: 3px; text-transform: uppercase; }
-      .section-title { font-size: 11px; font-weight: 700; color: #64748b; letter-spacing: 1.5px; text-transform: uppercase; margin: 0 24px 8px; }
-      table { width: calc(100% - 48px); margin: 0 24px; border-collapse: collapse; font-size: 9px; }
-      thead tr { background: #0f172a; }
-      th { color: #cbd5e1; padding: 8px 9px; text-align: left; font-weight: 700; letter-spacing: 0.5px; font-size: 8.5px; }
-      td { padding: 6px 9px; border-bottom: 1px solid #f1f5f9; }
-      tr:nth-child(even) td { background: #f8fafc; }
-      .badge { display: inline-block; padding: 1px 7px; border-radius: 20px; font-weight: 700; font-size: 8.5px; }
-      .gr-a { background:#dcfce7;color:#15803d; } .gr-b { background:#fef9c3;color:#a16207; } .gr-c { background:#fee2e2;color:#dc2626; }
-      .st-ns { background:#fef3c7;color:#b45309; } .st-fs { background:#dcfce7;color:#15803d; }
-      .footer { margin: 16px 24px 0; padding-top: 10px; border-top: 1px solid #e2e8f0; font-size: 9px; color: #94a3b8; display: flex; justify-content: space-between; }
-    </style></head><body>
-    <div class="hdr">
-      <h1>FS Report</h1>
-      <div class="sub">Generated ${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })} &nbsp;•&nbsp; ${filtered.length} Records &nbsp;•&nbsp; Team: ${team}</div>
-    </div>
-    <div class="stats">
-      <div class="stat"><div class="stat-v">${stats.total}</div><div class="stat-l">Total Records</div></div>
-      <div class="stat"><div class="stat-v">${stats.ns}</div><div class="stat-l">NS Status</div></div>
-      <div class="stat"><div class="stat-v">${stats.fs}</div><div class="stat-l">FS Status</div></div>
-      <div class="stat"><div class="stat-v">${stats.gradeA}</div><div class="stat-l">Grade A</div></div>
-    </div>
-    <div class="section-title">Report Data</div>
-    <table>
-      <thead><tr>${COLS.map((c) => `<th>${c}</th>`).join("")}</tr></thead>
-      <tbody>
-        ${filtered
-          .map(
-            (r) => `<tr>
-          <td><strong>${r.customer}</strong></td>
-          <td style="font-family:monospace;color:#2563eb">${r.model}</td>
-          <td style="font-family:monospace;font-size:8px">${r.serialNo}</td>
-          <td>${r.qNo || "-"}</td><td>${fmtDate(r.date)}</td><td>${r.tOfficer}</td>
-          <td><span class="badge gr-${r.grade.toLowerCase()}">${r.grade}</span></td>
-          <td>${r.team}</td>
-          <td><span class="badge st-${r.status.toLowerCase()}">${r.status}</span></td>
-          <td>${fmtDate(r.maStart)}</td><td><strong>${fmtDate(r.maEnd)}</strong></td>
-          <td>${fmtDate(r.installDate)}</td><td>${r.toCode}</td><td>${r.toName}</td>
-          <td>${r.vcType}</td><td style="font-family:monospace;font-size:8px">${r.mInvNo}</td>
-        </tr>`,
-          )
-          .join("")}
-      </tbody>
-    </table>
-    <div class="footer">
-      <span>FS Report — Confidential</span>
-      <span>${new Date().toLocaleString("en-GB")}</span>
-    </div>
-    </body></html>`;
-    const w = window.open("", "_blank", "width=1280,height=900");
-    if (!w) {
-      alert("Pop-up blocked. Please allow pop-ups and try again.");
-      return;
-    }
-    w.document.write(html);
-    w.document.close();
-    w.onload = () => {
-      w.focus();
-      w.print();
-    };
-  };
-
-  const teams: { key: TeamOption; icon: string; label: string }[] = [
-    { key: "ALL", icon: "🌐", label: "All" },
-    { key: "Colombo", icon: "🏙", label: "Colombo" },
-    { key: "Outstation", icon: "🌿", label: "Outstation" },
-    { key: "Suburbs", icon: "🏘", label: "Suburbs" },
-  ];
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div
       style={{
-        fontFamily: "'DM Sans','Segoe UI',sans-serif",
-        minHeight: "100vh",
+        fontFamily: "'Segoe UI', Tahoma, sans-serif",
         background: "#f0f4f8",
+        minHeight: "100vh",
       }}
     >
-      {/* ══ HEADER ══ */}
+      {/* ── Header ── */}
       <div
         style={{
           background:
-            "linear-gradient(135deg,#0f172a 0%,#1e3a5f 55%,#1d4ed8 100%)",
-          position: "relative",
-          overflow: "hidden",
+            "linear-gradient(135deg, #065f46 0%, #047857 60%, #10b981 100%)",
+          padding: "18px 28px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
         }}
       >
-        {/* decorative blobs */}
-        <div
-          style={{
-            position: "absolute",
-            top: -70,
-            right: -70,
-            width: 240,
-            height: 240,
-            borderRadius: "50%",
-            background: "rgba(255,255,255,0.04)",
-            pointerEvents: "none",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            top: 10,
-            right: 100,
-            width: 110,
-            height: 110,
-            borderRadius: "50%",
-            background: "rgba(59,130,246,0.13)",
-            pointerEvents: "none",
-          }}
-        />
-
-        {/* Title row */}
-        <div
-          style={{
-            padding: "28px 40px 24px",
-            position: "relative",
-            zIndex: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 16,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div
-              style={{
-                width: 54,
-                height: 54,
-                borderRadius: 14,
-                background: "linear-gradient(135deg,#3b82f6,#6366f1)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 26,
-                boxShadow: "0 4px 20px rgba(99,102,241,0.5)",
-              }}
-            >
-              📊
-            </div>
-            <div>
-              <div
-                style={{
-                  color: "rgba(255,255,255,0.45)",
-                  fontSize: 10,
-                  letterSpacing: 3,
-                  textTransform: "uppercase",
-                  fontWeight: 700,
-                  marginBottom: 4,
-                }}
-              >
-                Report 02
-              </div>
-              <h1
-                style={{
-                  color: "#f1f5f9",
-                  margin: 0,
-                  fontSize: 26,
-                  fontWeight: 800,
-                  letterSpacing: "-0.5px",
-                }}
-              >
-                FS Report
-              </h1>
-            </div>
+        <div>
+          <div
+            style={{
+              color: "#86efac",
+              fontSize: "10px",
+              letterSpacing: "3px",
+              textTransform: "uppercase",
+              fontWeight: 700,
+            }}
+          >
+            Service Management
           </div>
-
-          {/* Download buttons */}
-          <div style={{ display: "flex", gap: 10 }}>
-            <button
-              onClick={downloadExcel}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "10px 22px",
-                borderRadius: 10,
-                border: "none",
-                background: "linear-gradient(135deg,#059669,#10b981)",
-                color: "#fff",
-                fontWeight: 700,
-                fontSize: 13,
-                cursor: "pointer",
-                boxShadow: "0 2px 14px rgba(16,185,129,0.4)",
-                fontFamily: "inherit",
-                letterSpacing: 0.2,
-              }}
-            >
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              Excel
-            </button>
-            <button
-              onClick={downloadPDF}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "10px 22px",
-                borderRadius: 10,
-                border: "none",
-                background: "linear-gradient(135deg,#dc2626,#ef4444)",
-                color: "#fff",
-                fontWeight: 700,
-                fontSize: 13,
-                cursor: "pointer",
-                boxShadow: "0 2px 14px rgba(239,68,68,0.4)",
-                fontFamily: "inherit",
-                letterSpacing: 0.2,
-              }}
-            >
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" y1="13" x2="8" y2="13" />
-                <line x1="16" y1="17" x2="8" y2="17" />
-              </svg>
-              PDF
-            </button>
+          <h1
+            style={{
+              color: "white",
+              margin: "4px 0 0",
+              fontSize: "20px",
+              fontWeight: 800,
+              letterSpacing: "0.3px",
+            }}
+          >
+            FS Base Report
+          </h1>
+          <div style={{ color: "#bbf7d0", fontSize: "11px", marginTop: "2px" }}>
+            {loading
+              ? "Loading…"
+              : `${filtered.length.toLocaleString()} records`}
           </div>
         </div>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <button
+            onClick={handleExcelDownload}
+            disabled={dlLoading !== null || loading}
+            style={{
+              background: dlLoading === "excel" ? "#166534" : "#16a34a",
+              color: "white",
+              border: "none",
+              borderRadius: "7px",
+              padding: "9px 18px",
+              cursor: dlLoading !== null ? "wait" : "pointer",
+              fontWeight: 700,
+              fontSize: "12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              opacity: dlLoading !== null ? 0.75 : 1,
+              transition: "all 0.2s",
+              boxShadow: "0 2px 8px rgba(22,163,74,0.35)",
+            }}
+          >
+            {dlLoading === "excel" ? "⏳" : "⬇"} Excel
+          </button>
+          <button
+            onClick={handlePdfDownload}
+            disabled={dlLoading !== null || loading}
+            style={{
+              background: dlLoading === "pdf" ? "#991b1b" : "#dc2626",
+              color: "white",
+              border: "none",
+              borderRadius: "7px",
+              padding: "9px 18px",
+              cursor: dlLoading !== null ? "wait" : "pointer",
+              fontWeight: 700,
+              fontSize: "12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              opacity: dlLoading !== null ? 0.75 : 1,
+              transition: "all 0.2s",
+              boxShadow: "0 2px 8px rgba(220,38,38,0.35)",
+            }}
+          >
+            {dlLoading === "pdf" ? "⏳" : "⬇"} PDF
+          </button>
+        </div>
+      </div>
 
-        {/* Stats strip */}
-        <div
+      {/* ── Date Range + Fetch ── */}
+      <div
+        style={{
+          background: "white",
+          padding: "12px 28px",
+          display: "flex",
+          gap: "12px",
+          alignItems: "center",
+          flexWrap: "wrap",
+          borderBottom: "1px solid #e2e8f0",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+        }}
+      >
+        <label style={{ fontSize: "12px", fontWeight: 700, color: "#334155" }}>
+          Date Range:
+        </label>
+        <input
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
           style={{
-            borderTop: "1px solid rgba(255,255,255,0.08)",
-            background: "rgba(0,0,0,0.22)",
-            display: "flex",
-            overflowX: "auto",
+            border: "1px solid #cbd5e1",
+            borderRadius: "6px",
+            padding: "6px 10px",
+            fontSize: "12px",
+            outline: "none",
+          }}
+        />
+        <span style={{ color: "#94a3b8", fontWeight: 700 }}>→</span>
+        <input
+          type="date"
+          value={lastDate}
+          onChange={(e) => setLastDate(e.target.value)}
+          style={{
+            border: "1px solid #cbd5e1",
+            borderRadius: "6px",
+            padding: "6px 10px",
+            fontSize: "12px",
+            outline: "none",
+          }}
+        />
+        <button
+          onClick={fetchData}
+          disabled={loading}
+          style={{
+            background: "#047857",
+            color: "white",
+            border: "none",
+            borderRadius: "7px",
+            padding: "8px 18px",
+            cursor: loading ? "wait" : "pointer",
+            fontWeight: 700,
+            fontSize: "12px",
           }}
         >
-          {[
-            {
-              label: "TOTAL RECORDS",
-              value: stats.total,
-              icon: "📋",
-              color: "#60a5fa",
+          {loading ? "Loading…" : "🔍 Fetch"}
+        </button>
+        {error && (
+          <span style={{ color: "#dc2626", fontSize: "12px", fontWeight: 600 }}>
+            ⚠ {error}
+          </span>
+        )}
+      </div>
+
+      {/* ── Zone Filter + Search + Summary ── */}
+      <div
+        style={{
+          background: "white",
+          padding: "10px 28px",
+          display: "flex",
+          gap: "10px",
+          alignItems: "center",
+          flexWrap: "wrap",
+          borderBottom: "2px solid #e2e8f0",
+        }}
+      >
+        {/* Zone pills */}
+        <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
+          {(["ALL", "COL", "OUT", "SUB", "P2P", "UNKNOWN"] as const).map(
+            (z) => {
+              const col =
+                z === "ALL"
+                  ? { bg: "#047857", color: "white" }
+                  : ZONE_COLORS[z];
+              const active = zoneFilter === z;
+              const count = z === "ALL" ? filtered.length : zoneSummary[z];
+              return (
+                <button
+                  key={z}
+                  onClick={() => {
+                    setZoneFilter(z);
+                    setPage(1);
+                  }}
+                  style={{
+                    padding: "5px 12px",
+                    borderRadius: "20px",
+                    border: "none",
+                    cursor: "pointer",
+                    fontWeight: 700,
+                    fontSize: "11px",
+                    background: active
+                      ? z === "ALL"
+                        ? "#047857"
+                        : col.bg
+                      : "#f1f5f9",
+                    color: active
+                      ? z === "ALL"
+                        ? "white"
+                        : col.color
+                      : "#64748b",
+                    transition: "all 0.18s",
+                    outline: active
+                      ? `2px solid ${z === "ALL" ? "#047857" : col.color}`
+                      : "none",
+                  }}
+                >
+                  {z === "ALL" ? "All" : z === "UNKNOWN" ? "Unknown" : z}{" "}
+                  {count > 0 && (
+                    <span style={{ opacity: 0.75 }}>({count})</span>
+                  )}
+                </button>
+              );
             },
-            {
-              label: "NS STATUS",
-              value: stats.ns,
-              icon: "🔔",
-              color: "#fbbf24",
-            },
-            {
-              label: "FS STATUS",
-              value: stats.fs,
-              icon: "✅",
-              color: "#34d399",
-            },
-            {
-              label: "GRADE A",
-              value: stats.gradeA,
-              icon: "⭐",
-              color: "#c084fc",
-            },
-          ].map((s, i) => (
+          )}
+        </div>
+
+        {/* Search */}
+        <div style={{ marginLeft: "auto" }}>
+          <input
+            placeholder="Search name, serial, model, technician…"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            style={{
+              border: "1px solid #cbd5e1",
+              borderRadius: "7px",
+              padding: "7px 14px",
+              fontSize: "12px",
+              width: "260px",
+              outline: "none",
+            }}
+          />
+        </div>
+
+        {/* Zone chips summary */}
+        <div style={{ display: "flex", gap: "6px" }}>
+          {(["COL", "OUT", "SUB", "P2P"] as const).map((z) => (
             <div
-              key={i}
+              key={z}
               style={{
-                padding: "16px 36px",
-                borderRight: "1px solid rgba(255,255,255,0.07)",
-                flex: "1 0 140px",
+                background: ZONE_COLORS[z].bg,
+                color: ZONE_COLORS[z].color,
+                borderRadius: "6px",
+                padding: "3px 10px",
+                fontSize: "11px",
+                fontWeight: 700,
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 18 }}>{s.icon}</span>
-                <div>
-                  <div
-                    style={{
-                      color: s.color,
-                      fontSize: 24,
-                      fontWeight: 800,
-                      lineHeight: 1,
-                    }}
-                  >
-                    {s.value}
-                  </div>
-                  <div
-                    style={{
-                      color: "rgba(255,255,255,0.38)",
-                      fontSize: 9.5,
-                      letterSpacing: 1.5,
-                      marginTop: 4,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {s.label}
-                  </div>
-                </div>
-              </div>
+              {z}: {zoneSummary[z]}
             </div>
           ))}
         </div>
       </div>
 
-      <div style={{ padding: "28px 40px", maxWidth: 1800, margin: "0 auto" }}>
-        {/* ══ FILTERS ══ */}
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: 16,
-            padding: "20px 26px",
-            marginBottom: 22,
-            boxShadow: "0 1px 6px rgba(0,0,0,0.07)",
-            border: "1px solid #e2e8f0",
-            display: "flex",
-            gap: 20,
-            flexWrap: "wrap",
-            alignItems: "flex-end",
-          }}
-        >
-          {/* Team */}
-          <div>
-            <div style={labelSt}>Team</div>
-            <div style={{ display: "flex", gap: 7 }}>
-              {teams.map((t) => (
-                <button
-                  key={t.key}
-                  onClick={() => setTeam(t.key)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    padding: "7px 16px",
-                    borderRadius: 9,
-                    border: "1.5px solid",
-                    borderColor: team === t.key ? "#3b82f6" : "#e2e8f0",
-                    background: team === t.key ? "#3b82f6" : "#fff",
-                    color: team === t.key ? "#fff" : "#64748b",
-                    fontWeight: team === t.key ? 700 : 500,
-                    fontSize: 13,
-                    cursor: "pointer",
-                    fontFamily: "inherit",
-                    transition: "all 0.15s",
-                  }}
-                >
-                  <span>{t.icon}</span>
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Date range */}
-          <div>
-            <div style={labelSt}>MA End — From</div>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              style={inputSt}
-            />
-          </div>
-          <div>
-            <div style={labelSt}>MA End — To</div>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              style={inputSt}
-            />
-          </div>
-
-          {/* Count + Reset */}
-          <div
+      {/* ── Tabs ── */}
+      <div
+        style={{
+          background: "white",
+          borderBottom: "2px solid #e2e8f0",
+          padding: "0 28px",
+          display: "flex",
+        }}
+      >
+        {(
+          [
+            ["table", "📋 Report Table"],
+            ["chart", "📊 Monthly Chart"],
+          ] as const
+        ).map(([tab, label]) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab as any)}
             style={{
-              marginLeft: "auto",
-              display: "flex",
-              alignItems: "center",
-              gap: 14,
+              padding: "11px 20px",
+              border: "none",
+              background: "transparent",
+              cursor: "pointer",
+              fontWeight: 700,
+              fontSize: "13px",
+              color: activeTab === tab ? "#047857" : "#94a3b8",
+              borderBottom:
+                activeTab === tab
+                  ? "3px solid #047857"
+                  : "3px solid transparent",
+              transition: "all 0.15s",
             }}
           >
-            <div style={{ fontSize: 13, color: "#64748b" }}>
-              Showing{" "}
-              <strong style={{ color: "#1e3a5f", fontSize: 15 }}>
-                {filtered.length}
-              </strong>
-              <span style={{ color: "#cbd5e1" }}> / {SAMPLE_DATA.length}</span>
-            </div>
-            <button
-              onClick={() => {
-                setTeam("ALL");
-                setStartDate("");
-                setEndDate("");
-              }}
-              style={{
-                padding: "7px 16px",
-                borderRadius: 9,
-                border: "1.5px solid #e2e8f0",
-                background: "#f8fafc",
-                color: "#64748b",
-                fontWeight: 600,
-                fontSize: 13,
-                cursor: "pointer",
-                fontFamily: "inherit",
-              }}
-            >
-              ↺ Reset
-            </button>
-          </div>
-        </div>
+            {label}
+          </button>
+        ))}
+      </div>
 
-        {/* ══ CHART ══ */}
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: 16,
-            padding: "24px 28px 20px",
-            marginBottom: 22,
-            boxShadow: "0 1px 6px rgba(0,0,0,0.07)",
-            border: "1px solid #e2e8f0",
-          }}
-        >
+      {/* ── Loading skeleton ── */}
+      {loading && (
+        <div style={{ padding: "40px 28px", textAlign: "center" }}>
+          <div style={{ fontSize: "14px", color: "#64748b", fontWeight: 600 }}>
+            Fetching report data…
+          </div>
           <div
             style={{
-              display: "flex",
-              alignItems: "flex-start",
-              justifyContent: "space-between",
-              marginBottom: 20,
-              flexWrap: "wrap",
-              gap: 10,
+              margin: "16px auto",
+              width: "200px",
+              height: "4px",
+              background: "#e2e8f0",
+              borderRadius: "2px",
+              overflow: "hidden",
             }}
           >
-            <div>
-              <h2
-                style={{
-                  margin: 0,
-                  fontSize: 15,
-                  fontWeight: 800,
-                  color: "#0f172a",
-                  letterSpacing: "-0.3px",
-                }}
-              >
-                MA End Expiry Distribution
-              </h2>
-              <p style={{ margin: "4px 0 0", fontSize: 12, color: "#94a3b8" }}>
-                Contracts expiring per month — based on MA End date
-              </p>
-            </div>
             <div
               style={{
-                background: "#f0f9ff",
-                border: "1px solid #bae6fd",
-                borderRadius: 8,
-                padding: "5px 14px",
-                fontSize: 12,
-                color: "#0284c7",
-                fontWeight: 700,
+                height: "100%",
+                width: "40%",
+                background: "#047857",
+                borderRadius: "2px",
+                animation: "slide 1.2s ease-in-out infinite",
               }}
-            >
-              {chartData.reduce((s, d) => s + d.count, 0)} total expiring
-            </div>
+            />
           </div>
-          {chartData.length === 0 ? (
-            <div
-              style={{
-                height: 220,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#94a3b8",
-                fontSize: 14,
-                flexDirection: "column",
-                gap: 8,
-              }}
-            >
-              <span style={{ fontSize: 32 }}>🔍</span>
-              No data matches selected filters
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart
-                data={chartData}
-                margin={{ top: 4, right: 16, left: -10, bottom: 0 }}
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="#f1f5f9"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="month"
-                  tick={{
-                    fontSize: 12,
-                    fill: "#94a3b8",
-                    fontFamily: "inherit",
-                  }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  allowDecimals={false}
-                  tick={{
-                    fontSize: 12,
-                    fill: "#94a3b8",
-                    fontFamily: "inherit",
-                  }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip
-                  content={<ChartTooltip />}
-                  cursor={{ fill: "rgba(59,130,246,0.05)" }}
-                />
-                <Bar dataKey="count" radius={[8, 8, 0, 0]} maxBarSize={54}>
-                  {chartData.map((_, i) => (
-                    <Cell
-                      key={i}
-                      fill={CHART_PALETTE[i % CHART_PALETTE.length]}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+          <style>{`@keyframes slide { 0%{transform:translateX(-250%)} 100%{transform:translateX(600%)} }`}</style>
         </div>
+      )}
 
-        {/* ══ TABLE ══ */}
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: 16,
-            boxShadow: "0 1px 6px rgba(0,0,0,0.07)",
-            border: "1px solid #e2e8f0",
-            overflow: "hidden",
-          }}
-        >
-          {/* Table header */}
+      <div style={{ padding: "18px 28px" }}>
+        {/* ════════════ TABLE TAB ════════════ */}
+        {!loading && activeTab === "table" && (
           <div
             style={{
-              padding: "18px 24px 16px",
-              borderBottom: "1px solid #f1f5f9",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              flexWrap: "wrap",
-              gap: 8,
+              background: "white",
+              borderRadius: "12px",
+              boxShadow: "0 2px 10px rgba(0,0,0,0.07)",
+              overflow: "hidden",
             }}
           >
-            <div>
-              <h2
+            <div style={{ overflowX: "auto" }}>
+              <table
                 style={{
-                  margin: 0,
-                  fontSize: 15,
-                  fontWeight: 800,
-                  color: "#0f172a",
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  fontSize: "11.5px",
+                  minWidth: "1200px",
                 }}
               >
-                Report Data
-              </h2>
-              <p style={{ margin: "3px 0 0", fontSize: 12, color: "#94a3b8" }}>
-                Click column headers to sort · Scroll horizontally for all
-                columns
-              </p>
-            </div>
-          </div>
-
-          <div style={{ overflowX: "auto" }}>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontSize: 12.5,
-              }}
-            >
-              <thead>
-                <tr style={{ background: "#0f172a" }}>
-                  {COLS.map((col, i) => (
-                    <th
-                      key={col}
-                      onClick={() => handleSort(COL_KEYS[i])}
-                      style={{
-                        padding: "11px 13px",
-                        textAlign: "left",
-                        color: "#94a3b8",
-                        fontSize: 11,
-                        fontWeight: 700,
-                        letterSpacing: 0.6,
-                        whiteSpace: "nowrap",
-                        cursor: "pointer",
-                        userSelect: "none",
-                      }}
-                    >
-                      <span
+                <thead>
+                  <tr
+                    style={{
+                      background: "linear-gradient(135deg, #065f46, #047857)",
+                    }}
+                  >
+                    {[
+                      "#",
+                      "Customer",
+                      "Model",
+                      "Serial No",
+                      "Q.No / Inv",
+                      "Zone",
+                      "Grade",
+                      "Warranty End",
+                      "MA Start",
+                      "MA End",
+                      "Technician",
+                      "Type",
+                      "Address",
+                      "Mobile",
+                    ].map((h) => (
+                      <th
+                        key={h}
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 5,
+                          padding: "10px 10px",
+                          color: "white",
+                          fontWeight: 700,
+                          textAlign: "left",
+                          fontSize: "10.5px",
+                          whiteSpace: "nowrap",
+                          letterSpacing: "0.4px",
                         }}
                       >
-                        {col}
-                        {sortCol === COL_KEYS[i] && (
-                          <span style={{ color: "#60a5fa", fontSize: 10 }}>
-                            {sortDir === "asc" ? "▲" : "▼"}
-                          </span>
-                        )}
-                      </span>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={16}
-                      style={{
-                        textAlign: "center",
-                        padding: "56px 0",
-                        color: "#94a3b8",
-                        fontSize: 14,
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          gap: 10,
-                        }}
-                      >
-                        <span style={{ fontSize: 36 }}>📭</span>
-                        No records match the selected filters
-                      </div>
-                    </td>
+                        {h}
+                      </th>
+                    ))}
                   </tr>
-                ) : (
-                  sorted.map((r, i) => (
-                    <tr
-                      key={i}
-                      style={{
-                        background: i % 2 === 0 ? "#fff" : "#f8fafc",
-                        transition: "background 0.12s",
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.background = "#eff6ff")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.background =
-                          i % 2 === 0 ? "#fff" : "#f8fafc")
-                      }
-                    >
-                      {/* Customer */}
-                      <td style={tdSt}>
-                        <span style={{ fontWeight: 600, color: "#1e293b" }}>
-                          {r.customer}
-                        </span>
-                      </td>
-                      {/* Model */}
-                      <td style={tdSt}>
-                        <span
-                          style={{
-                            fontFamily: "monospace",
-                            fontSize: 11.5,
-                            color: "#2563eb",
-                            fontWeight: 600,
-                          }}
-                        >
-                          {r.model}
-                        </span>
-                      </td>
-                      {/* Serial */}
-                      <td style={tdSt}>
-                        <span
-                          style={{
-                            fontFamily: "monospace",
-                            fontSize: 11,
-                            color: "#475569",
-                          }}
-                        >
-                          {r.serialNo}
-                        </span>
-                      </td>
-                      {/* Q.No */}
-                      <td style={tdSt}>{r.qNo || "—"}</td>
-                      {/* Date */}
-                      <td style={tdSt}>{fmtDate(r.date)}</td>
-                      {/* T.Officer */}
-                      <td style={tdSt}>{r.tOfficer}</td>
-                      {/* Grade */}
-                      <td style={tdSt}>
-                        <span
-                          style={{
-                            display: "inline-block",
-                            padding: "2px 10px",
-                            borderRadius: 20,
-                            fontSize: 11,
-                            fontWeight: 700,
-                            background:
-                              r.grade === "A"
-                                ? "#dcfce7"
-                                : r.grade === "B"
-                                  ? "#fef9c3"
-                                  : "#fee2e2",
-                            color:
-                              r.grade === "A"
-                                ? "#15803d"
-                                : r.grade === "B"
-                                  ? "#a16207"
-                                  : "#dc2626",
-                          }}
-                        >
-                          {r.grade}
-                        </span>
-                      </td>
-                      {/* Team */}
-                      <td style={tdSt}>
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 5,
-                            padding: "2px 10px",
-                            borderRadius: 20,
-                            fontSize: 11,
-                            fontWeight: 600,
-                            background:
-                              r.team === "Colombo"
-                                ? "#dbeafe"
-                                : r.team === "Suburbs"
-                                  ? "#fae8ff"
-                                  : "#ecfdf5",
-                            color:
-                              r.team === "Colombo"
-                                ? "#1d4ed8"
-                                : r.team === "Suburbs"
-                                  ? "#7e22ce"
-                                  : "#065f46",
-                          }}
-                        >
-                          {r.team === "Colombo"
-                            ? "🏙"
-                            : r.team === "Suburbs"
-                              ? "🏘"
-                              : "🌿"}{" "}
-                          {r.team}
-                        </span>
-                      </td>
-                      {/* Status */}
-                      <td style={tdSt}>
-                        <span
-                          style={{
-                            display: "inline-block",
-                            padding: "2px 10px",
-                            borderRadius: 20,
-                            fontSize: 11,
-                            fontWeight: 700,
-                            background:
-                              r.status === "NS" ? "#fef3c7" : "#dcfce7",
-                            color: r.status === "NS" ? "#b45309" : "#15803d",
-                          }}
-                        >
-                          {r.status}
-                        </span>
-                      </td>
-                      {/* MA Start */}
-                      <td style={tdSt}>{fmtDate(r.maStart)}</td>
-                      {/* MA End */}
+                </thead>
+                <tbody>
+                  {pageData.length === 0 && (
+                    <tr>
                       <td
-                        style={{ ...tdSt, fontWeight: 700, color: "#1e3a5f" }}
+                        colSpan={14}
+                        style={{
+                          padding: "48px",
+                          textAlign: "center",
+                          color: "#94a3b8",
+                          fontSize: "14px",
+                        }}
                       >
-                        {fmtDate(r.maEnd)}
-                      </td>
-                      {/* Install Date */}
-                      <td style={tdSt}>{fmtDate(r.installDate)}</td>
-                      {/* TO Code */}
-                      <td style={tdSt}>{r.toCode}</td>
-                      {/* TO Name */}
-                      <td style={tdSt}>{r.toName}</td>
-                      {/* VC Type */}
-                      <td style={tdSt}>{r.vcType}</td>
-                      {/* M_INV_NO */}
-                      <td style={tdSt}>
-                        <span style={{ fontFamily: "monospace", fontSize: 11 }}>
-                          {r.mInvNo}
-                        </span>
+                        {data.length === 0
+                          ? "No data — click Fetch to load."
+                          : "No records match the current filters."}
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  )}
+                  {pageData.map((row, i) => {
+                    const effDate = getEffectiveDate(row);
+                    const zone = resolveTeam(row.team);
+                    const zoneStyle = ZONE_COLORS[zone.zone];
+                    const idx = (page - 1) * PAGE_SIZE + i + 1;
 
-          {/* Table footer */}
-          <div
-            style={{
-              padding: "12px 24px",
-              borderTop: "1px solid #f1f5f9",
-              background: "#f8fafc",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <div style={{ fontSize: 12, color: "#94a3b8" }}>
-              {sorted.length} record{sorted.length !== 1 ? "s" : ""} displayed
+                    return (
+                      <tr
+                        key={`${row.serialNo}-${i}`}
+                        style={{
+                          background: i % 2 === 0 ? "white" : "#f8fafc",
+                          borderBottom: "1px solid #f1f5f9",
+                          transition: "background 0.12s",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background = "#ecfdf5")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background =
+                            i % 2 === 0 ? "white" : "#f8fafc")
+                        }
+                      >
+                        <td
+                          style={{
+                            padding: "8px 10px",
+                            color: "#94a3b8",
+                            fontWeight: 600,
+                            fontSize: "11px",
+                          }}
+                        >
+                          {idx}
+                        </td>
+                        <td
+                          style={{
+                            padding: "8px 10px",
+                            fontWeight: 700,
+                            color: "#1e293b",
+                            maxWidth: "180px",
+                            lineHeight: 1.3,
+                          }}
+                        >
+                          {row.cusName || "—"}
+                        </td>
+                        <td
+                          style={{
+                            padding: "8px 10px",
+                            color: "#475569",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {row.machineDesc || "—"}
+                        </td>
+                        <td
+                          style={{
+                            padding: "8px 10px",
+                            color: "#64748b",
+                            fontSize: "10.5px",
+                            fontFamily: "monospace",
+                          }}
+                        >
+                          {row.serialNo || "—"}
+                        </td>
+                        <td
+                          style={{
+                            padding: "8px 10px",
+                            color: "#2563eb",
+                            fontWeight: 700,
+                          }}
+                        >
+                          {row.machineRefCode || row.mInvNo || "—"}
+                        </td>
+                        <td style={{ padding: "8px 10px" }}>
+                          <span
+                            style={{
+                              padding: "2px 8px",
+                              borderRadius: "10px",
+                              fontSize: "10px",
+                              fontWeight: 700,
+                              background: zoneStyle.bg,
+                              color: zoneStyle.color,
+                            }}
+                          >
+                            {zone.zone}
+                          </span>
+                        </td>
+                        <td
+                          style={{ padding: "8px 10px", textAlign: "center" }}
+                        >
+                          <span
+                            style={{
+                              padding: "2px 8px",
+                              borderRadius: "10px",
+                              fontSize: "10px",
+                              fontWeight: 700,
+                              background:
+                                row.cusGrade === "A" ? "#dcfce7" : "#fee2e2",
+                              color:
+                                row.cusGrade === "A" ? "#166534" : "#991b1b",
+                            }}
+                          >
+                            {row.cusGrade || "—"}
+                          </span>
+                        </td>
+                        <td
+                          style={{ padding: "8px 10px", whiteSpace: "nowrap" }}
+                        >
+                          {effDate ? (
+                            <span
+                              style={{
+                                color: "#047857",
+                                fontWeight: 700,
+                                fontSize: "11px",
+                              }}
+                            >
+                              {formatDate(effDate)}
+                            </span>
+                          ) : (
+                            <span style={{ color: "#cbd5e1" }}>—</span>
+                          )}
+                        </td>
+                        <td
+                          style={{
+                            padding: "8px 10px",
+                            fontSize: "11px",
+                            color: "#64748b",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {formatDate(row.maPeriodStart)}
+                        </td>
+                        <td
+                          style={{
+                            padding: "8px 10px",
+                            fontSize: "11px",
+                            color: "#64748b",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {formatDate(row.maPeriodEnd)}
+                        </td>
+                        <td
+                          style={{
+                            padding: "8px 10px",
+                            color: "#475569",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {row.tOfficerName || row.repName || "—"}
+                        </td>
+                        <td style={{ padding: "8px 10px" }}>
+                          {row.machineType ? (
+                            <span
+                              style={{
+                                background: "#ede9fe",
+                                color: "#5b21b6",
+                                padding: "2px 7px",
+                                borderRadius: "8px",
+                                fontSize: "10px",
+                                fontWeight: 700,
+                              }}
+                            >
+                              {row.machineType}
+                            </span>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td
+                          style={{
+                            padding: "8px 10px",
+                            fontSize: "11px",
+                            color: "#64748b",
+                            maxWidth: "160px",
+                          }}
+                        >
+                          {getAddress(row) || "—"}
+                        </td>
+                        <td
+                          style={{
+                            padding: "8px 10px",
+                            fontSize: "11px",
+                            color: "#2563eb",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {row.mLocTelephone && row.mLocTelephone !== "-"
+                            ? row.mLocTelephone
+                            : row.telNo && row.telNo !== "-"
+                              ? row.telNo
+                              : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div
+                style={{
+                  padding: "12px 20px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  borderTop: "1px solid #f1f5f9",
+                  background: "#fafbfc",
+                }}
+              >
+                <span style={{ fontSize: "12px", color: "#64748b" }}>
+                  Showing {(page - 1) * PAGE_SIZE + 1}–
+                  {Math.min(page * PAGE_SIZE, filtered.length)} of{" "}
+                  {filtered.length}
+                </span>
+                <div style={{ display: "flex", gap: "5px" }}>
+                  <PaginationBtn
+                    label="‹"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                  />
+                  {paginationRange(page, totalPages).map((p, i) =>
+                    p === "…" ? (
+                      <span
+                        key={`e${i}`}
+                        style={{ padding: "6px 4px", color: "#94a3b8" }}
+                      >
+                        …
+                      </span>
+                    ) : (
+                      <PaginationBtn
+                        key={p}
+                        label={String(p)}
+                        onClick={() => setPage(Number(p))}
+                        active={p === page}
+                      />
+                    ),
+                  )}
+                  <PaginationBtn
+                    label="›"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ════════════ CHART TAB ════════════ */}
+        {!loading && activeTab === "chart" && (
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+          >
+            {/* Year selector */}
             <div
               style={{
-                fontSize: 11,
-                color: "#cbd5e1",
-                letterSpacing: 1,
-                fontWeight: 600,
+                background: "white",
+                borderRadius: "12px",
+                padding: "16px 22px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                flexWrap: "wrap",
               }}
             >
-              FS REPORT • {new Date().getFullYear()}
+              <span
+                style={{ fontSize: "13px", fontWeight: 700, color: "#334155" }}
+              >
+                Year:
+              </span>
+              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                {availableYears.map((y) => (
+                  <button
+                    key={y}
+                    onClick={() => {
+                      setChartYear(y);
+                      setSelectedMonth(null);
+                    }}
+                    style={{
+                      padding: "6px 16px",
+                      borderRadius: "20px",
+                      border: "none",
+                      cursor: "pointer",
+                      fontWeight: 700,
+                      fontSize: "13px",
+                      background: chartYear === y ? "#047857" : "#f1f5f9",
+                      color: chartYear === y ? "white" : "#475569",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    {y}
+                  </button>
+                ))}
+              </div>
+              {selectedMonth !== null && (
+                <button
+                  onClick={() => setSelectedMonth(null)}
+                  style={{
+                    marginLeft: "auto",
+                    padding: "6px 14px",
+                    borderRadius: "8px",
+                    border: "1px solid #e2e8f0",
+                    background: "white",
+                    cursor: "pointer",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    color: "#64748b",
+                  }}
+                >
+                  ← Back to Year View
+                </button>
+              )}
+            </div>
+
+            {/* Bar chart */}
+            <div
+              style={{
+                background: "white",
+                borderRadius: "12px",
+                padding: "24px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+              }}
+            >
+              <div style={{ marginBottom: "4px" }}>
+                <h3
+                  style={{
+                    margin: 0,
+                    color: "#065f46",
+                    fontSize: "15px",
+                    fontWeight: 800,
+                  }}
+                >
+                  {selectedMonth !== null
+                    ? `${MONTHS[selectedMonth]} ${chartYear} — ${monthDrilldown.length} records`
+                    : `Monthly Warranty End Distribution — ${chartYear}`}
+                </h3>
+                <p
+                  style={{
+                    margin: "4px 0 20px",
+                    color: "#94a3b8",
+                    fontSize: "11px",
+                  }}
+                >
+                  Based on M_WARRANTY_END_DATE.
+                  {selectedMonth === null &&
+                    " Click a bar to drill into that month."}
+                </p>
+              </div>
+
+              {selectedMonth === null ? (
+                /* ── Year view: bar chart ── */
+                <>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-end",
+                      gap: "8px",
+                      height: "240px",
+                      paddingBottom: "0",
+                    }}
+                  >
+                    {MONTHS.map((m, i) => {
+                      const count = monthlyData[i];
+                      const height =
+                        count === 0
+                          ? 4
+                          : Math.max(18, (count / maxCount) * 210);
+                      const isHot =
+                        count === Math.max(...monthlyData) && count > 0;
+                      return (
+                        <div
+                          key={m}
+                          style={{
+                            flex: 1,
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: "11px",
+                              fontWeight: 700,
+                              color: count > 0 ? "#047857" : "#cbd5e1",
+                              minHeight: "16px",
+                            }}
+                          >
+                            {count || ""}
+                          </div>
+                          <div
+                            onClick={() => count > 0 && setSelectedMonth(i)}
+                            style={{
+                              width: "100%",
+                              height: `${height}px`,
+                              background: isHot
+                                ? "linear-gradient(180deg, #f59e0b 0%, #d97706 100%)"
+                                : count > 0
+                                  ? "linear-gradient(180deg, #10b981 0%, #047857 100%)"
+                                  : "#f1f5f9",
+                              borderRadius: "5px 5px 0 0",
+                              cursor: count > 0 ? "pointer" : "default",
+                              transition: "filter 0.15s, transform 0.15s",
+                              boxShadow:
+                                count > 0
+                                  ? "0 2px 6px rgba(4,120,87,0.2)"
+                                  : "none",
+                            }}
+                            onMouseEnter={(e) => {
+                              if (count > 0) {
+                                (e.target as HTMLElement).style.filter =
+                                  "brightness(1.15)";
+                                (e.target as HTMLElement).style.transform =
+                                  "scaleY(1.03)";
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.target as HTMLElement).style.filter = "";
+                              (e.target as HTMLElement).style.transform = "";
+                            }}
+                            title={`${m} ${chartYear}: ${count} records — click to view`}
+                          />
+                          <div
+                            style={{
+                              fontSize: "10.5px",
+                              color: "#64748b",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {m}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {/* Legend */}
+                  <div
+                    style={{
+                      marginTop: "20px",
+                      display: "flex",
+                      gap: "12px",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    {MONTHS.map(
+                      (m, i) =>
+                        monthlyData[i] > 0 && (
+                          <div
+                            key={m}
+                            onClick={() => setSelectedMonth(i)}
+                            style={{
+                              background: "#ecfdf5",
+                              borderRadius: "8px",
+                              padding: "6px 12px",
+                              fontSize: "11.5px",
+                              cursor: "pointer",
+                              border: "1px solid #a7f3d0",
+                            }}
+                          >
+                            <span style={{ fontWeight: 700, color: "#047857" }}>
+                              {m}:
+                            </span>{" "}
+                            <span style={{ color: "#334155" }}>
+                              {monthlyData[i]} record
+                              {monthlyData[i] !== 1 ? "s" : ""}
+                            </span>
+                          </div>
+                        ),
+                    )}
+                  </div>
+                </>
+              ) : (
+                /* ── Month drilldown: mini table ── */
+                <div style={{ overflowX: "auto" }}>
+                  {monthDrilldown.length === 0 ? (
+                    <div
+                      style={{
+                        padding: "32px",
+                        textAlign: "center",
+                        color: "#94a3b8",
+                      }}
+                    >
+                      No records for this month.
+                    </div>
+                  ) : (
+                    <table
+                      style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        fontSize: "11.5px",
+                        minWidth: "900px",
+                      }}
+                    >
+                      <thead>
+                        <tr
+                          style={{
+                            background: "#ecfdf5",
+                            borderBottom: "2px solid #a7f3d0",
+                          }}
+                        >
+                          {[
+                            "#",
+                            "Customer",
+                            "Model",
+                            "Serial No",
+                            "Zone",
+                            "Warranty End",
+                            "Technician",
+                            "Type",
+                            "Mobile",
+                          ].map((h) => (
+                            <th
+                              key={h}
+                              style={{
+                                padding: "8px 10px",
+                                color: "#047857",
+                                fontWeight: 700,
+                                textAlign: "left",
+                                fontSize: "10.5px",
+                              }}
+                            >
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {monthDrilldown.map((row, i) => {
+                          const zone = resolveTeam(row.team);
+                          const zs = ZONE_COLORS[zone.zone];
+                          const eff = getEffectiveDate(row);
+                          return (
+                            <tr
+                              key={`${row.serialNo}-${i}`}
+                              style={{
+                                background: i % 2 === 0 ? "white" : "#f8fafc",
+                                borderBottom: "1px solid #f1f5f9",
+                              }}
+                            >
+                              <td
+                                style={{
+                                  padding: "7px 10px",
+                                  color: "#94a3b8",
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {i + 1}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "7px 10px",
+                                  fontWeight: 700,
+                                  color: "#1e293b",
+                                }}
+                              >
+                                {row.cusName || "—"}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "7px 10px",
+                                  color: "#475569",
+                                }}
+                              >
+                                {row.machineDesc || "—"}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "7px 10px",
+                                  color: "#64748b",
+                                  fontFamily: "monospace",
+                                  fontSize: "10.5px",
+                                }}
+                              >
+                                {row.serialNo || "—"}
+                              </td>
+                              <td style={{ padding: "7px 10px" }}>
+                                <span
+                                  style={{
+                                    padding: "2px 7px",
+                                    borderRadius: "9px",
+                                    fontSize: "10px",
+                                    fontWeight: 700,
+                                    background: zs.bg,
+                                    color: zs.color,
+                                  }}
+                                >
+                                  {zone.zone}
+                                </span>
+                              </td>
+                              <td
+                                style={{
+                                  padding: "7px 10px",
+                                  fontWeight: 700,
+                                  color: "#047857",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {formatDate(eff)}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "7px 10px",
+                                  color: "#475569",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {row.tOfficerName || "—"}
+                              </td>
+                              <td style={{ padding: "7px 10px" }}>
+                                {row.machineType ? (
+                                  <span
+                                    style={{
+                                      background: "#ede9fe",
+                                      color: "#5b21b6",
+                                      padding: "2px 6px",
+                                      borderRadius: "7px",
+                                      fontSize: "10px",
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    {row.machineType}
+                                  </span>
+                                ) : (
+                                  "—"
+                                )}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "7px 10px",
+                                  fontSize: "11px",
+                                  color: "#2563eb",
+                                }}
+                              >
+                                {row.mLocTelephone && row.mLocTelephone !== "-"
+                                  ? row.mLocTelephone
+                                  : row.telNo && row.telNo !== "-"
+                                    ? row.telNo
+                                    : "—"}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
             </div>
           </div>
-        </div>
+        )}
+      </div>
+
+      {/* Legend */}
+      <div
+        style={{ padding: "6px 28px 20px", fontSize: "11px", color: "#94a3b8" }}
+      >
+        Effective Date: M_WARRANTY_END_DATE (Warranty End Date)
       </div>
     </div>
   );
 }
 
-// ── Shared micro-styles ────────────────────────────────────────────────────────
-const labelSt: React.CSSProperties = {
-  fontSize: 11,
-  fontWeight: 700,
-  color: "#64748b",
-  letterSpacing: 0.8,
-  textTransform: "uppercase",
-  marginBottom: 7,
-};
-const inputSt: React.CSSProperties = {
-  padding: "8px 13px",
-  borderRadius: 9,
-  border: "1.5px solid #e2e8f0",
-  fontSize: 13,
-  color: "#1e293b",
-  fontFamily: "inherit",
-  outline: "none",
-  background: "#fff",
-};
-const tdSt: React.CSSProperties = {
-  padding: "10px 13px",
-  borderBottom: "1px solid #f1f5f9",
-  color: "#334155",
-  whiteSpace: "nowrap",
-};
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function PaginationBtn({
+  label,
+  onClick,
+  disabled,
+  active,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  active?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        padding: "6px 10px",
+        borderRadius: "6px",
+        border: "1px solid #e2e8f0",
+        background: active ? "#047857" : "white",
+        color: active ? "white" : disabled ? "#cbd5e1" : "#334155",
+        cursor: disabled ? "not-allowed" : "pointer",
+        fontWeight: 700,
+        minWidth: "32px",
+        fontSize: "12px",
+        transition: "all 0.12s",
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function paginationRange(current: number, total: number): (number | "…")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages: (number | "…")[] = [1];
+  if (current > 3) pages.push("…");
+  for (
+    let p = Math.max(2, current - 1);
+    p <= Math.min(total - 1, current + 1);
+    p++
+  )
+    pages.push(p);
+  if (current < total - 2) pages.push("…");
+  pages.push(total);
+  return pages;
+}
