@@ -1,698 +1,56 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { useApiConfig } from "@/hooks/apiconfig"; // adjust path as needed
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface Machine {
+interface CustomerReport {
+  cusCode: string;
+  cusName: string;
+  add1: string;
+  add2: string;
+  add3: string;
+  mobileNo: string;
+  telNo: string;
+  email: string;
+  city: string;
+  postalCode: string;
+  cusStatus: string;
+  sageCode: string;
+  cusGradeId: string;
+  cusGradeName: string;
+  repCode: string;
+  repName: string;
+  techCode: string;
+  techName: string;
+  debtCode: string;
+  consRepCode: string;
+  machineCount: number;
+}
+
+interface MachineRecord {
+  serialNo: string;
   machineCode: string;
-  modelNumber: string;
-  technicianCode: string;
-  location: string;
-  contactName: string;
-  isActive: boolean;
+  machineDesc: string;
+  machineRefCode: string;
+  machineType: string;
+  cusStatus: string;
+  mLoc1: string;
+  mLoc2: string;
+  mLoc3: string;
+  mLocContactName: string;
+  mLocContactNo: string;
+  tOfficerCode: string;
+  team: string;
+  maPeriodStart: string | null;
+  maPeriodEnd: string | null;
+  mWarrantyEndDate: string | null;
+  visitsPerYear: number | null;
+  cusEmail: string;
 }
-
-interface Customer {
-  customerCode: string;
-  customerName: string;
-  address1: string;
-  address2: string;
-  address3: string;
-  mobile: string;
-  machines: Machine[];
-}
-
-// ─── Data ─────────────────────────────────────────────────────────────────────
-
-const CUSTOMERS: Customer[] = [
-  {
-    customerCode: "C001",
-    customerName: "CENTRAL CULTURAL FUND",
-    address1: "2ND STAGE, 04TH FLOOR",
-    address2: "SETHSIRIPAYA",
-    address3: "BATTARAMULLA",
-    mobile: "0112186308",
-    machines: [
-      {
-        machineCode: "Q12669",
-        modelNumber: "MP 2014AD",
-        technicianCode: "3152",
-        location: "GROUND FLOOR - RECEPTION",
-        contactName: "MR. PERERA",
-        isActive: true,
-      },
-      {
-        machineCode: "Q12670",
-        modelNumber: "MP 2014AD",
-        technicianCode: "3152",
-        location: "2ND FLOOR - ADMIN",
-        contactName: "MS. SILVA",
-        isActive: true,
-      },
-      {
-        machineCode: "Q13208",
-        modelNumber: "MP 2014AD",
-        technicianCode: "3152",
-        location: "4TH FLOOR - ACCOUNTS",
-        contactName: "MR. FERNANDO",
-        isActive: false,
-      },
-    ],
-  },
-  {
-    customerCode: "C002",
-    customerName: "MINISTRY OF HIGHER EDUCATION",
-    address1: "NO:18, WARD PLACE",
-    address2: "COLOMBO 07",
-    address3: "-",
-    mobile: "0112694486",
-    machines: [
-      {
-        machineCode: "Q98978",
-        modelNumber: "MP 2014D",
-        technicianCode: "3152",
-        location: "1ST FLOOR - REGISTRY",
-        contactName: "MRS. JAYAWARDENA",
-        isActive: true,
-      },
-      {
-        machineCode: "Q98979",
-        modelNumber: "MP 2014D",
-        technicianCode: "3152",
-        location: "2ND FLOOR - IT UNIT",
-        contactName: "MR. BANDARA",
-        isActive: true,
-      },
-      {
-        machineCode: "Q98980",
-        modelNumber: "MP 2014D",
-        technicianCode: "3152",
-        location: "3RD FLOOR - DIRECTOR",
-        contactName: "MS. KUMARI",
-        isActive: false,
-      },
-      {
-        machineCode: "Q98981",
-        modelNumber: "MP 2014D",
-        technicianCode: "3152",
-        location: "4TH FLOOR - PLANNING",
-        contactName: "MR. RANASINGHE",
-        isActive: true,
-      },
-    ],
-  },
-  {
-    customerCode: "C003",
-    customerName: "EMBASSY OF FRANCE",
-    address1: "NO: 89, ROSMEAD PLACE",
-    address2: "COLOMBO 07",
-    address3: "-",
-    mobile: "0112639401",
-    machines: [
-      {
-        machineCode: "Q9712",
-        modelNumber: "MP2501SP",
-        technicianCode: "3152",
-        location: "MAIN HALL",
-        contactName: "MR. DUBOIS",
-        isActive: true,
-      },
-      {
-        machineCode: "Q16600",
-        modelNumber: "IMC2000",
-        technicianCode: "3152",
-        location: "VISA SECTION",
-        contactName: "MS. MARTIN",
-        isActive: true,
-      },
-      {
-        machineCode: "Q16599",
-        modelNumber: "IMC2000",
-        technicianCode: "3152",
-        location: "ADMIN OFFICE",
-        contactName: "MR. LEFEVRE",
-        isActive: false,
-      },
-    ],
-  },
-  {
-    customerCode: "C004",
-    customerName: "NATIONAL AUDIT OFFICE",
-    address1: "NO :306/72, POLDUWA ROAD",
-    address2: "BATTARAMULLA",
-    address3: "-",
-    mobile: "0112887021",
-    machines: [
-      {
-        machineCode: "Q14379",
-        modelNumber: "MP2501SP",
-        technicianCode: "3168",
-        location: "GROUND FLOOR",
-        contactName: "MR. DISSANAYAKE",
-        isActive: true,
-      },
-      {
-        machineCode: "Q14380",
-        modelNumber: "MP2501SP",
-        technicianCode: "8050",
-        location: "AUDIT DIVISION A",
-        contactName: "MS. WEERASINGHE",
-        isActive: true,
-      },
-      {
-        machineCode: "Q14381",
-        modelNumber: "MP2501SP",
-        technicianCode: "8034",
-        location: "AUDIT DIVISION B",
-        contactName: "MR. GUNASEKARA",
-        isActive: true,
-      },
-      {
-        machineCode: "Q14383",
-        modelNumber: "MP2501SP",
-        technicianCode: "8050",
-        location: "FINANCE UNIT",
-        contactName: "MRS. RATHNAYAKE",
-        isActive: false,
-      },
-      {
-        machineCode: "Q14384",
-        modelNumber: "MP2501SP",
-        technicianCode: "3152",
-        location: "DIRECTOR OFFICE",
-        contactName: "MR. JAYASURIYA",
-        isActive: true,
-      },
-    ],
-  },
-  {
-    customerCode: "C005",
-    customerName: "UNIVERSITY OF COLOMBO",
-    address1: "NO:94 KUMARATHUNGA MUNIDASA MW",
-    address2: "COLOMBO 03",
-    address3: "-",
-    mobile: "0112502127",
-    machines: [
-      {
-        machineCode: "Q11315",
-        modelNumber: "DSM615",
-        technicianCode: "3152",
-        location: "FACULTY OF ARTS",
-        contactName: "PROF. WIJESEKARA",
-        isActive: true,
-      },
-      {
-        machineCode: "Q9955",
-        modelNumber: "MP 2501SP",
-        technicianCode: "3152",
-        location: "FACULTY OF SCIENCE",
-        contactName: "DR. MENDIS",
-        isActive: true,
-      },
-      {
-        machineCode: "Q14515",
-        modelNumber: "DD5450",
-        technicianCode: "3152",
-        location: "LIBRARY",
-        contactName: "MS. ABEYSEKARA",
-        isActive: false,
-      },
-      {
-        machineCode: "Q99088",
-        modelNumber: "DD3344",
-        technicianCode: "3152",
-        location: "ADMIN BLOCK",
-        contactName: "MR. SAMARAWEERA",
-        isActive: true,
-      },
-    ],
-  },
-  {
-    customerCode: "C006",
-    customerName: "MINISTRY OF PORTS AND SHIPPING",
-    address1: "NO. 19, CHAITHYA ROAD",
-    address2: "COLOMBO 01",
-    address3: "-",
-    mobile: "0112320252",
-    machines: [
-      {
-        machineCode: "Q12009",
-        modelNumber: "MP2501SP",
-        technicianCode: "3157",
-        location: "SECRETARY OFFICE",
-        contactName: "MR. KODITHUWAKKU",
-        isActive: true,
-      },
-      {
-        machineCode: "Q12365",
-        modelNumber: "MP2501SP",
-        technicianCode: "3157",
-        location: "PLANNING DIVISION",
-        contactName: "MS. SENEVIRATNE",
-        isActive: true,
-      },
-      {
-        machineCode: "Q9119",
-        modelNumber: "MP2501SP",
-        technicianCode: "3157",
-        location: "SHIPPING REGISTRY",
-        contactName: "MR. WICKRAMASINGHE",
-        isActive: true,
-      },
-      {
-        machineCode: "Q9120",
-        modelNumber: "MP2501SP",
-        technicianCode: "3157",
-        location: "IT DIVISION",
-        contactName: "MRS. PEIRIS",
-        isActive: false,
-      },
-    ],
-  },
-  {
-    customerCode: "C007",
-    customerName: "COLOMBO MUNICIPAL COUNCIL",
-    address1: "TOWN HALL, DHARMAPALA MAWATHA",
-    address2: "COLOMBO 07",
-    address3: "-",
-    mobile: "0112691968",
-    machines: [
-      {
-        machineCode: "Q15267",
-        modelNumber: "MP 2014D",
-        technicianCode: "3152",
-        location: "MAIN OFFICE",
-        contactName: "MR. ATTANAYAKE",
-        isActive: true,
-      },
-      {
-        machineCode: "Q8256",
-        modelNumber: "MP2501SP",
-        technicianCode: "3152",
-        location: "HEALTH DEPT",
-        contactName: "DR. WIJERATNE",
-        isActive: true,
-      },
-      {
-        machineCode: "Q12904",
-        modelNumber: "MP2501SP",
-        technicianCode: "8028",
-        location: "PUBLIC HEALTH",
-        contactName: "MR. NANDANA",
-        isActive: false,
-      },
-    ],
-  },
-  {
-    customerCode: "C008",
-    customerName: "DEPARTMENT OF BUDDHIST AFFAIRS",
-    address1: "NO: 135, DHARMAPALA MW",
-    address2: "COLOMBO 07",
-    address3: "-",
-    mobile: "0112424447",
-    machines: [
-      {
-        machineCode: "Q7176",
-        modelNumber: "MP 2501SP",
-        technicianCode: "3152",
-        location: "DIRECTOR GENERAL OFFICE",
-        contactName: "REV. THERO",
-        isActive: true,
-      },
-      {
-        machineCode: "Q7177",
-        modelNumber: "MP 2501SP",
-        technicianCode: "3152",
-        location: "ADMINISTRATION",
-        contactName: "MR. GUNAWARDENA",
-        isActive: true,
-      },
-      {
-        machineCode: "Q7341",
-        modelNumber: "MP2501SP",
-        technicianCode: "3152",
-        location: "FINANCE SECTION",
-        contactName: "MS. DHARMASIRI",
-        isActive: false,
-      },
-      {
-        machineCode: "Q15539",
-        modelNumber: "MP 2014AD",
-        technicianCode: "3152",
-        location: "RECORDS ROOM",
-        contactName: "MR. NISHANTHA",
-        isActive: true,
-      },
-    ],
-  },
-  {
-    customerCode: "C009",
-    customerName: "SPECIAL TASK FORCE",
-    address1: "NO:223, BAUDDHALOKA MW",
-    address2: "COLOMBO 07",
-    address3: "-",
-    mobile: "0112500471",
-    machines: [
-      {
-        machineCode: "Q12271",
-        modelNumber: "MP 2014AD",
-        technicianCode: "8050",
-        location: "HQ - MAIN OFFICE",
-        contactName: "CAPT. SILVA",
-        isActive: true,
-      },
-      {
-        machineCode: "Q12289",
-        modelNumber: "MP 2014AD",
-        technicianCode: "3152",
-        location: "OPERATIONS ROOM",
-        contactName: "MAJ. FERNANDO",
-        isActive: true,
-      },
-      {
-        machineCode: "Q5552",
-        modelNumber: "MP2001L",
-        technicianCode: "3167",
-        location: "LOGISTICS",
-        contactName: "LT. JAYASENA",
-        isActive: false,
-      },
-    ],
-  },
-  {
-    customerCode: "C010",
-    customerName: "POLICE HEADQUARTERS",
-    address1: "COLOMBO 01",
-    address2: "-",
-    address3: "-",
-    mobile: "0112621667",
-    machines: [
-      {
-        machineCode: "Q11571",
-        modelNumber: "MP 2014AD",
-        technicianCode: "3168",
-        location: "IGP OFFICE",
-        contactName: "ASP RANAWEERA",
-        isActive: true,
-      },
-      {
-        machineCode: "Q11593",
-        modelNumber: "MP 2014AD",
-        technicianCode: "3168",
-        location: "CID DIVISION",
-        contactName: "DIG SOORIYABANDARA",
-        isActive: true,
-      },
-      {
-        machineCode: "Q11616",
-        modelNumber: "MP 2014AD",
-        technicianCode: "3168",
-        location: "ADMIN SECTION",
-        contactName: "SP KARUNARATNE",
-        isActive: false,
-      },
-    ],
-  },
-  {
-    customerCode: "C011",
-    customerName: "CRIMINAL RECORDS DIVISION",
-    address1: "NO.40 MEDLAND PLACE",
-    address2: "COLOMBO 07",
-    address3: "-",
-    mobile: "0112692012",
-    machines: [
-      {
-        machineCode: "Q18311",
-        modelNumber: "DD3344",
-        technicianCode: "3152",
-        location: "RECORDS ROOM A",
-        contactName: "MR. ABEYKOON",
-        isActive: true,
-      },
-      {
-        machineCode: "Q18568",
-        modelNumber: "M2701",
-        technicianCode: "3152",
-        location: "RECORDS ROOM B",
-        contactName: "MS. RAJAPAKSHA",
-        isActive: true,
-      },
-      {
-        machineCode: "Q18569",
-        modelNumber: "M2701",
-        technicianCode: "3152",
-        location: "DATA ENTRY UNIT",
-        contactName: "MR. PRIYANTHA",
-        isActive: false,
-      },
-    ],
-  },
-  {
-    customerCode: "C012",
-    customerName: "IRRIGATION DEPARTMENT",
-    address1: "P.O. BOX. 1138, BAUDDHALOKA MW",
-    address2: "COLOMBO 07",
-    address3: "-",
-    mobile: "0112587888",
-    machines: [
-      {
-        machineCode: "Q16327",
-        modelNumber: "MP 2014D",
-        technicianCode: "3152",
-        location: "CHIEF ENGINEER OFFICE",
-        contactName: "ENGR. PIERIS",
-        isActive: true,
-      },
-      {
-        machineCode: "Q16332",
-        modelNumber: "MP 2014D",
-        technicianCode: "3152",
-        location: "HYDROLOGY DIVISION",
-        contactName: "MR. RANAWAKA",
-        isActive: true,
-      },
-      {
-        machineCode: "Q16336",
-        modelNumber: "MP 2014D",
-        technicianCode: "3152",
-        location: "DESIGN OFFICE",
-        contactName: "MS. SUGATHADASA",
-        isActive: true,
-      },
-      {
-        machineCode: "Q16337",
-        modelNumber: "MP 2014D",
-        technicianCode: "3152",
-        location: "PLANNING UNIT",
-        contactName: "MR. BUDDHADASA",
-        isActive: false,
-      },
-      {
-        machineCode: "Q16339",
-        modelNumber: "MP 2014D",
-        technicianCode: "3152",
-        location: "SURVEY SECTION",
-        contactName: "MR. MUNASINGHE",
-        isActive: true,
-      },
-    ],
-  },
-  {
-    customerCode: "C013",
-    customerName: "NATIONAL SCIENCE FOUNDATION",
-    address1: "NO:47/5, MAITLAND PLACE",
-    address2: "COLOMBO 07",
-    address3: "-",
-    mobile: "0123456789",
-    machines: [
-      {
-        machineCode: "Q10646",
-        modelNumber: "MP2501SP",
-        technicianCode: "3152",
-        location: "DIRECTOR OFFICE",
-        contactName: "DR. PATHIRANA",
-        isActive: true,
-      },
-      {
-        machineCode: "Q10516",
-        modelNumber: "MPC2004SP",
-        technicianCode: "3152",
-        location: "RESEARCH WING",
-        contactName: "MS. KARUNARATHNA",
-        isActive: true,
-      },
-    ],
-  },
-  {
-    customerCode: "C014",
-    customerName: "LANWA SANSTHA CEMENT CORPORATION PVT LTD",
-    address1: "NO:25 ALFRED PLACE",
-    address2: "COLOMBO 03",
-    address3: "-",
-    mobile: "-",
-    machines: [
-      {
-        machineCode: "Q18166",
-        modelNumber: "IMC2000",
-        technicianCode: "3185",
-        location: "ACCOUNTS DEPT",
-        contactName: "MR. LANKAPURA",
-        isActive: true,
-      },
-      {
-        machineCode: "Q18782",
-        modelNumber: "M2701",
-        technicianCode: "3185",
-        location: "HR DIVISION",
-        contactName: "MS. SENANAYAKE",
-        isActive: true,
-      },
-    ],
-  },
-  {
-    customerCode: "C015",
-    customerName: "NATIONAL HOUSING DEVELOPMENT AUTHORITY",
-    address1: "P.O.BOX.1826",
-    address2: "NO.34, SRI CHITTAMPALAM A GARD",
-    address3: "-",
-    mobile: "0342222298",
-    machines: [
-      {
-        machineCode: "Q19108",
-        modelNumber: "DD3344",
-        technicianCode: "3168",
-        location: "PLANNING DIVISION",
-        contactName: "MR. WIJESINGHE",
-        isActive: true,
-      },
-      {
-        machineCode: "Q19175",
-        modelNumber: "M2701",
-        technicianCode: "8050",
-        location: "FINANCE DEPT",
-        contactName: "MS. BALASURIYA",
-        isActive: false,
-      },
-    ],
-  },
-  {
-    customerCode: "C016",
-    customerName: "BRITISH INSTITUTE OF ENGINEERING AND TECHNOLOGY (PVT) LTD",
-    address1: "NO:534, GALLE ROAD",
-    address2: "COLOMBO 03",
-    address3: "-",
-    mobile: "0112576596",
-    machines: [
-      {
-        machineCode: "Q15735",
-        modelNumber: "IM2702",
-        technicianCode: "3152",
-        location: "ADMISSIONS OFFICE",
-        contactName: "MR. GUNARATNE",
-        isActive: true,
-      },
-      {
-        machineCode: "Q15736",
-        modelNumber: "IM2702",
-        technicianCode: "3152",
-        location: "EXAMINATION HALL",
-        contactName: "MS. WICKRAMA",
-        isActive: false,
-      },
-    ],
-  },
-  {
-    customerCode: "C017",
-    customerName: "MINISTRY OF TOURISM & WILDLIFE DIVISION",
-    address1: "NO:07 HEKTER KOBBAKADUWA MAWATHA",
-    address2: "COLOMBO 07",
-    address3: "-",
-    mobile: "0112381798",
-    machines: [
-      {
-        machineCode: "Q17455",
-        modelNumber: "IM2702",
-        technicianCode: "3152",
-        location: "SECRETARY OFFICE",
-        contactName: "MR. JAYAKODY",
-        isActive: true,
-      },
-      {
-        machineCode: "Q18040",
-        modelNumber: "IM2702",
-        technicianCode: "3152",
-        location: "WILDLIFE WING",
-        contactName: "DR. SAMARAKOON",
-        isActive: true,
-      },
-    ],
-  },
-  {
-    customerCode: "C018",
-    customerName: "INSTITUTE OF WESTERN MUSIC & SPEECH",
-    address1: "NO:12, KOTHALAWALA GARDEN",
-    address2: "COLOMBO 04",
-    address3: "-",
-    mobile: "0112587328",
-    machines: [
-      {
-        machineCode: "Q19336",
-        modelNumber: "MP3555",
-        technicianCode: "3152",
-        location: "ADMIN OFFICE",
-        contactName: "MS. AMARATUNGA",
-        isActive: true,
-      },
-      {
-        machineCode: "Q19337",
-        modelNumber: "MP3555",
-        technicianCode: "3152",
-        location: "LIBRARY",
-        contactName: "MR. JAYALATH",
-        isActive: false,
-      },
-    ],
-  },
-  {
-    customerCode: "C019",
-    customerName: "SRI LANKA FOUNDATION",
-    address1: "NO:100, INDEPENDENCE SQUARE",
-    address2: "COLOMBO 07",
-    address3: "-",
-    mobile: "0112695249",
-    machines: [
-      {
-        machineCode: "Q11452",
-        modelNumber: "MP3555",
-        technicianCode: "3152",
-        location: "CONFERENCE HALL",
-        contactName: "MR. DISSANAYAKA",
-        isActive: true,
-      },
-    ],
-  },
-  {
-    customerCode: "C020",
-    customerName: "CANADIAN HIGH COMMISSION",
-    address1: "NO:06 R.G SENANAYAKA MAWATHA",
-    address2: "COLOMBO 07",
-    address3: "-",
-    mobile: "-",
-    machines: [
-      {
-        machineCode: "Q18585",
-        modelNumber: "IMC2000",
-        technicianCode: "3152",
-        location: "VISA SECTION",
-        contactName: "MR. THOMPSON",
-        isActive: true,
-      },
-    ],
-  },
-];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function toCSV(data: Customer[]): string {
+function toCSV(data: CustomerReport[]): string {
   const h = [
     "Customer Code",
     "Customer Name",
@@ -700,49 +58,99 @@ function toCSV(data: Customer[]): string {
     "Address 2",
     "Address 3",
     "Mobile",
-    "Total Machines",
-    "Active Machines",
+    "Tel No",
+    "Email",
+    "City",
+    "Status",
+    "Grade",
+    "Rep Name",
+    "Machine Count",
   ];
   const rows = data.map((c) => [
-    c.customerCode,
-    c.customerName,
-    c.address1,
-    c.address2,
-    c.address3,
-    c.mobile,
-    String(c.machines.length),
-    String(c.machines.filter((m) => m.isActive).length),
+    c.cusCode,
+    c.cusName,
+    c.add1,
+    c.add2,
+    c.add3,
+    c.mobileNo,
+    c.telNo,
+    c.email,
+    c.city,
+    c.cusStatus,
+    c.cusGradeName,
+    c.repName,
+    String(c.machineCount),
   ]);
   return [h, ...rows]
     .map((r) => r.map((v) => `"${(v ?? "").replace(/"/g, '""')}"`).join(","))
     .join("\n");
 }
 
-function dlCSV(csv: string, name: string) {
-  const b = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const u = URL.createObjectURL(b);
+function dlBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = u;
-  a.download = name;
+  a.href = url;
+  a.download = filename;
   a.click();
-  URL.revokeObjectURL(u);
+  URL.revokeObjectURL(url);
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+function dlCSV(csv: string, name: string) {
+  dlBlob(new Blob([csv], { type: "text/csv;charset=utf-8;" }), name);
+}
+
+function fmt(d: string | null): string {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("en-GB");
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  MA: "Maintenance Agreement",
+  FS: "Free Service",
+  NS: "No Service",
+  EX: "Extended Service",
+};
+
+// ─── Spinner ─────────────────────────────────────────────────────────────────
+
+function Spinner({
+  size = 20,
+  color = "#2563eb",
+}: {
+  size?: number;
+  color?: string;
+}) {
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        border: `2px solid rgba(0,0,0,0.08)`,
+        borderTop: `2px solid ${color}`,
+        borderRadius: "50%",
+        animation: "spin 0.7s linear infinite",
+      }}
+    />
+  );
+}
+
+// ─── Machine Dialog ───────────────────────────────────────────────────────────
 
 interface MachineDialogProps {
-  customer: Customer;
+  customer: CustomerReport;
+  machines: MachineRecord[];
+  loading: boolean;
   onClose: () => void;
 }
 
-function MachineDialog({ customer, onClose }: MachineDialogProps) {
+function MachineDialog({
+  customer,
+  machines,
+  loading,
+  onClose,
+}: MachineDialogProps) {
   const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
 
-  const shown = customer.machines.filter((m) =>
-    filter === "all" ? true : filter === "active" ? m.isActive : !m.isActive,
-  );
-
-  // close on Escape
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -751,11 +159,23 @@ function MachineDialog({ customer, onClose }: MachineDialogProps) {
     return () => window.removeEventListener("keydown", fn);
   }, [onClose]);
 
-  const active = customer.machines.filter((m) => m.isActive).length;
-  const inactive = customer.machines.length - active;
+  const active = machines.filter(
+    (m) => m.cusStatus !== "EX" && m.cusStatus !== "NS",
+  ).length;
+  const inactive = machines.length - active;
+
+  const shown = machines.filter((m) => {
+    const isActive = m.cusStatus !== "EX" && m.cusStatus !== "NS";
+    if (filter === "active") return isActive;
+    if (filter === "inactive") return !isActive;
+    return true;
+  });
 
   return (
     <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
       style={{
         position: "fixed",
         inset: 0,
@@ -767,23 +187,21 @@ function MachineDialog({ customer, onClose }: MachineDialogProps) {
         padding: "20px",
         backdropFilter: "blur(4px)",
       }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
     >
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <div
         style={{
           background: "white",
           borderRadius: "16px",
           width: "100%",
-          maxWidth: "820px",
-          maxHeight: "85vh",
+          maxWidth: "900px",
+          maxHeight: "88vh",
           display: "flex",
           flexDirection: "column",
           boxShadow: "0 25px 60px rgba(0,0,0,0.3)",
         }}
       >
-        {/* Dialog Header */}
+        {/* Header */}
         <div
           style={{
             background: "linear-gradient(135deg,#0f172a,#1e3a5f)",
@@ -809,7 +227,7 @@ function MachineDialog({ customer, onClose }: MachineDialogProps) {
                   marginBottom: "4px",
                 }}
               >
-                Machine List
+                Machine List · {customer.cusCode}
               </div>
               <h2
                 style={{
@@ -820,7 +238,7 @@ function MachineDialog({ customer, onClose }: MachineDialogProps) {
                   lineHeight: 1.3,
                 }}
               >
-                {customer.customerName}
+                {customer.cusName}
               </h2>
               <p
                 style={{
@@ -830,8 +248,11 @@ function MachineDialog({ customer, onClose }: MachineDialogProps) {
                   fontWeight: 500,
                 }}
               >
-                {customer.address1}
-                {customer.address2 !== "-" ? `, ${customer.address2}` : ""}
+                {customer.add1}
+                {customer.add2 && customer.add2 !== "-"
+                  ? `, ${customer.add2}`
+                  : ""}
+                {customer.city ? ` · ${customer.city}` : ""}
               </p>
             </div>
             <button
@@ -855,12 +276,12 @@ function MachineDialog({ customer, onClose }: MachineDialogProps) {
             </button>
           </div>
 
-          {/* Machine count pills */}
+          {/* Filter pills */}
           <div style={{ display: "flex", gap: "10px", marginTop: "14px" }}>
             {[
               {
                 label: "Total",
-                val: customer.machines.length,
+                val: machines.length,
                 bg: "rgba(255,255,255,0.15)",
                 col: "white",
                 key: "all" as const,
@@ -890,7 +311,6 @@ function MachineDialog({ customer, onClose }: MachineDialogProps) {
                   borderRadius: "10px",
                   padding: "6px 14px",
                   cursor: "pointer",
-                  transition: "all 0.15s",
                 }}
               >
                 <span
@@ -914,175 +334,235 @@ function MachineDialog({ customer, onClose }: MachineDialogProps) {
           </div>
         </div>
 
-        {/* Dialog Table */}
+        {/* Body */}
         <div style={{ overflowY: "auto", flex: 1 }}>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              fontSize: "13px",
-            }}
-          >
-            <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>
-              <tr
-                style={{
-                  background: "#f8fafc",
-                  borderBottom: "2px solid #e2e8f0",
-                }}
+          {loading ? (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "60px",
+                gap: "16px",
+              }}
+            >
+              <Spinner size={36} />
+              <span
+                style={{ color: "#94a3b8", fontSize: "13px", fontWeight: 600 }}
               >
-                {[
-                  "#",
-                  "Machine Code (Q.No)",
-                  "Model Number",
-                  "Tech Code",
-                  "Location",
-                  "Contact Name",
-                  "Status",
-                ].map((h) => (
-                  <th
-                    key={h}
-                    style={{
-                      padding: "12px 14px",
-                      color: "#64748b",
-                      fontWeight: 700,
-                      textAlign: "left",
-                      fontSize: "11px",
-                      whiteSpace: "nowrap",
-                      letterSpacing: "0.4px",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {shown.map((m, i) => (
+                Loading machines…
+              </span>
+            </div>
+          ) : (
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontSize: "12px",
+                minWidth: "760px",
+              }}
+            >
+              <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>
                 <tr
-                  key={m.machineCode}
                   style={{
-                    background: i % 2 === 0 ? "white" : "#f8fafc",
-                    borderBottom: "1px solid #f1f5f9",
+                    background: "#f8fafc",
+                    borderBottom: "2px solid #e2e8f0",
                   }}
                 >
-                  <td
-                    style={{
-                      padding: "12px 14px",
-                      color: "#cbd5e1",
-                      fontWeight: 700,
-                      fontSize: "11px",
-                    }}
-                  >
-                    {i + 1}
-                  </td>
-                  <td style={{ padding: "12px 14px" }}>
-                    <span
+                  {[
+                    "#",
+                    "Serial No",
+                    "Machine Ref",
+                    "Model",
+                    "Type",
+                    "Location",
+                    "Contact",
+                    "MA End",
+                    "Warranty End",
+                    "Status",
+                  ].map((h) => (
+                    <th
+                      key={h}
                       style={{
-                        fontWeight: 800,
-                        color: "#1e40af",
-                        background: "#eff6ff",
-                        padding: "3px 10px",
-                        borderRadius: "8px",
-                        fontSize: "13px",
-                      }}
-                    >
-                      {m.machineCode}
-                    </span>
-                  </td>
-                  <td
-                    style={{
-                      padding: "12px 14px",
-                      fontWeight: 600,
-                      color: "#334155",
-                    }}
-                  >
-                    {m.modelNumber}
-                  </td>
-                  <td style={{ padding: "12px 14px" }}>
-                    <span
-                      style={{
-                        background: "#ede9fe",
-                        color: "#5b21b6",
-                        padding: "2px 8px",
-                        borderRadius: "8px",
-                        fontSize: "11px",
+                        padding: "11px 12px",
+                        color: "#64748b",
                         fontWeight: 700,
+                        textAlign: "left",
+                        fontSize: "10px",
+                        whiteSpace: "nowrap",
+                        letterSpacing: "0.4px",
+                        textTransform: "uppercase",
                       }}
                     >
-                      {m.technicianCode}
-                    </span>
-                  </td>
-                  <td
-                    style={{
-                      padding: "12px 14px",
-                      color: "#475569",
-                      fontSize: "12px",
-                    }}
-                  >
-                    {m.location}
-                  </td>
-                  <td
-                    style={{
-                      padding: "12px 14px",
-                      color: "#1e293b",
-                      fontWeight: 600,
-                      fontSize: "12px",
-                    }}
-                  >
-                    {m.contactName}
-                  </td>
-                  <td style={{ padding: "12px 14px" }}>
-                    <span
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {shown.map((m, i) => {
+                  const isActive = m.cusStatus !== "EX" && m.cusStatus !== "NS";
+                  return (
+                    <tr
+                      key={m.serialNo + i}
                       style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "5px",
-                        padding: "4px 11px",
-                        borderRadius: "20px",
-                        fontSize: "11px",
-                        fontWeight: 700,
-                        background: m.isActive ? "#dcfce7" : "#fee2e2",
-                        color: m.isActive ? "#15803d" : "#b91c1c",
+                        background: i % 2 === 0 ? "white" : "#f8fafc",
+                        borderBottom: "1px solid #f1f5f9",
                       }}
                     >
-                      <span
+                      <td
                         style={{
-                          width: "6px",
-                          height: "6px",
-                          borderRadius: "50%",
-                          background: m.isActive ? "#22c55e" : "#ef4444",
-                          flexShrink: 0,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontWeight: 700,
+                          fontSize: "11px",
                         }}
-                      />
-                      {m.isActive ? "Active" : "Non-Active"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {shown.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={7}
-                    style={{
-                      padding: "40px",
-                      textAlign: "center",
-                      color: "#cbd5e1",
-                      fontSize: "14px",
-                    }}
-                  >
-                    No machines found for this filter.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                      >
+                        {i + 1}
+                      </td>
+                      <td style={{ padding: "11px 12px" }}>
+                        <span
+                          style={{
+                            fontWeight: 800,
+                            color: "#1e40af",
+                            background: "#eff6ff",
+                            padding: "3px 9px",
+                            borderRadius: "7px",
+                            fontSize: "12px",
+                          }}
+                        >
+                          {m.serialNo}
+                        </span>
+                      </td>
+                      <td
+                        style={{
+                          padding: "11px 12px",
+                          fontWeight: 700,
+                          color: "#374151",
+                          fontSize: "12px",
+                        }}
+                      >
+                        {m.machineRefCode || "—"}
+                      </td>
+                      <td
+                        style={{
+                          padding: "11px 12px",
+                          color: "#334155",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {m.machineCode || "—"}
+                      </td>
+                      <td style={{ padding: "11px 12px" }}>
+                        <span
+                          style={{
+                            background: "#ede9fe",
+                            color: "#5b21b6",
+                            padding: "2px 8px",
+                            borderRadius: "7px",
+                            fontSize: "10px",
+                            fontWeight: 700,
+                          }}
+                        >
+                          {m.machineType || "—"}
+                        </span>
+                      </td>
+                      <td
+                        style={{
+                          padding: "11px 12px",
+                          color: "#475569",
+                          fontSize: "11px",
+                          maxWidth: "140px",
+                        }}
+                      >
+                        {[m.mLoc1, m.mLoc2, m.mLoc3]
+                          .filter(Boolean)
+                          .join(", ") || "—"}
+                      </td>
+                      <td
+                        style={{
+                          padding: "11px 12px",
+                          color: "#1e293b",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {m.mLocContactName || "—"}
+                      </td>
+                      <td
+                        style={{
+                          padding: "11px 12px",
+                          color: "#475569",
+                          fontSize: "11px",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {fmt(m.maPeriodEnd)}
+                      </td>
+                      <td
+                        style={{
+                          padding: "11px 12px",
+                          color: "#475569",
+                          fontSize: "11px",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {fmt(m.mWarrantyEndDate)}
+                      </td>
+                      <td style={{ padding: "11px 12px" }}>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "5px",
+                            padding: "3px 10px",
+                            borderRadius: "20px",
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            background: isActive ? "#dcfce7" : "#fee2e2",
+                            color: isActive ? "#15803d" : "#b91c1c",
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: "5px",
+                              height: "5px",
+                              borderRadius: "50%",
+                              background: isActive ? "#22c55e" : "#ef4444",
+                              flexShrink: 0,
+                            }}
+                          />
+                          {STATUS_LABEL[m.cusStatus] ?? m.cusStatus ?? "—"}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {shown.length === 0 && !loading && (
+                  <tr>
+                    <td
+                      colSpan={10}
+                      style={{
+                        padding: "40px",
+                        textAlign: "center",
+                        color: "#cbd5e1",
+                        fontSize: "14px",
+                      }}
+                    >
+                      No machines found for this filter.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
 
-        {/* Dialog Footer */}
+        {/* Footer */}
         <div
           style={{
-            padding: "14px 24px",
+            padding: "13px 24px",
             borderTop: "1px solid #f1f5f9",
             display: "flex",
             justifyContent: "space-between",
@@ -1093,10 +573,7 @@ function MachineDialog({ customer, onClose }: MachineDialogProps) {
         >
           <span style={{ fontSize: "12px", color: "#94a3b8" }}>
             Showing <strong style={{ color: "#334155" }}>{shown.length}</strong>{" "}
-            of{" "}
-            <strong style={{ color: "#334155" }}>
-              {customer.machines.length}
-            </strong>{" "}
+            of <strong style={{ color: "#334155" }}>{machines.length}</strong>{" "}
             machines
           </span>
           <button
@@ -1122,31 +599,85 @@ function MachineDialog({ customer, onClose }: MachineDialogProps) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function CustomerBaseReport() {
-  const [search, setSearch] = useState<string>("");
-  const [page, setPage] = useState<number>(1);
-  const [selected, setSelected] = useState<Customer | null>(null);
-  const PAGE_SIZE = 10;
+const PAGE_SIZE = 10;
 
-  const filtered = useMemo<Customer[]>(() => {
-    if (!search.trim()) return CUSTOMERS;
+export default function CustomerBaseReport() {
+  const api = useApiConfig();
+
+  // Table state
+  const [customers, setCustomers] = useState<CustomerReport[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+
+  // Download state
+  const [dlExcel, setDlExcel] = useState(false);
+  const [dlPdf, setDlPdf] = useState(false);
+
+  // Dialog state
+  const [selected, setSelected] = useState<CustomerReport | null>(null);
+  const [machines, setMachines] = useState<MachineRecord[]>([]);
+  const [machinesLoading, setMachinesLoading] = useState(false);
+
+  // Fetch customer list on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const data = await api.getCustomerReportData();
+        setCustomers(data);
+      } catch (e: any) {
+        setError(e.message ?? "Failed to load customer data.");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  // Open dialog + fetch machines
+  const handleOpenMachines = useCallback(
+    async (customer: CustomerReport) => {
+      setSelected(customer);
+      setMachines([]);
+      setMachinesLoading(true);
+      try {
+        const data = await api.getCustomerMachineData(customer.cusCode);
+        setMachines(data);
+      } catch (e: any) {
+        console.error("Failed to load machines:", e.message);
+      } finally {
+        setMachinesLoading(false);
+      }
+    },
+    [api],
+  );
+
+  const handleCloseDialog = useCallback(() => {
+    setSelected(null);
+    setMachines([]);
+  }, []);
+
+  // Filter + paginate
+  const filtered = useMemo<CustomerReport[]>(() => {
+    if (!search.trim()) return customers;
     const q = search.toLowerCase();
-    return CUSTOMERS.filter(
+    return customers.filter(
       (c) =>
-        c.customerName.toLowerCase().includes(q) ||
-        c.customerCode.toLowerCase().includes(q) ||
-        c.address1.toLowerCase().includes(q) ||
-        c.address2.toLowerCase().includes(q) ||
-        c.mobile.includes(q),
+        c.cusName?.toLowerCase().includes(q) ||
+        c.cusCode?.toLowerCase().includes(q) ||
+        c.add1?.toLowerCase().includes(q) ||
+        c.city?.toLowerCase().includes(q) ||
+        c.mobileNo?.includes(q),
     );
-  }, [search]);
+  }, [search, customers]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const pages = useMemo<number[]>(() => {
     const total = Math.min(5, totalPages);
-    let s =
+    const s =
       page <= 3
         ? 1
         : page >= totalPages - 2
@@ -1155,17 +686,73 @@ export default function CustomerBaseReport() {
     return Array.from({ length: total }, (_, i) => s + i);
   }, [page, totalPages]);
 
-  const totalMachines = CUSTOMERS.reduce(
-    (acc, c) => acc + c.machines.length,
-    0,
+  const totalMachines = useMemo(
+    () => customers.reduce((a, c) => a + (c.machineCount ?? 0), 0),
+    [customers],
   );
-  const activeMachines = CUSTOMERS.reduce(
-    (acc, c) => acc + c.machines.filter((m) => m.isActive).length,
-    0,
-  );
+
+  // ── Render ──────────────────────────────────────────────────────────────────
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#f1f5f9",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "16px",
+        }}
+      >
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <Spinner size={40} />
+        <span style={{ color: "#64748b", fontWeight: 600, fontSize: "14px" }}>
+          Loading Customer Report…
+        </span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#f1f5f9",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "12px",
+        }}
+      >
+        <div style={{ fontSize: "32px" }}>⚠️</div>
+        <div style={{ color: "#b91c1c", fontWeight: 700, fontSize: "15px" }}>
+          {error}
+        </div>
+        <button
+          onClick={() => window.location.reload()}
+          style={{
+            background: "#0f172a",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            padding: "9px 22px",
+            cursor: "pointer",
+            fontWeight: 700,
+          }}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <div
         style={{
           fontFamily: "'Segoe UI', system-ui, sans-serif",
@@ -1173,11 +760,11 @@ export default function CustomerBaseReport() {
           minHeight: "100vh",
         }}
       >
-        {/* ── Header ── */}
+        {/* ── Header ─────────────────────────────────────────────────────── */}
         <div
           style={{
             background:
-              "linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #0f172a 100%)",
+              "linear-gradient(135deg,#0f172a 0%,#1e3a5f 60%,#0f172a 100%)",
             padding: "22px 28px",
             boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
           }}
@@ -1187,6 +774,8 @@ export default function CustomerBaseReport() {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "flex-start",
+              gap: "16px",
+              flexWrap: "wrap",
             }}
           >
             <div>
@@ -1213,12 +802,11 @@ export default function CustomerBaseReport() {
               >
                 Customer Base Report
               </h1>
-              {/* Stats */}
               <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                 {[
                   {
                     label: "Customers",
-                    val: CUSTOMERS.length,
+                    val: customers.length,
                     color: "white",
                     border: "rgba(255,255,255,0.2)",
                     bg: "rgba(255,255,255,0.1)",
@@ -1229,20 +817,6 @@ export default function CustomerBaseReport() {
                     color: "#7dd3fc",
                     border: "rgba(125,211,252,0.3)",
                     bg: "rgba(125,211,252,0.1)",
-                  },
-                  {
-                    label: "Active",
-                    val: activeMachines,
-                    color: "#4ade80",
-                    border: "rgba(74,222,128,0.3)",
-                    bg: "rgba(74,222,128,0.1)",
-                  },
-                  {
-                    label: "Inactive",
-                    val: totalMachines - activeMachines,
-                    color: "#f87171",
-                    border: "rgba(248,113,113,0.3)",
-                    bg: "rgba(248,113,113,0.1)",
                   },
                 ].map((s) => (
                   <div
@@ -1279,29 +853,90 @@ export default function CustomerBaseReport() {
                 ))}
               </div>
             </div>
-            <button
-              onClick={() => dlCSV(toCSV(filtered), "Customer_Base_Report.csv")}
-              style={{
-                background: "#16a34a",
-                color: "white",
-                border: "none",
-                borderRadius: "9px",
-                padding: "11px 22px",
-                cursor: "pointer",
-                fontWeight: 700,
-                fontSize: "13px",
-                display: "flex",
-                alignItems: "center",
-                gap: "7px",
-                boxShadow: "0 2px 8px rgba(22,163,74,0.4)",
-              }}
-            >
-              ⬇ Download Customer List
-            </button>
+
+            {/* Download buttons */}
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              <button
+                onClick={() =>
+                  dlCSV(toCSV(filtered), "Customer_Base_Report.csv")
+                }
+                style={{
+                  background: "#16a34a",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "9px",
+                  padding: "10px 18px",
+                  cursor: "pointer",
+                  fontWeight: 700,
+                  fontSize: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                ⬇ CSV
+              </button>
+              <button
+                disabled={dlExcel}
+                onClick={async () => {
+                  setDlExcel(true);
+                  try {
+                    const blob = await api.downloadCustomerReportExcel();
+                    dlBlob(blob, "Customer_Report.xlsx");
+                  } finally {
+                    setDlExcel(false);
+                  }
+                }}
+                style={{
+                  background: "#1d6f42",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "9px",
+                  padding: "10px 18px",
+                  cursor: dlExcel ? "not-allowed" : "pointer",
+                  fontWeight: 700,
+                  fontSize: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  opacity: dlExcel ? 0.7 : 1,
+                }}
+              >
+                {dlExcel ? <Spinner size={13} color="white" /> : "⬇"} Excel
+              </button>
+              <button
+                disabled={dlPdf}
+                onClick={async () => {
+                  setDlPdf(true);
+                  try {
+                    const blob = await api.downloadCustomerReportPdf();
+                    dlBlob(blob, "Customer_Report.pdf");
+                  } finally {
+                    setDlPdf(false);
+                  }
+                }}
+                style={{
+                  background: "#dc2626",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "9px",
+                  padding: "10px 18px",
+                  cursor: dlPdf ? "not-allowed" : "pointer",
+                  fontWeight: 700,
+                  fontSize: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  opacity: dlPdf ? 0.7 : 1,
+                }}
+              >
+                {dlPdf ? <Spinner size={13} color="white" /> : "⬇"} PDF
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* ── Search Bar ── */}
+        {/* ── Search ─────────────────────────────────────────────────────── */}
         <div
           style={{
             background: "white",
@@ -1327,7 +962,7 @@ export default function CustomerBaseReport() {
               🔍
             </span>
             <input
-              placeholder="Search by customer name, code, address…"
+              placeholder="Search by name, code, city…"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -1337,7 +972,7 @@ export default function CustomerBaseReport() {
                 width: "100%",
                 border: "1px solid #e2e8f0",
                 borderRadius: "9px",
-                padding: "8px 14px 8px 36px",
+                padding: "8px 36px",
                 fontSize: "13px",
                 outline: "none",
                 background: "#f8fafc",
@@ -1381,7 +1016,7 @@ export default function CustomerBaseReport() {
           </div>
         </div>
 
-        {/* ── Table ── */}
+        {/* ── Table ──────────────────────────────────────────────────────── */}
         <div
           style={{
             margin: "16px 28px 28px",
@@ -1397,7 +1032,7 @@ export default function CustomerBaseReport() {
                 width: "100%",
                 borderCollapse: "collapse",
                 fontSize: "13px",
-                minWidth: "860px",
+                minWidth: "960px",
               }}
             >
               <thead>
@@ -1410,10 +1045,11 @@ export default function CustomerBaseReport() {
                     "#",
                     "Customer Code",
                     "Customer Name",
-                    "Address 1",
-                    "Address 2",
-                    "Address 3",
+                    "Address",
+                    "City",
                     "Mobile",
+                    "Grade",
+                    "Rep",
                     "Machines",
                     "Action",
                   ].map((h) => (
@@ -1437,11 +1073,10 @@ export default function CustomerBaseReport() {
               </thead>
               <tbody>
                 {pageData.map((c, i) => {
-                  const active = c.machines.filter((m) => m.isActive).length;
                   const idx = (page - 1) * PAGE_SIZE + i + 1;
                   return (
                     <tr
-                      key={c.customerCode}
+                      key={c.cusCode}
                       style={{
                         background: i % 2 === 0 ? "white" : "#f8fafc",
                         borderBottom: "1px solid #f1f5f9",
@@ -1477,7 +1112,7 @@ export default function CustomerBaseReport() {
                             fontWeight: 800,
                           }}
                         >
-                          {c.customerCode}
+                          {c.cusCode}
                         </span>
                       </td>
 
@@ -1490,7 +1125,7 @@ export default function CustomerBaseReport() {
                           fontSize: "13px",
                         }}
                       >
-                        {c.customerName}
+                        {c.cusName}
                       </td>
 
                       <td
@@ -1498,10 +1133,11 @@ export default function CustomerBaseReport() {
                           padding: "13px 14px",
                           color: "#475569",
                           fontSize: "12px",
-                          maxWidth: "160px",
+                          maxWidth: "180px",
                         }}
                       >
-                        {c.address1}
+                        {c.add1}
+                        {c.add2 && c.add2 !== "-" ? `, ${c.add2}` : ""}
                       </td>
 
                       <td
@@ -1511,17 +1147,7 @@ export default function CustomerBaseReport() {
                           fontSize: "12px",
                         }}
                       >
-                        {c.address2 !== "-" ? c.address2 : "—"}
-                      </td>
-
-                      <td
-                        style={{
-                          padding: "13px 14px",
-                          color: "#64748b",
-                          fontSize: "12px",
-                        }}
-                      >
-                        {c.address3 !== "-" ? c.address3 : "—"}
+                        {c.city || "—"}
                       </td>
 
                       <td
@@ -1532,60 +1158,57 @@ export default function CustomerBaseReport() {
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {c.mobile !== "-" ? c.mobile : "—"}
+                        {c.mobileNo && c.mobileNo !== "-"
+                          ? c.mobileNo
+                          : c.telNo && c.telNo !== "-"
+                            ? c.telNo
+                            : "—"}
                       </td>
 
                       <td style={{ padding: "13px 14px" }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "6px",
-                          }}
-                        >
+                        {c.cusGradeName ? (
                           <span
                             style={{
-                              fontWeight: 800,
-                              color: "#0f172a",
-                              fontSize: "14px",
+                              background: "#fef3c7",
+                              color: "#92400e",
+                              padding: "2px 8px",
+                              borderRadius: "6px",
+                              fontSize: "11px",
+                              fontWeight: 700,
                             }}
                           >
-                            {c.machines.length}
+                            {c.cusGradeName}
                           </span>
-                          <div style={{ display: "flex", gap: "3px" }}>
-                            <span
-                              style={{
-                                background: "#dcfce7",
-                                color: "#15803d",
-                                padding: "1px 6px",
-                                borderRadius: "6px",
-                                fontSize: "10px",
-                                fontWeight: 700,
-                              }}
-                            >
-                              {active}✓
-                            </span>
-                            {c.machines.length - active > 0 && (
-                              <span
-                                style={{
-                                  background: "#fee2e2",
-                                  color: "#b91c1c",
-                                  padding: "1px 6px",
-                                  borderRadius: "6px",
-                                  fontSize: "10px",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {c.machines.length - active}✗
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+
+                      <td
+                        style={{
+                          padding: "13px 14px",
+                          color: "#334155",
+                          fontSize: "12px",
+                        }}
+                      >
+                        {c.repName && c.repName !== "N/A" ? c.repName : "—"}
+                      </td>
+
+                      <td style={{ padding: "13px 14px" }}>
+                        <span
+                          style={{
+                            fontWeight: 800,
+                            color: "#0f172a",
+                            fontSize: "15px",
+                          }}
+                        >
+                          {c.machineCount ?? 0}
+                        </span>
                       </td>
 
                       <td style={{ padding: "13px 14px" }}>
                         <button
-                          onClick={() => setSelected(c)}
+                          onClick={() => handleOpenMachines(c)}
                           style={{
                             background:
                               "linear-gradient(135deg,#1e3a5f,#2563eb)",
@@ -1620,7 +1243,7 @@ export default function CustomerBaseReport() {
                 {pageData.length === 0 && (
                   <tr>
                     <td
-                      colSpan={9}
+                      colSpan={10}
                       style={{ padding: "60px", textAlign: "center" }}
                     >
                       <div style={{ fontSize: "36px", marginBottom: "10px" }}>
@@ -1736,7 +1359,6 @@ export default function CustomerBaseReport() {
           )}
         </div>
 
-        {/* Footer note */}
         <div
           style={{
             padding: "0 28px 20px",
@@ -1756,9 +1378,14 @@ export default function CustomerBaseReport() {
         </div>
       </div>
 
-      {/* ── Machine Dialog ── */}
+      {/* ── Machine Dialog ──────────────────────────────────────────────── */}
       {selected && (
-        <MachineDialog customer={selected} onClose={() => setSelected(null)} />
+        <MachineDialog
+          customer={selected}
+          machines={machines}
+          loading={machinesLoading}
+          onClose={handleCloseDialog}
+        />
       )}
     </>
   );
