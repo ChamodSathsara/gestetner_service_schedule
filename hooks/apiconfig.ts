@@ -1004,5 +1004,24 @@ export const useApiConfig = () => {
       console.log("35. Fetching Customer Machine Data...")
       return await apiCall(`api/Report/getCustomerMachineData?customerCode=${customerCode}`)
     },
+
+    getServiceVisitReportData: async (startDate: string, lastDate: string): Promise<any[]> => {
+      console.log("36. Fetching Service Visit Report Data...")
+      return await apiCall(`api/Report/getServiceVisitReportData?startDate=${startDate}&lastDate=${lastDate}`)
+    },
+    downloadServiceVisitReportExcel: async (startDate: string, lastDate: string): Promise<Blob> => {
+      console.log("37. Downloading Service Visit Report Excel...")
+      const response = await apiCallRaw(
+        `api/Report/downloadServiceVisitReportExcel?startDate=${startDate}&lastDate=${lastDate}`
+      )
+      return await response.blob()
+    },
+    downloadServiceVisitReportPdf: async (startDate: string, lastDate: string): Promise<Blob> => {
+      console.log("38. Downloading Service Visit Report PDF...")
+      const response = await apiCallRaw(
+        `api/Report/downloadServiceVisitReportPdf?startDate=${startDate}&lastDate=${lastDate}`
+      )
+      return await response.blob()    
+    }
   }
 }
