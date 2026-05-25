@@ -7,7 +7,6 @@ import {
   Mail,
   Briefcase,
   Wrench,
-  Calendar,
   ChevronDown,
   ChevronUp,
   ChevronLeft,
@@ -21,13 +20,14 @@ import {
   Clock,
   AlertCircle,
   XCircle,
-  RefreshCw,
   User,
   Hash,
   CalendarDays,
   Tag,
   Building2,
   Activity,
+  TrendingUp,
+  Star,
 } from "lucide-react";
 import {
   Zone,
@@ -48,12 +48,6 @@ interface JobOrService {
   location?: string;
 }
 
-interface DailyRecord {
-  date: string;
-  jobs: JobOrService[];
-  services: JobOrService[];
-}
-
 type FilterStatus = "all" | "pending" | "started" | "completed" | "cancelled";
 
 // ── Status config ─────────────────────────────────────────────────────────────
@@ -66,23 +60,26 @@ const STATUS_CONFIG: Record<
     text: string;
     border: string;
     dot: string;
+    pill: string;
     icon: React.ReactNode;
   }
 > = {
   completed: {
     label: "Completed",
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    border: "border-emerald-200",
-    dot: "bg-emerald-500",
+    bg: "bg-green-50",
+    text: "text-green-700",
+    border: "border-green-200",
+    dot: "bg-green-500",
+    pill: "bg-green-100 text-green-700 border-green-200",
     icon: <CheckCircle2 className="w-3.5 h-3.5" />,
   },
   started: {
     label: "In Progress",
-    bg: "bg-sky-50",
-    text: "text-sky-700",
-    border: "border-sky-200",
-    dot: "bg-sky-500",
+    bg: "bg-blue-50",
+    text: "text-blue-700",
+    border: "border-blue-200",
+    dot: "bg-blue-500",
+    pill: "bg-blue-100 text-blue-700 border-blue-200",
     icon: <Clock className="w-3.5 h-3.5" />,
   },
   pending: {
@@ -90,15 +87,17 @@ const STATUS_CONFIG: Record<
     bg: "bg-amber-50",
     text: "text-amber-700",
     border: "border-amber-200",
-    dot: "bg-amber-500",
+    dot: "bg-amber-400",
+    pill: "bg-amber-100 text-amber-700 border-amber-200",
     icon: <AlertCircle className="w-3.5 h-3.5" />,
   },
   cancelled: {
     label: "Cancelled",
-    bg: "bg-rose-50",
-    text: "text-rose-700",
-    border: "border-rose-200",
-    dot: "bg-rose-400",
+    bg: "bg-red-50",
+    text: "text-red-700",
+    border: "border-red-200",
+    dot: "bg-red-400",
+    pill: "bg-red-100 text-red-600 border-red-200",
     icon: <XCircle className="w-3.5 h-3.5" />,
   },
 };
@@ -116,11 +115,34 @@ const getInitials = (name: string) =>
     .slice(0, 2)
     .toUpperCase();
 
-const perfColor = (pct: number) => {
-  if (pct >= 95) return { bar: "bg-emerald-500", text: "text-emerald-600" };
-  if (pct >= 88) return { bar: "bg-sky-500", text: "text-sky-600" };
-  if (pct >= 80) return { bar: "bg-amber-500", text: "text-amber-600" };
-  return { bar: "bg-rose-400", text: "text-rose-500" };
+const perfLabel = (pct: number) => {
+  if (pct >= 95)
+    return {
+      color: "text-green-600",
+      bar: "bg-green-500",
+      badge: "Excellent",
+      badgeCls: "bg-green-100 text-green-700",
+    };
+  if (pct >= 88)
+    return {
+      color: "text-blue-600",
+      bar: "bg-blue-500",
+      badge: "Good",
+      badgeCls: "bg-blue-100 text-blue-700",
+    };
+  if (pct >= 80)
+    return {
+      color: "text-amber-600",
+      bar: "bg-amber-400",
+      badge: "Fair",
+      badgeCls: "bg-amber-100 text-amber-700",
+    };
+  return {
+    color: "text-red-500",
+    bar: "bg-red-400",
+    badge: "Needs Attention",
+    badgeCls: "bg-red-100 text-red-600",
+  };
 };
 
 const normalizeZone = (zone: string): Zone => {
@@ -147,26 +169,39 @@ const normalizeZone = (zone: string): Zone => {
   return "UNKNOWN";
 };
 
-const zoneIdentity: Record<Zone, { gradient: string; avatarBg: string }> = {
+const zoneStyle: Record<
+  Zone,
+  { gradient: string; accentColor: string; avatarBg: string; badge: string }
+> = {
   OUTSTATION: {
-    gradient: "from-blue-600 via-blue-700 to-indigo-800",
-    avatarBg: "bg-blue-500/30",
+    gradient: "from-indigo-500 to-blue-600",
+    accentColor: "text-indigo-600",
+    avatarBg: "bg-indigo-100 text-indigo-700",
+    badge: "bg-indigo-100 text-indigo-700 border-indigo-200",
   },
   COLOMBO: {
-    gradient: "from-violet-600 via-violet-700 to-purple-800",
-    avatarBg: "bg-violet-500/30",
+    gradient: "from-violet-500 to-purple-600",
+    accentColor: "text-violet-600",
+    avatarBg: "bg-violet-100 text-violet-700",
+    badge: "bg-violet-100 text-violet-700 border-violet-200",
   },
   SUBURBS: {
-    gradient: "from-emerald-600 via-emerald-700 to-teal-800",
-    avatarBg: "bg-emerald-500/30",
+    gradient: "from-emerald-500 to-teal-600",
+    accentColor: "text-emerald-600",
+    avatarBg: "bg-emerald-100 text-emerald-700",
+    badge: "bg-emerald-100 text-emerald-700 border-emerald-200",
   },
   P2P: {
-    gradient: "from-purple-600 via-purple-700 to-fuchsia-800",
-    avatarBg: "bg-purple-500/30",
+    gradient: "from-purple-500 to-fuchsia-600",
+    accentColor: "text-purple-600",
+    avatarBg: "bg-purple-100 text-purple-700",
+    badge: "bg-purple-100 text-purple-700 border-purple-200",
   },
   UNKNOWN: {
-    gradient: "from-slate-600 via-slate-700 to-slate-800",
-    avatarBg: "bg-slate-500/30",
+    gradient: "from-slate-500 to-slate-600",
+    accentColor: "text-slate-600",
+    avatarBg: "bg-slate-100 text-slate-700",
+    badge: "bg-slate-100 text-slate-600 border-slate-200",
   },
 };
 
@@ -178,8 +213,6 @@ const getZoneLabel = (zone: Zone) =>
     P2P: "P2P",
     UNKNOWN: "Other",
   })[zone] ?? zone;
-
-// ── Month helpers ─────────────────────────────────────────────────────────────
 
 const MONTHS = [
   "January",
@@ -217,13 +250,15 @@ function DetailRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-      <span className="text-slate-400 mt-0.5 shrink-0">{icon}</span>
+    <div className="flex items-start gap-3 py-3 border-b border-stone-100 last:border-0">
+      <span className="w-8 h-8 rounded-lg bg-stone-100 flex items-center justify-center text-stone-400 shrink-0 mt-0.5">
+        {icon}
+      </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-0.5">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-0.5">
           {label}
         </p>
-        <p className="text-sm text-slate-800 font-medium break-words">
+        <p className="text-sm text-stone-800 font-medium break-words leading-relaxed">
           {children}
         </p>
       </div>
@@ -257,7 +292,6 @@ function DetailDialog({
   const daysAbs = Math.abs(daysLeft);
   const isOverdue = daysLeft < 0;
 
-  // Collect all extra fields
   const knownKeys = new Set([
     "id",
     "jobId",
@@ -283,36 +317,36 @@ function DetailDialog({
       val !== "-",
   );
 
+  const headerBg =
+    isJob || isPendingJob
+      ? "from-stone-700 to-stone-900"
+      : "from-indigo-600 to-violet-700";
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
         onClick={onClose}
       />
-
-      {/* Panel */}
       <div
-        className="relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden"
-        style={{ animation: "slideUp 0.25s cubic-bezier(0.16,1,0.3,1)" }}
+        className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden"
+        style={{ animation: "dialogIn 0.3s cubic-bezier(0.16,1,0.3,1)" }}
       >
-        {/* Drag handle (mobile) */}
-        <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-3 sm:hidden" />
+        {/* Mobile drag handle */}
+        <div className="w-10 h-1 bg-stone-200 rounded-full mx-auto mt-3 mb-1 sm:hidden" />
 
-        {/* Colored header */}
-        <div
-          className={`px-6 pt-5 pb-6 ${isJob || isPendingJob ? "bg-gradient-to-br from-slate-800 to-slate-900" : "bg-gradient-to-br from-indigo-700 to-violet-900"}`}
-        >
-          <div className="flex items-start justify-between mb-4">
+        {/* Header */}
+        <div className={`bg-gradient-to-br ${headerBg} px-6 pt-5 pb-7`}>
+          <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-white/15 flex items-center justify-center">
                 {isJob || isPendingJob ? (
-                  <Briefcase className="w-4 h-4 text-white" />
+                  <Briefcase className="w-3.5 h-3.5 text-white" />
                 ) : (
-                  <Wrench className="w-4 h-4 text-white" />
+                  <Wrench className="w-3.5 h-3.5 text-white" />
                 )}
               </div>
-              <span className="text-xs font-semibold uppercase tracking-widest text-white/50">
+              <span className="text-xs font-semibold text-white/50 uppercase tracking-widest">
                 {isPendingJob
                   ? "Pending Job"
                   : isJob
@@ -328,59 +362,54 @@ function DetailDialog({
             </button>
           </div>
 
-          <div className="flex items-end justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-xl font-bold text-white leading-tight truncate">
-                {job?.customerName ||
-                  svc?.customerName ||
-                  pj?.technician ||
-                  "—"}
-              </p>
-              <p className="text-sm text-white/50 font-mono mt-1">
-                {job?.jobId ||
-                  (svc ? `SV${svc.expected_visit_no}` : pj?.id) ||
-                  "—"}
-              </p>
-            </div>
+          <h2 className="text-xl font-bold text-white mb-1 truncate">
+            {job?.customerName || svc?.customerName || pj?.technician || "—"}
+          </h2>
+          <p className="text-sm text-white/50 font-mono">
+            {job?.jobId ||
+              (svc ? `Service Visit #${svc.expected_visit_no}` : pj?.id) ||
+              "—"}
+          </p>
 
+          <div className="mt-4">
             {!isPendingJob && (
               <span
-                className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border shrink-0 ${cfg.bg} ${cfg.text} ${cfg.border}`}
+                className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border bg-white/15 text-white border-white/20`}
               >
-                {cfg.icon}
-                {cfg.label}
+                {cfg.icon} {cfg.label}
               </span>
             )}
             {isPendingJob && (
               <span
-                className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border shrink-0 ${isOverdue ? "bg-rose-50 text-rose-700 border-rose-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}
+                className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full ${isOverdue ? "bg-red-100 text-red-700 border border-red-200" : "bg-amber-100 text-amber-700 border border-amber-200"}`}
               >
                 <Clock className="w-3.5 h-3.5" />
                 {isOverdue
-                  ? `${daysAbs}d overdue`
+                  ? `${daysAbs} days overdue`
                   : daysLeft === 0
                     ? "Due today"
-                    : `${daysLeft}d left`}
+                    : `${daysLeft} days left`}
               </span>
             )}
           </div>
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 space-y-2.5 max-h-[55vh] overflow-y-auto">
-          {/* Location */}
+        <div className="px-6 py-4 max-h-[50vh] overflow-y-auto">
           {(job?.location || svc?.location || pj?.location) && (
-            <DetailRow icon={<MapPin className="w-4 h-4" />} label="Location">
+            <DetailRow
+              icon={<MapPin className="w-3.5 h-3.5" />}
+              label="Location"
+            >
               {job?.location || svc?.location || pj?.location}
             </DetailRow>
           )}
 
-          {/* Job fields */}
           {job && (
             <>
               {job.date && (
                 <DetailRow
-                  icon={<CalendarDays className="w-4 h-4" />}
+                  icon={<CalendarDays className="w-3.5 h-3.5" />}
                   label="Date"
                 >
                   {new Date(job.date).toLocaleDateString("en-GB", {
@@ -391,13 +420,16 @@ function DetailDialog({
                 </DetailRow>
               )}
               {(job as any).jobType && (
-                <DetailRow icon={<Tag className="w-4 h-4" />} label="Job Type">
+                <DetailRow
+                  icon={<Tag className="w-3.5 h-3.5" />}
+                  label="Job Type"
+                >
                   {(job as any).jobType}
                 </DetailRow>
               )}
               {(job as any).description && (
                 <DetailRow
-                  icon={<ClipboardList className="w-4 h-4" />}
+                  icon={<ClipboardList className="w-3.5 h-3.5" />}
                   label="Description"
                 >
                   {(job as any).description}
@@ -405,7 +437,7 @@ function DetailDialog({
               )}
               {(job as any).branch && (
                 <DetailRow
-                  icon={<Building2 className="w-4 h-4" />}
+                  icon={<Building2 className="w-3.5 h-3.5" />}
                   label="Branch"
                 >
                   {(job as any).branch}
@@ -413,45 +445,50 @@ function DetailDialog({
               )}
               {(job as any).technician && (
                 <DetailRow
-                  icon={<User className="w-4 h-4" />}
+                  icon={<User className="w-3.5 h-3.5" />}
                   label="Technician"
                 >
                   {(job as any).technician}
                 </DetailRow>
               )}
               {(job as any).phone && (
-                <DetailRow icon={<Phone className="w-4 h-4" />} label="Phone">
+                <DetailRow
+                  icon={<Phone className="w-3.5 h-3.5" />}
+                  label="Phone"
+                >
                   {(job as any).phone}
                 </DetailRow>
               )}
               {(job as any).email && (
-                <DetailRow icon={<Mail className="w-4 h-4" />} label="Email">
+                <DetailRow
+                  icon={<Mail className="w-3.5 h-3.5" />}
+                  label="Email"
+                >
                   {(job as any).email}
                 </DetailRow>
               )}
             </>
           )}
 
-          {/* Service fields */}
           {svc && (
             <>
               <DetailRow
-                icon={<Activity className="w-4 h-4" />}
-                label="Visit No."
+                icon={<Activity className="w-3.5 h-3.5" />}
+                label="Visit Number"
               >
                 Service Visit #{svc.expected_visit_no}
               </DetailRow>
               <DetailRow
-                icon={<Clock className="w-4 h-4" />}
+                icon={<Clock className="w-3.5 h-3.5" />}
                 label="Due Status"
               >
                 <span
                   className={
                     isOverdue
-                      ? "text-rose-600 font-semibold"
+                      ? "text-red-600 font-semibold"
                       : daysLeft === 0
                         ? "text-amber-600 font-semibold"
-                        : ""
+                        : "text-stone-700"
                   }
                 >
                   {isOverdue
@@ -463,7 +500,7 @@ function DetailDialog({
               </DetailRow>
               {(svc as any).scheduledDate && (
                 <DetailRow
-                  icon={<CalendarDays className="w-4 h-4" />}
+                  icon={<CalendarDays className="w-3.5 h-3.5" />}
                   label="Scheduled"
                 >
                   {new Date((svc as any).scheduledDate).toLocaleDateString(
@@ -473,42 +510,47 @@ function DetailDialog({
                 </DetailRow>
               )}
               {(svc as any).jobType && (
-                <DetailRow icon={<Tag className="w-4 h-4" />} label="Type">
+                <DetailRow icon={<Tag className="w-3.5 h-3.5" />} label="Type">
                   {(svc as any).jobType}
                 </DetailRow>
               )}
               {(svc as any).description && (
                 <DetailRow
-                  icon={<ClipboardList className="w-4 h-4" />}
+                  icon={<ClipboardList className="w-3.5 h-3.5" />}
                   label="Notes"
                 >
                   {(svc as any).description}
                 </DetailRow>
               )}
               {(svc as any).phone && (
-                <DetailRow icon={<Phone className="w-4 h-4" />} label="Phone">
+                <DetailRow
+                  icon={<Phone className="w-3.5 h-3.5" />}
+                  label="Phone"
+                >
                   {(svc as any).phone}
                 </DetailRow>
               )}
             </>
           )}
 
-          {/* Pending job fields */}
           {pj && (
             <>
               {pj.jobType && (
-                <DetailRow icon={<Tag className="w-4 h-4" />} label="Job Type">
+                <DetailRow
+                  icon={<Tag className="w-3.5 h-3.5" />}
+                  label="Job Type"
+                >
                   {pj.jobType}
                 </DetailRow>
               )}
               <DetailRow
-                icon={<Activity className="w-4 h-4" />}
+                icon={<Activity className="w-3.5 h-3.5" />}
                 label="Due Status"
               >
                 <span
                   className={
                     isOverdue
-                      ? "text-rose-600 font-semibold"
+                      ? "text-red-600 font-semibold"
                       : daysLeft === 0
                         ? "text-amber-600 font-semibold"
                         : ""
@@ -522,13 +564,16 @@ function DetailDialog({
                 </span>
               </DetailRow>
               {(pj as any).phone && (
-                <DetailRow icon={<Phone className="w-4 h-4" />} label="Phone">
+                <DetailRow
+                  icon={<Phone className="w-3.5 h-3.5" />}
+                  label="Phone"
+                >
                   {(pj as any).phone}
                 </DetailRow>
               )}
               {(pj as any).description && (
                 <DetailRow
-                  icon={<ClipboardList className="w-4 h-4" />}
+                  icon={<ClipboardList className="w-3.5 h-3.5" />}
                   label="Notes"
                 >
                   {(pj as any).description}
@@ -537,11 +582,10 @@ function DetailDialog({
             </>
           )}
 
-          {/* Extra fields fallback */}
           {extraFields.map(([key, val]) => (
             <DetailRow
               key={key}
-              icon={<Hash className="w-4 h-4" />}
+              icon={<Hash className="w-3.5 h-3.5" />}
               label={key
                 .replace(/([A-Z])/g, " $1")
                 .replace(/^./, (s) => s.toUpperCase())}
@@ -551,185 +595,169 @@ function DetailDialog({
           ))}
         </div>
 
-        {/* Footer */}
-        <div className="px-6 pb-6 pt-3 border-t border-slate-100">
+        <div className="px-6 py-4 bg-stone-50 border-t border-stone-100">
           <button
             onClick={onClose}
-            className="w-full py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition-colors"
+            className="w-full py-3 rounded-xl bg-stone-800 hover:bg-stone-700 text-white font-semibold text-sm transition-colors"
           >
-            Close
+            Done
           </button>
         </div>
       </div>
 
       <style>{`
-        @keyframes slideUp {
-          from { transform: translateY(32px); opacity: 0; }
-          to   { transform: translateY(0);    opacity: 1; }
+        @keyframes dialogIn {
+          from { transform: translateY(20px) scale(0.98); opacity: 0; }
+          to   { transform: translateY(0) scale(1);       opacity: 1; }
         }
       `}</style>
     </div>
   );
 }
 
-// ── Mini Calendar ─────────────────────────────────────────────────────────────
+// ── Mini Stat ─────────────────────────────────────────────────────────────────
 
-const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-
-function MiniCalendar({
-  availableDates,
-  selectedDate,
-  onSelect,
-}: {
-  availableDates: Set<string>;
-  selectedDate: string;
-  onSelect: (d: string) => void;
-}) {
-  const today = new Date();
-  const [viewYear, setViewYear] = useState(today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(today.getMonth());
-
-  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
-  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-  const prevMonth = () => {
-    if (viewMonth === 0) {
-      setViewMonth(11);
-      setViewYear((y) => y - 1);
-    } else setViewMonth((m) => m - 1);
-  };
-  const nextMonth = () => {
-    if (viewMonth === 11) {
-      setViewMonth(0);
-      setViewYear((y) => y + 1);
-    } else setViewMonth((m) => m + 1);
-  };
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const cells = [
-    ...Array(firstDay).fill(null),
-    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
-  ];
-  const todayStr = today.toISOString().split("T")[0];
-
-  return (
-    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-      <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-100">
-        <button
-          onClick={prevMonth}
-          className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-200 transition-colors text-slate-500"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <span className="text-xs font-semibold text-slate-700">
-          {MONTHS[viewMonth]} {viewYear}
-        </span>
-        <button
-          onClick={nextMonth}
-          className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-200 transition-colors text-slate-500"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-      <div className="grid grid-cols-7 px-3 pt-2 pb-1">
-        {DAYS.map((d) => (
-          <div
-            key={d}
-            className="text-center text-[10px] font-semibold text-slate-400 py-1"
-          >
-            {d}
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7 px-3 pb-3 gap-y-0.5">
-        {cells.map((day, idx) => {
-          if (!day) return <div key={`e-${idx}`} />;
-          const ds = `${viewYear}-${pad(viewMonth + 1)}-${pad(day)}`;
-          const hasData = availableDates.has(ds);
-          const isSel = ds === selectedDate;
-          const isToday = ds === todayStr;
-          return (
-            <button
-              key={ds}
-              disabled={!hasData}
-              onClick={() => onSelect(isSel ? "" : ds)}
-              className={`relative mx-auto w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition-all
-                ${isSel ? "bg-slate-800 text-white" : hasData ? "text-slate-700 hover:bg-slate-100 cursor-pointer" : "text-slate-300 cursor-default"}
-                ${isToday && !isSel ? "font-bold ring-2 ring-blue-400 ring-offset-1" : ""}`}
-            >
-              {day}
-              {hasData && !isSel && (
-                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-blue-400" />
-              )}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ── Stat Card ─────────────────────────────────────────────────────────────────
-
-function StatCard({
+function MiniStat({
   label,
   value,
-  cls,
+  valueClass,
+  icon,
 }: {
   label: string;
   value: number;
-  cls: string;
+  valueClass: string;
+  icon: React.ReactNode;
 }) {
   return (
-    <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-center">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
+    <div className="flex flex-col items-center justify-center bg-white rounded-2xl border border-stone-100 shadow-sm p-3 gap-1">
+      <span className={`text-stone-300 mb-0.5`}>{icon}</span>
+      <p className={`text-2xl font-bold leading-none ${valueClass}`}>{value}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-400">
         {label}
       </p>
-      <p className={`text-2xl font-bold ${cls}`}>{value}</p>
     </div>
   );
 }
 
-// ── Job Row (clickable) ───────────────────────────────────────────────────────
+// ── Performance Card ──────────────────────────────────────────────────────────
+
+function PerformanceCard({
+  title,
+  icon,
+  pct,
+  total,
+  done,
+  active,
+  pending,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  pct: number;
+  total: number;
+  done: number;
+  active: number;
+  pending: number;
+}) {
+  const p = perfLabel(pct);
+  return (
+    <div className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="px-5 pt-5 pb-4">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="w-8 h-8 rounded-xl bg-stone-100 flex items-center justify-center text-stone-500">
+              {icon}
+            </span>
+            <span className="text-sm font-bold text-stone-700">{title}</span>
+          </div>
+          <div className="text-right">
+            <p className={`text-2xl font-bold leading-none ${p.color}`}>
+              {pct.toFixed(1)}%
+            </p>
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${p.badgeCls}`}
+            >
+              {p.badge}
+            </span>
+          </div>
+        </div>
+
+        {/* Progress track */}
+        <div className="relative h-3 bg-stone-100 rounded-full overflow-hidden mb-4">
+          <div
+            className={`h-full rounded-full ${p.bar} transition-all duration-700`}
+            style={{ width: `${Math.min(pct, 100)}%` }}
+          />
+        </div>
+
+        <div className="grid grid-cols-4 gap-2">
+          <MiniStat
+            label="Total"
+            value={total}
+            valueClass="text-stone-800"
+            icon={<ClipboardList className="w-3.5 h-3.5" />}
+          />
+          <MiniStat
+            label="Done"
+            value={done}
+            valueClass="text-green-600"
+            icon={<CheckCircle2 className="w-3.5 h-3.5 text-green-400" />}
+          />
+          <MiniStat
+            label="Active"
+            value={active}
+            valueClass="text-blue-600"
+            icon={<Clock className="w-3.5 h-3.5 text-blue-400" />}
+          />
+          <MiniStat
+            label="Pending"
+            value={pending}
+            valueClass="text-amber-600"
+            icon={<AlertCircle className="w-3.5 h-3.5 text-amber-400" />}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Job Row ───────────────────────────────────────────────────────────────────
 
 function JobRow({ job, onClick }: { job: Job; onClick: () => void }) {
   const cfg = getStatusConfig(job.status);
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-slate-50 active:bg-slate-100 transition-colors text-left group cursor-pointer"
+      className="w-full flex items-center gap-3 px-4 py-4 hover:bg-stone-50 active:bg-stone-100 transition-colors text-left group"
     >
-      <div className="flex items-center gap-3 flex-1 min-w-0">
-        <div className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot}`} />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-slate-800 truncate">
-              {job.customerName ?? "—"}
-            </p>
-            <span className="text-[10px] font-mono text-slate-400 shrink-0">
-              {job.jobId}
-            </span>
-          </div>
-          {job.location && (
-            <p className="text-[11px] text-slate-400 truncate flex items-center gap-1 mt-0.5">
-              <MapPin className="w-3 h-3 shrink-0" />
-              {job.location}
-            </p>
-          )}
+      <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${cfg.dot}`} />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <p className="text-sm font-semibold text-stone-800 truncate">
+            {job.customerName ?? "—"}
+          </p>
+          <span className="text-[10px] font-mono text-stone-400 shrink-0 bg-stone-100 px-1.5 py-0.5 rounded">
+            {job.jobId}
+          </span>
         </div>
+        {job.location && (
+          <p className="text-xs text-stone-400 flex items-center gap-1">
+            <MapPin className="w-3 h-3 shrink-0" />
+            {job.location}
+          </p>
+        )}
       </div>
-      <div className="flex items-center gap-2 shrink-0 ml-2">
-        <span
-          className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border ${cfg.bg} ${cfg.text} ${cfg.border}`}
-        >
-          {cfg.icon}
-          {cfg.label}
-        </span>
-        <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-500 transition-colors" />
-      </div>
+      <span
+        className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border ${cfg.pill} shrink-0`}
+      >
+        {cfg.icon}
+        {cfg.label}
+      </span>
+      <ChevronRight className="w-4 h-4 text-stone-300 group-hover:text-stone-400 transition-colors shrink-0" />
     </button>
   );
 }
 
-// ── Service Row (clickable) ───────────────────────────────────────────────────
+// ── Service Row ───────────────────────────────────────────────────────────────
 
 function ServiceRow({
   svc,
@@ -739,57 +767,53 @@ function ServiceRow({
   onClick: () => void;
 }) {
   const cfg = getStatusConfig(svc.status);
-  const daysAbs = Math.abs(svc.daysLeft);
   const isOverdue = svc.daysLeft < 0;
+  const daysAbs = Math.abs(svc.daysLeft);
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-slate-50 active:bg-slate-100 transition-colors text-left group cursor-pointer"
+      className="w-full flex items-center gap-3 px-4 py-4 hover:bg-stone-50 active:bg-stone-100 transition-colors text-left group"
     >
-      <div className="flex items-center gap-3 flex-1 min-w-0">
-        <div className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot}`} />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-slate-800 truncate">
-              {svc.customerName ?? "—"}
-            </p>
-            <span className="text-[10px] text-slate-400 shrink-0">
-              SV{svc.expected_visit_no}
+      <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${cfg.dot}`} />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <p className="text-sm font-semibold text-stone-800 truncate">
+            {svc.customerName ?? "—"}
+          </p>
+          <span className="text-[10px] text-stone-400 shrink-0">
+            SV#{svc.expected_visit_no}
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          {svc.location && (
+            <span className="text-xs text-stone-400 flex items-center gap-1 truncate">
+              <MapPin className="w-3 h-3 shrink-0" />
+              {svc.location}
             </span>
-          </div>
-          <div className="flex items-center gap-2 mt-0.5">
-            {svc.location && (
-              <p className="text-[11px] text-slate-400 truncate flex items-center gap-1">
-                <MapPin className="w-3 h-3 shrink-0" />
-                {svc.location}
-              </p>
-            )}
-            <span
-              className={`text-[11px] font-medium shrink-0 ${isOverdue ? "text-rose-500" : "text-slate-400"}`}
-            >
-              {isOverdue
-                ? `${daysAbs}d overdue`
-                : svc.daysLeft === 0
-                  ? "Due today"
-                  : `${daysAbs}d left`}
-            </span>
-          </div>
+          )}
+          <span
+            className={`text-xs font-medium shrink-0 ${isOverdue ? "text-red-500" : svc.daysLeft === 0 ? "text-amber-600" : "text-stone-400"}`}
+          >
+            {isOverdue
+              ? `${daysAbs}d overdue`
+              : svc.daysLeft === 0
+                ? "Due today"
+                : `${daysAbs}d left`}
+          </span>
         </div>
       </div>
-      <div className="flex items-center gap-2 shrink-0 ml-2">
-        <span
-          className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border ${cfg.bg} ${cfg.text} ${cfg.border}`}
-        >
-          {cfg.icon}
-          {cfg.label}
-        </span>
-        <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-500 transition-colors" />
-      </div>
+      <span
+        className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border ${cfg.pill} shrink-0`}
+      >
+        {cfg.icon}
+        {cfg.label}
+      </span>
+      <ChevronRight className="w-4 h-4 text-stone-300 group-hover:text-stone-400 transition-colors shrink-0" />
     </button>
   );
 }
 
-// ── Pending Job Row (clickable) ───────────────────────────────────────────────
+// ── Pending Job Row ───────────────────────────────────────────────────────────
 
 function PendingJobRow({
   job,
@@ -802,49 +826,45 @@ function PendingJobRow({
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-slate-50 active:bg-slate-100 transition-colors text-left group cursor-pointer"
+      className="w-full flex items-center gap-3 px-4 py-4 hover:bg-stone-50 active:bg-stone-100 transition-colors text-left group"
     >
-      <div className="flex items-center gap-3 flex-1 min-w-0">
-        <div
-          className={`w-2 h-2 rounded-full shrink-0 ${isOverdue ? "bg-rose-400" : "bg-amber-400"}`}
-        />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-slate-800 truncate">
-              {job.technician || "—"}
-            </p>
-            <span className="text-[10px] font-mono text-slate-400 shrink-0">
-              {job.id}
+      <div
+        className={`w-2.5 h-2.5 rounded-full shrink-0 ${isOverdue ? "bg-red-400" : "bg-amber-400"}`}
+      />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <p className="text-sm font-semibold text-stone-800 truncate">
+            {job.technician || "—"}
+          </p>
+          <span className="text-[10px] font-mono text-stone-400 shrink-0 bg-stone-100 px-1.5 py-0.5 rounded">
+            {job.id}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          {job.location && (
+            <span className="text-xs text-stone-400 flex items-center gap-1 truncate">
+              <MapPin className="w-3 h-3 shrink-0" />
+              {job.location}
             </span>
-          </div>
-          <div className="flex items-center gap-2 mt-0.5">
-            {job.location && (
-              <p className="text-[11px] text-slate-400 truncate flex items-center gap-1">
-                <MapPin className="w-3 h-3 shrink-0" />
-                {job.location}
-              </p>
-            )}
-            {job.jobType && (
-              <span className="text-[11px] text-slate-400 shrink-0">
-                {job.jobType}
-              </span>
-            )}
-          </div>
+          )}
+          {job.jobType && (
+            <span className="text-xs text-stone-400 shrink-0">
+              {job.jobType}
+            </span>
+          )}
         </div>
       </div>
-      <div className="flex items-center gap-2 shrink-0 ml-2">
-        <span
-          className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border ${isOverdue ? "bg-rose-50 text-rose-700 border-rose-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}
-        >
-          <Clock className="w-3.5 h-3.5" />
-          {isOverdue
-            ? `${Math.abs(job.daysLeft)}d overdue`
-            : job.daysLeft === 0
-              ? "Due today"
-              : `${job.daysLeft}d left`}
-        </span>
-        <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-500 transition-colors" />
-      </div>
+      <span
+        className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border shrink-0 ${isOverdue ? "bg-red-50 text-red-600 border-red-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}
+      >
+        <Clock className="w-3 h-3" />
+        {isOverdue
+          ? `${Math.abs(job.daysLeft)}d overdue`
+          : job.daysLeft === 0
+            ? "Due today"
+            : `${job.daysLeft}d left`}
+      </span>
+      <ChevronRight className="w-4 h-4 text-stone-300 group-hover:text-stone-400 transition-colors shrink-0" />
     </button>
   );
 }
@@ -881,37 +901,40 @@ function ExpandableSection({
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+    <div className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
       <button
         onClick={toggle}
-        className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors"
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-stone-50 transition-colors"
       >
-        <div className="flex items-center gap-2.5">
-          <span className="text-slate-500">{icon}</span>
-          <span className="text-sm font-semibold text-slate-800">{title}</span>
+        <div className="flex items-center gap-3">
+          <span className="w-8 h-8 rounded-xl bg-stone-100 flex items-center justify-center text-stone-500">
+            {icon}
+          </span>
+          <span className="text-sm font-bold text-stone-800">{title}</span>
           {count !== undefined && (
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-600 border border-stone-200">
               {count}
             </span>
           )}
           {loading && (
-            <Loader2 className="w-3.5 h-3.5 text-slate-400 animate-spin" />
+            <Loader2 className="w-3.5 h-3.5 text-stone-400 animate-spin" />
           )}
         </div>
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           {headerExtra}
           <div
-            className={`w-6 h-6 rounded-lg flex items-center justify-center transition-colors ${open ? "bg-slate-800" : "bg-slate-100"}`}
+            className={`w-7 h-7 rounded-xl flex items-center justify-center transition-all ${open ? "bg-stone-800" : "bg-stone-100"}`}
           >
             {open ? (
-              <ChevronUp className="w-3.5 h-3.5 text-white" />
+              <ChevronUp className="w-4 h-4 text-white" />
             ) : (
-              <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+              <ChevronDown className="w-4 h-4 text-stone-500" />
             )}
           </div>
         </div>
       </button>
-      {open && <div className="border-t border-slate-100">{children}</div>}
+
+      {open && <div className="border-t border-stone-100">{children}</div>}
     </div>
   );
 }
@@ -933,20 +956,21 @@ function StatusFilterBar({
     "cancelled",
   ];
   return (
-    <div className="flex items-center gap-1.5 px-4 py-3 flex-wrap border-b border-slate-100 bg-slate-50/50">
+    <div className="flex items-center gap-1.5 px-4 py-3 flex-wrap border-b border-stone-100 bg-stone-50/60">
       {filters.map((f) => {
-        const cfg = f === "all" ? null : getStatusConfig(f);
+        const cfg = f !== "all" ? getStatusConfig(f) : null;
+        const isActive = active === f;
         return (
           <button
             key={f}
             onClick={() => onChange(f)}
-            className={`text-[11px] font-semibold px-3 py-1 rounded-full border transition-all capitalize
+            className={`text-[11px] font-bold px-3 py-1.5 rounded-full border transition-all capitalize
               ${
-                active === f
+                isActive
                   ? f === "all"
-                    ? "bg-slate-800 text-white border-slate-800"
-                    : `${cfg!.bg} ${cfg!.text} ${cfg!.border}`
-                  : "bg-white text-slate-400 border-slate-200 hover:border-slate-300 hover:text-slate-600"
+                    ? "bg-stone-800 text-white border-stone-800 shadow-sm"
+                    : `${cfg!.bg} ${cfg!.text} ${cfg!.border} shadow-sm`
+                  : "bg-white text-stone-400 border-stone-200 hover:border-stone-300 hover:text-stone-600"
               }`}
           >
             {f === "started" ? "In Progress" : f}
@@ -957,131 +981,50 @@ function StatusFilterBar({
   );
 }
 
-// ── Service Date Filter ───────────────────────────────────────────────────────
+// ── Month Filter ──────────────────────────────────────────────────────────────
 
-function ServiceDateFilter({
+function ServiceMonthFilter({
   selectedMonth,
   selectedYear,
-  customFrom,
-  customTo,
   onMonthChange,
-  onCustomRange,
-  onReset,
 }: {
   selectedMonth: number | null;
   selectedYear: number;
-  customFrom: string;
-  customTo: string;
   onMonthChange: (year: number, month: number) => void;
-  onCustomRange: (from: string, to: string) => void;
-  onReset: () => void;
 }) {
-  const [mode, setMode] = useState<"month" | "custom">("month");
-  const [fromVal, setFromVal] = useState(customFrom);
-  const [toVal, setToVal] = useState(customTo);
   const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
-
   return (
-    <div className="p-4 space-y-3 bg-slate-50/50">
-      <div className="flex rounded-xl border border-slate-200 overflow-hidden text-xs font-semibold bg-white">
+    <div className="p-4 bg-stone-50/60 space-y-3">
+      <div className="flex items-center justify-between">
         <button
-          onClick={() => setMode("month")}
-          className={`flex-1 py-2 transition-colors ${mode === "month" ? "bg-slate-800 text-white" : "text-slate-500 hover:bg-slate-50"}`}
+          onClick={() => setPickerYear((y) => y - 1)}
+          className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-stone-200 text-stone-500 transition-colors"
         >
-          By month
+          <ChevronLeft className="w-4 h-4" />
         </button>
+        <span className="text-sm font-bold text-stone-700">{pickerYear}</span>
         <button
-          onClick={() => setMode("custom")}
-          className={`flex-1 py-2 transition-colors ${mode === "custom" ? "bg-slate-800 text-white" : "text-slate-500 hover:bg-slate-50"}`}
+          onClick={() => setPickerYear((y) => y + 1)}
+          className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-stone-200 text-stone-500 transition-colors"
         >
-          Custom range
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
-
-      {mode === "month" && (
-        <div>
-          <div className="flex items-center justify-between mb-2">
+      <div className="grid grid-cols-4 gap-1.5">
+        {MONTHS.map((m, idx) => {
+          const isActive = selectedMonth === idx && selectedYear === pickerYear;
+          return (
             <button
-              onClick={() => setPickerYear((y) => y - 1)}
-              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-200 text-slate-500"
+              key={m}
+              onClick={() => onMonthChange(pickerYear, idx)}
+              className={`py-1.5 rounded-xl text-[11px] font-bold transition-colors border
+                ${isActive ? "bg-stone-800 text-white border-stone-800 shadow-sm" : "bg-white text-stone-600 border-stone-200 hover:border-stone-300 hover:bg-stone-50"}`}
             >
-              <ChevronLeft className="w-4 h-4" />
+              {m.slice(0, 3)}
             </button>
-            <span className="text-xs font-semibold text-slate-700">
-              {pickerYear}
-            </span>
-            <button
-              onClick={() => setPickerYear((y) => y + 1)}
-              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-200 text-slate-500"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="grid grid-cols-4 gap-1.5">
-            {MONTHS.map((m, idx) => {
-              const isActive =
-                selectedMonth === idx && selectedYear === pickerYear;
-              return (
-                <button
-                  key={m}
-                  onClick={() => onMonthChange(pickerYear, idx)}
-                  className={`py-1.5 rounded-lg text-[11px] font-semibold transition-colors border
-                    ${isActive ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"}`}
-                >
-                  {m.slice(0, 3)}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {mode === "custom" && (
-        <div className="space-y-2">
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <label className="text-[10px] text-slate-400 font-semibold block mb-1">
-                From
-              </label>
-              <input
-                type="date"
-                value={fromVal}
-                onChange={(e) => setFromVal(e.target.value)}
-                className="w-full text-xs border border-slate-200 rounded-lg px-3 py-1.5 text-slate-700 bg-white focus:outline-none focus:border-slate-400"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="text-[10px] text-slate-400 font-semibold block mb-1">
-                To
-              </label>
-              <input
-                type="date"
-                value={toVal}
-                onChange={(e) => setToVal(e.target.value)}
-                className="w-full text-xs border border-slate-200 rounded-lg px-3 py-1.5 text-slate-700 bg-white focus:outline-none focus:border-slate-400"
-              />
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              if (fromVal && toVal) onCustomRange(fromVal, toVal);
-            }}
-            disabled={!fromVal || !toVal}
-            className="w-full py-2 text-xs font-semibold rounded-lg bg-slate-800 text-white disabled:opacity-40 hover:bg-slate-700 transition-colors"
-          >
-            Apply range
-          </button>
-        </div>
-      )}
-
-      {(selectedMonth !== null || customFrom) && (
-        <button
-          onClick={onReset}
-          className="w-full flex items-center justify-center gap-1.5 text-[11px] text-slate-400 hover:text-slate-600 transition-colors py-1"
-        >
-          <RefreshCw className="w-3 h-3" /> Reset filter
-        </button>
-      )}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -1089,19 +1032,68 @@ function ServiceDateFilter({
 // ── Empty / Loading ───────────────────────────────────────────────────────────
 
 const EmptyState = ({ message }: { message: string }) => (
-  <div className="py-12 text-center">
-    <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
-      <ClipboardList className="w-5 h-5 text-slate-300" />
+  <div className="py-14 text-center">
+    <div className="w-14 h-14 rounded-2xl bg-stone-100 flex items-center justify-center mx-auto mb-3">
+      <ClipboardList className="w-6 h-6 text-stone-300" />
     </div>
-    <p className="text-sm text-slate-400 font-medium">{message}</p>
+    <p className="text-sm text-stone-400 font-medium">{message}</p>
   </div>
 );
 
 const LoadingRows = () => (
-  <div className="py-12 flex justify-center">
-    <Loader2 className="w-5 h-5 text-slate-300 animate-spin" />
+  <div className="py-14 flex flex-col items-center gap-2">
+    <Loader2 className="w-6 h-6 text-stone-300 animate-spin" />
+    <p className="text-xs text-stone-400">Loading...</p>
   </div>
 );
+
+// ── Contact Info ──────────────────────────────────────────────────────────────
+
+function ContactCard({ email, phone }: { email?: string; phone?: string }) {
+  const hasEmail = email && email !== "-";
+  const hasPhone = !!phone;
+  return (
+    <div className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="px-5 py-3 border-b border-stone-100">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
+          Contact Information
+        </p>
+      </div>
+      <div className="divide-y divide-stone-100">
+        <div className="flex items-center gap-3 px-5 py-3.5">
+          <div className="w-9 h-9 rounded-xl bg-stone-100 flex items-center justify-center shrink-0">
+            <Mail className="w-4 h-4 text-stone-500" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-0.5">
+              Email
+            </p>
+            <p
+              className={`text-sm font-medium ${hasEmail ? "text-stone-800" : "text-stone-400 italic"}`}
+            >
+              {hasEmail ? email : "Not provided"}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 px-5 py-3.5">
+          <div className="w-9 h-9 rounded-xl bg-stone-100 flex items-center justify-center shrink-0">
+            <Phone className="w-4 h-4 text-stone-500" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-0.5">
+              Phone
+            </p>
+            <p
+              className={`text-sm font-medium ${hasPhone ? "text-stone-800" : "text-stone-400 italic"}`}
+            >
+              {hasPhone ? phone : "Not provided"}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
@@ -1138,7 +1130,6 @@ export default function TechnicianDetailPage() {
   const [allServicesLoading, setAllServicesLoading] = useState(false);
   const [allServicesFetched, setAllServicesFetched] = useState(false);
 
-  // ── Dialog state ──────────────────────────────────────────────────────────
   const [dialogItem, setDialogItem] = useState<{
     item: Job | ServiceVisit | PendingJob;
     type: "job" | "service" | "pendingJob";
@@ -1147,15 +1138,10 @@ export default function TechnicianDetailPage() {
   const today = new Date();
   const [svcMonth, setSvcMonth] = useState<number | null>(today.getMonth());
   const [svcYear, setSvcYear] = useState<number>(today.getFullYear());
-  const [svcCustomFrom, setSvcCustomFrom] = useState<string>("");
-  const [svcCustomTo, setSvcCustomTo] = useState<string>("");
 
   const [allJobFilter, setAllJobFilter] = useState<FilterStatus>("all");
   const [pendingSvcFilter, setPendingSvcFilter] = useState<FilterStatus>("all");
   const [allSvcFilter, setAllSvcFilter] = useState<FilterStatus>("all");
-
-  const [selectedDate, setSelectedDate] = useState<string>("");
-  const [calOpen, setCalOpen] = useState(false);
 
   useEffect(() => {
     if (!techCode) return;
@@ -1175,12 +1161,10 @@ export default function TechnicianDetailPage() {
     })();
   }, [techCode]);
 
-  const currentRange = useMemo(() => {
-    if (svcCustomFrom && svcCustomTo)
-      return { firstday: svcCustomFrom, lastday: svcCustomTo };
-    if (svcMonth !== null) return getMonthRange(svcYear, svcMonth);
-    return getMonthRange(today.getFullYear(), today.getMonth());
-  }, [svcMonth, svcYear, svcCustomFrom, svcCustomTo]);
+  const currentRange = useMemo(
+    () => getMonthRange(svcYear, svcMonth ?? today.getMonth()),
+    [svcMonth, svcYear],
+  );
 
   const fetchPendingJobs = useCallback(async () => {
     if (!techCode || pendingJobsFetched) return;
@@ -1254,19 +1238,6 @@ export default function TechnicianDetailPage() {
   const handleMonthChange = (year: number, month: number) => {
     setSvcMonth(month);
     setSvcYear(year);
-    setSvcCustomFrom("");
-    setSvcCustomTo("");
-  };
-  const handleCustomRange = (from: string, to: string) => {
-    setSvcCustomFrom(from);
-    setSvcCustomTo(to);
-    setSvcMonth(null);
-  };
-  const handleSvcReset = () => {
-    setSvcMonth(today.getMonth());
-    setSvcYear(today.getFullYear());
-    setSvcCustomFrom("");
-    setSvcCustomTo("");
   };
 
   const onOpenPendingJobs = useCallback(
@@ -1287,16 +1258,6 @@ export default function TechnicianDetailPage() {
     }
   }, [allServicesFetched, currentRange, fetchAllServices]);
 
-  const dailyRecordsMap = useMemo(() => new Map<string, DailyRecord>(), []);
-  const availableDatesSet = useMemo(
-    () => new Set(Array.from(dailyRecordsMap.keys())),
-    [dailyRecordsMap],
-  );
-  const handleDateSelect = (d: string) => {
-    setSelectedDate(d);
-    if (d) setCalOpen(false);
-  };
-
   const filteredPendingServices = useMemo(
     () =>
       pendingSvcFilter === "all"
@@ -1306,7 +1267,6 @@ export default function TechnicianDetailPage() {
           ),
     [pendingServices, pendingSvcFilter],
   );
-
   const filteredAllJobs = useMemo(
     () =>
       allJobFilter === "all"
@@ -1314,7 +1274,6 @@ export default function TechnicianDetailPage() {
         : allJobs.filter((j) => j.status?.toLowerCase() === allJobFilter),
     [allJobs, allJobFilter],
   );
-
   const filteredAllServices = useMemo(
     () =>
       allSvcFilter === "all"
@@ -1325,12 +1284,12 @@ export default function TechnicianDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-stone-50">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center">
-            <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />
+          <div className="w-14 h-14 rounded-2xl bg-white border border-stone-200 shadow-sm flex items-center justify-center">
+            <Loader2 className="w-6 h-6 text-stone-400 animate-spin" />
           </div>
-          <p className="text-sm text-slate-500 font-medium">
+          <p className="text-sm text-stone-500 font-semibold">
             Loading technician…
           </p>
         </div>
@@ -1340,16 +1299,21 @@ export default function TechnicianDetailPage() {
 
   if (error || !tech) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-10 bg-slate-50">
-        <div className="w-14 h-14 rounded-2xl bg-rose-100 flex items-center justify-center">
-          <XCircle className="w-7 h-7 text-rose-500" />
+      <div className="min-h-screen flex flex-col items-center justify-center gap-5 p-10 bg-stone-50">
+        <div className="w-16 h-16 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-center">
+          <XCircle className="w-8 h-8 text-red-400" />
         </div>
-        <p className="text-slate-600 text-base font-semibold">
-          {error ?? `Technician ${techCode} not found.`}
-        </p>
+        <div className="text-center">
+          <p className="text-stone-800 text-base font-bold mb-1">
+            {error ?? `Technician ${techCode} not found.`}
+          </p>
+          <p className="text-stone-400 text-sm">
+            Please check the technician code and try again.
+          </p>
+        </div>
         <button
           onClick={() => router.push("/technicians")}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 text-white text-sm font-semibold hover:bg-slate-700 transition-colors"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-stone-800 text-white text-sm font-bold hover:bg-stone-700 transition-colors shadow-sm"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Technicians
         </button>
@@ -1358,69 +1322,12 @@ export default function TechnicianDetailPage() {
   }
 
   const zone = normalizeZone(tech.zone);
-  const identity = zoneIdentity[zone];
-  const dayRecord = selectedDate ? dailyRecordsMap.get(selectedDate) : null;
-
-  const jobStats = dayRecord
-    ? {
-        total: dayRecord.jobs.length,
-        pending: dayRecord.jobs.filter((j) => j.status === "pending").length,
-        completed: dayRecord.jobs.filter((j) => j.status === "completed")
-          .length,
-        started: dayRecord.jobs.filter((j) => j.status === "started").length,
-      }
-    : {
-        total: tech.allJobs,
-        pending: tech.pendingJobs,
-        completed: tech.completeJobs,
-        started: tech.startedJobs,
-      };
-
-  const svcStats = dayRecord
-    ? {
-        total: dayRecord.services.length,
-        pending: dayRecord.services.filter((s) => s.status === "pending")
-          .length,
-        completed: dayRecord.services.filter((s) => s.status === "completed")
-          .length,
-        started: dayRecord.services.filter((s) => s.status === "started")
-          .length,
-      }
-    : {
-        total: tech.allServices,
-        pending: tech.pendingServices,
-        completed: tech.completeServices,
-        started: tech.startedServices,
-      };
-
-  const displayJobPerf =
-    selectedDate && jobStats.total > 0
-      ? Math.round((jobStats.completed / jobStats.total) * 100)
-      : tech.jobPerformancePercentage;
-  const displaySvcPerf =
-    selectedDate && svcStats.total > 0
-      ? Math.round((svcStats.completed / svcStats.total) * 100)
-      : tech.servicePerformancePercentage;
-  const jc = perfColor(displayJobPerf);
-  const sc = perfColor(displaySvcPerf);
-
-  const displayDate = selectedDate
-    ? new Date(selectedDate + "T00:00:00").toLocaleDateString("en-GB", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })
-    : "";
+  const zs = zoneStyle[zone];
   const svcRangeLabel =
-    svcCustomFrom && svcCustomTo
-      ? `${new Date(svcCustomFrom).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} – ${new Date(svcCustomTo).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`
-      : svcMonth !== null
-        ? `${MONTHS[svcMonth]} ${svcYear}`
-        : "All";
+    svcMonth !== null ? `${MONTHS[svcMonth]} ${svcYear}` : "All";
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Detail dialog */}
+    <div className="min-h-screen bg-stone-50">
       {dialogItem && (
         <DetailDialog
           item={dialogItem.item}
@@ -1429,223 +1336,84 @@ export default function TechnicianDetailPage() {
         />
       )}
 
-      {/* Hero header */}
+      {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <div
-        className={`bg-gradient-to-br ${identity.gradient} px-6 md:px-10 pt-8 pb-14 relative overflow-hidden`}
+        className={`relative bg-gradient-to-br ${zs.gradient} overflow-hidden`}
       >
+        {/* Subtle grid texture */}
         <div
-          className="absolute inset-0 opacity-[0.04]"
+          className="absolute inset-0 opacity-[0.07]"
           style={{
             backgroundImage:
-              "radial-gradient(circle at 2px 2px, white 1px, transparent 0)",
-            backgroundSize: "24px 24px",
+              "radial-gradient(circle, white 1px, transparent 1px)",
+            backgroundSize: "20px 20px",
           }}
         />
-        <button
-          onClick={() => router.push("/technicians")}
-          className="relative flex items-center gap-1.5 text-white/60 hover:text-white text-sm font-medium mb-8 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back to Technicians
-        </button>
-        <div className="relative flex items-center gap-5">
-          <div
-            className={`w-[4.5rem] h-[4.5rem] rounded-2xl ${identity.avatarBg} border border-white/20 flex items-center justify-center text-white font-bold text-xl shrink-0`}
+
+        <div className="relative px-5 md:px-10 pt-6 pb-16 max-w-5xl mx-auto">
+          {/* Back nav */}
+          <button
+            onClick={() => router.push("/technicians")}
+            className="flex items-center gap-1.5 text-white/60 hover:text-white text-sm font-semibold mb-8 transition-colors group"
           >
-            {getInitials(tech.name)}
-          </div>
-          <div>
-            <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-white/40 mb-1">
-              Field Technician
-            </p>
-            <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
-              {tech.name}
-            </h1>
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <span className="text-xs font-mono text-white/50 bg-white/10 px-2 py-0.5 rounded-md">
-                {tech.techCode}
-              </span>
-              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-white/15 text-white border border-white/20">
-                {getZoneLabel(zone)}
-              </span>
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />{" "}
+            Back to Technicians
+          </button>
+
+          {/* Profile */}
+          <div className="flex items-start gap-5">
+            <div
+              className={`w-20 h-20 rounded-3xl ${zs.avatarBg} flex items-center justify-center text-2xl font-black shrink-0 shadow-lg`}
+            >
+              {getInitials(tech.name)}
+            </div>
+            <div className="flex-1 min-w-0 pt-1">
+              <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-white/40 mb-1">
+                Field Technician
+              </p>
+              <h1 className="text-2xl md:text-3xl font-black text-white leading-tight truncate mb-2">
+                {tech.name}
+              </h1>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-mono font-bold text-white/60 bg-white/10 px-2.5 py-1 rounded-lg border border-white/10">
+                  {tech.techCode}
+                </span>
+                <span
+                  className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${zs.badge}`}
+                >
+                  {getZoneLabel(zone)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main content (pulled up to overlap hero) */}
-      <div className="px-4 md:px-10 -mt-6 pb-10 max-w-5xl mx-auto space-y-4">
-        {/* Contact + Date filter */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-slate-100">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                Contact
-              </p>
-            </div>
-            <div className="divide-y divide-slate-100">
-              <div className="flex items-center gap-3 px-5 py-3.5">
-                <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
-                  <Mail className="w-3.5 h-3.5 text-slate-500" />
-                </div>
-                <span className="text-sm text-slate-700">
-                  {tech.email && tech.email !== "-"
-                    ? tech.email
-                    : "Not provided"}
-                </span>
-              </div>
-              <div className="flex items-center gap-3 px-5 py-3.5">
-                <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
-                  <Phone className="w-3.5 h-3.5 text-slate-500" />
-                </div>
-                <span className="text-sm text-slate-700">
-                  {tech.phone || "Not provided"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-slate-100">
-              <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                <Calendar className="w-3 h-3" /> Filter by Date
-              </p>
-            </div>
-            <div className="p-5">
-              <button
-                onClick={() => setCalOpen((v) => !v)}
-                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${selectedDate ? "border-slate-800 bg-slate-800 text-white" : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300"}`}
-              >
-                <span className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 shrink-0" />
-                  {selectedDate ? displayDate : "Select a date…"}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  {selectedDate && (
-                    <span
-                      role="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDateSelect("");
-                        setCalOpen(false);
-                      }}
-                      className="w-5 h-5 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors"
-                    >
-                      <X className="w-3 h-3" />
-                    </span>
-                  )}
-                  {calOpen ? (
-                    <ChevronUp className="w-4 h-4" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" />
-                  )}
-                </span>
-              </button>
-              {calOpen && (
-                <div className="mt-3">
-                  <MiniCalendar
-                    availableDates={availableDatesSet}
-                    selectedDate={selectedDate}
-                    onSelect={handleDateSelect}
-                  />
-                  <p className="mt-2 text-[11px] text-amber-500 text-center font-medium">
-                    Daily breakdown unavailable — showing totals.
-                  </p>
-                </div>
-              )}
-              {!calOpen && (
-                <p className="mt-2 text-[11px] text-slate-400 text-center">
-                  {selectedDate
-                    ? `Showing data for ${displayDate}`
-                    : "Showing all-time totals"}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
+      {/* ── Content ───────────────────────────────────────────────────────── */}
+      <div className="px-4 md:px-10 -mt-8 pb-12 max-w-5xl mx-auto space-y-4">
+        {/* Contact */}
+        <ContactCard email={tech.email} phone={tech.phone} />
 
         {/* Performance */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
-              <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                <Briefcase className="w-3.5 h-3.5" /> Job Performance
-              </p>
-              <span className={`text-lg font-bold ${jc.text}`}>
-                {displayJobPerf.toFixed(1)}%
-              </span>
-            </div>
-            <div className="p-5 space-y-4">
-              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full ${jc.bar} transition-all duration-700`}
-                  style={{ width: `${displayJobPerf}%` }}
-                />
-              </div>
-              <div className="grid grid-cols-4 gap-2">
-                <StatCard
-                  label="Total"
-                  value={jobStats.total}
-                  cls="text-slate-800"
-                />
-                <StatCard
-                  label="Done"
-                  value={jobStats.completed}
-                  cls="text-emerald-600"
-                />
-                <StatCard
-                  label="Active"
-                  value={jobStats.started}
-                  cls="text-sky-500"
-                />
-                <StatCard
-                  label="Pending"
-                  value={jobStats.pending}
-                  cls="text-amber-500"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
-              <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                <Wrench className="w-3.5 h-3.5" /> Service Performance
-              </p>
-              <span className={`text-lg font-bold ${sc.text}`}>
-                {displaySvcPerf.toFixed(1)}%
-              </span>
-            </div>
-            <div className="p-5 space-y-4">
-              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full ${sc.bar} transition-all duration-700`}
-                  style={{ width: `${displaySvcPerf}%` }}
-                />
-              </div>
-              <div className="grid grid-cols-4 gap-2">
-                <StatCard
-                  label="Total"
-                  value={svcStats.total}
-                  cls="text-slate-800"
-                />
-                <StatCard
-                  label="Done"
-                  value={svcStats.completed}
-                  cls="text-emerald-600"
-                />
-                <StatCard
-                  label="Active"
-                  value={svcStats.started}
-                  cls="text-sky-500"
-                />
-                <StatCard
-                  label="Pending"
-                  value={svcStats.pending}
-                  cls="text-amber-500"
-                />
-              </div>
-            </div>
-          </div>
+          <PerformanceCard
+            title="Job Performance"
+            icon={<Briefcase className="w-4 h-4" />}
+            pct={tech.jobPerformancePercentage}
+            total={tech.allJobs}
+            done={tech.completeJobs}
+            active={tech.startedJobs}
+            pending={tech.pendingJobs}
+          />
+          <PerformanceCard
+            title="Service Performance"
+            icon={<Wrench className="w-4 h-4" />}
+            pct={tech.servicePerformancePercentage}
+            total={tech.allServices}
+            done={tech.completeServices}
+            active={tech.startedServices}
+            pending={tech.pendingServices}
+          />
         </div>
 
         {/* Pending Jobs */}
@@ -1661,7 +1429,7 @@ export default function TechnicianDetailPage() {
           ) : pendingJobs.length === 0 ? (
             <EmptyState message="No pending jobs found." />
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-stone-100">
               {pendingJobs.map((job) => (
                 <PendingJobRow
                   key={job.id}
@@ -1685,20 +1453,16 @@ export default function TechnicianDetailPage() {
           loading={pendingServicesLoading}
           onOpen={onOpenPendingServices}
           headerExtra={
-            <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+            <span className="text-[11px] font-bold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-full border border-stone-200">
               {svcRangeLabel}
             </span>
           }
         >
-          <div className="border-b border-slate-100">
-            <ServiceDateFilter
+          <div className="border-b border-stone-100">
+            <ServiceMonthFilter
               selectedMonth={svcMonth}
               selectedYear={svcYear}
-              customFrom={svcCustomFrom}
-              customTo={svcCustomTo}
               onMonthChange={handleMonthChange}
-              onCustomRange={handleCustomRange}
-              onReset={handleSvcReset}
             />
           </div>
           <StatusFilterBar
@@ -1709,10 +1473,10 @@ export default function TechnicianDetailPage() {
             <LoadingRows />
           ) : filteredPendingServices.length === 0 ? (
             <EmptyState
-              message={`No ${pendingSvcFilter === "all" ? "" : pendingSvcFilter + " "}services for ${svcRangeLabel}.`}
+              message={`No ${pendingSvcFilter !== "all" ? pendingSvcFilter + " " : ""}services for ${svcRangeLabel}.`}
             />
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-stone-100">
               {filteredPendingServices.map((svc) => (
                 <ServiceRow
                   key={svc.id}
@@ -1737,10 +1501,10 @@ export default function TechnicianDetailPage() {
             <LoadingRows />
           ) : filteredAllJobs.length === 0 ? (
             <EmptyState
-              message={`No ${allJobFilter === "all" ? "" : allJobFilter + " "}jobs found.`}
+              message={`No ${allJobFilter !== "all" ? allJobFilter + " " : ""}jobs found.`}
             />
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-stone-100">
               {filteredAllJobs.map((job) => (
                 <JobRow
                   key={job.jobId}
@@ -1760,20 +1524,16 @@ export default function TechnicianDetailPage() {
           loading={allServicesLoading}
           onOpen={onOpenAllServices}
           headerExtra={
-            <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+            <span className="text-[11px] font-bold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-full border border-stone-200">
               {svcRangeLabel}
             </span>
           }
         >
-          <div className="border-b border-slate-100">
-            <ServiceDateFilter
+          <div className="border-b border-stone-100">
+            <ServiceMonthFilter
               selectedMonth={svcMonth}
               selectedYear={svcYear}
-              customFrom={svcCustomFrom}
-              customTo={svcCustomTo}
               onMonthChange={handleMonthChange}
-              onCustomRange={handleCustomRange}
-              onReset={handleSvcReset}
             />
           </div>
           <StatusFilterBar active={allSvcFilter} onChange={setAllSvcFilter} />
@@ -1781,10 +1541,10 @@ export default function TechnicianDetailPage() {
             <LoadingRows />
           ) : filteredAllServices.length === 0 ? (
             <EmptyState
-              message={`No ${allSvcFilter === "all" ? "" : allSvcFilter + " "}services for ${svcRangeLabel}.`}
+              message={`No ${allSvcFilter !== "all" ? allSvcFilter + " " : ""}services for ${svcRangeLabel}.`}
             />
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-stone-100">
               {filteredAllServices.map((svc) => (
                 <ServiceRow
                   key={svc.id}
