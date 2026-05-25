@@ -38,10 +38,90 @@ import { useEffect, useState } from "react";
 interface JobPercentageItem {
   name: string;
   value: number;
-  fill?: string; // Add this line
+  fill?: string;
 }
 
+// ─── Loading Overlay ───────────────────────────────────────────────────────────
+
+function DashboardLoader() {
+  const steps = [
+    { label: "Job counts & rates", icon: "📊" },
+    { label: "Service metrics", icon: "🔧" },
+    { label: "Pending jobs", icon: "📋" },
+    { label: "Warranty data", icon: "🛡️" },
+    { label: "Overdue jobs", icon: "⏰" },
+    { label: "Technician performance", icon: "👥" },
+    { label: "Weekly trends", icon: "📈" },
+    { label: "Job percentages", icon: "🥧" },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+      <div className="flex flex-col items-center gap-6 p-8 rounded-2xl bg-card border border-border shadow-xl max-w-sm w-full mx-4">
+        {/* Spinner */}
+        <div className="relative w-16 h-16">
+          <div className="absolute inset-0 rounded-full border-4 border-border" />
+          <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+        </div>
+
+        <div className="text-center space-y-1">
+          <h2 className="text-lg font-semibold text-foreground">
+            Loading Dashboard
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Fetching your service overview…
+          </p>
+        </div>
+
+        {/* Step checklist */}
+        <ul className="w-full space-y-2">
+          {steps.map((step, i) => (
+            <li
+              key={i}
+              className="flex items-center gap-3 text-sm text-muted-foreground animate-pulse"
+              style={{ animationDelay: `${i * 120}ms` }}
+            >
+              <span className="text-base">{step.icon}</span>
+              <span>{step.label}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// ─── Skeleton Cards ────────────────────────────────────────────────────────────
+
+function SkeletonCard() {
+  return (
+    <Card className="bg-card border-border">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <div className="h-4 w-24 bg-secondary rounded animate-pulse" />
+        <div className="h-4 w-4 bg-secondary rounded animate-pulse" />
+      </CardHeader>
+      <CardContent>
+        <div className="h-8 w-16 bg-secondary rounded animate-pulse mb-2" />
+        <div className="h-3 w-28 bg-secondary rounded animate-pulse" />
+      </CardContent>
+    </Card>
+  );
+}
+
+function SkeletonChart({ height = 250 }: { height?: number }) {
+  return (
+    <div
+      className="w-full bg-secondary rounded-lg animate-pulse"
+      style={{ height }}
+    />
+  );
+}
+
+// ─── Main Component ────────────────────────────────────────────────────────────
+
 export function DashboardContent() {
+  const [isLoading, setIsLoading] = useState(true);
+
   const [JobCountAndRate, setJobCountAndRate] =
     useState<GetJobAndServiceCountAndRate>();
   const [ServiceCountAndRate, setServiceCountAndRate] =
@@ -62,7 +142,6 @@ export function DashboardContent() {
   const [CompleteAndPendingJobPercentage, setCompleteAndPendingJobPercentage] =
     useState<GetCompleteAndPendingJobAndServicePercentage>();
 
-  // Import data from config instead of defining locally
   const { warrantyDetailsDataNew } = mockDataConfig;
 
   const {
@@ -72,49 +151,62 @@ export function DashboardContent() {
     getLastWeekJobPerformence,
     getCompleteAndPendingServicesPercentage,
     getCompleteAndPendingJobPercentage,
-
     getPendingJobs,
     getServiceCountAndRate,
     getJobCountAndRate,
-  } = useApiConfig(); // Placeholder for future API integration
+  } = useApiConfig();
 
   useEffect(() => {
-    // Example of how to use the API functions - currently just logging results
     const fetchData = async () => {
-      const jobCountAndRate = await getJobCountAndRate();
-      setJobCountAndRate(jobCountAndRate);
+      try {
+        // Run all API calls in parallel — dashboard only shows once ALL resolve
+        const [
+          jobCountAndRate,
+          serviceCountAndRate,
+          pendingJobs,
+          customerWarranty,
+          oldestDueJobs,
+          techniciansPerformance,
+          lastWeekJobPerformence,
+          completeAndPendingServicesPercentage,
+          completeAndPendingJobPercentage,
+        ] = await Promise.all([
+          getJobCountAndRate(),
+          getServiceCountAndRate(),
+          getPendingJobs(),
+          getCustomerWarranty(),
+          getOldestDueJobs(),
+          getTechniciansPerformance(),
+          getLastWeekJobPerformence(),
+          getCompleteAndPendingServicesPercentage(),
+          getCompleteAndPendingJobPercentage(),
+        ]);
 
-      const serviceCountAndRate = await getServiceCountAndRate();
-      setServiceCountAndRate(serviceCountAndRate);
-
-      const pendingJobs: Job[] = await getPendingJobs();
-      setPendingJobs(pendingJobs);
-
-      const customerWarranty = await getCustomerWarranty();
-      setCustomerWarranty(customerWarranty);
-
-      const oldestDueJobs = await getOldestDueJobs();
-      setOldestDueJobs(oldestDueJobs);
-
-      const techniciansPerformance = await getTechniciansPerformance();
-      setTechniciansPerformance(techniciansPerformance);
-
-      const lastWeekJobPerformence = await getLastWeekJobPerformence();
-      setLastWeekJobPerformence(lastWeekJobPerformence);
-
-      const completeAndPendingServicesPercentage =
-        await getCompleteAndPendingServicesPercentage();
-      setCompleteAndPendingServicesPercentage(
-        completeAndPendingServicesPercentage,
-      );
-
-      const completeAndPendingJobPercentage =
-        await getCompleteAndPendingJobPercentage();
-      setCompleteAndPendingJobPercentage(completeAndPendingJobPercentage);
+        setJobCountAndRate(jobCountAndRate);
+        setServiceCountAndRate(serviceCountAndRate);
+        setPendingJobs(pendingJobs);
+        setCustomerWarranty(customerWarranty);
+        setOldestDueJobs(oldestDueJobs);
+        setTechniciansPerformance(techniciansPerformance);
+        setLastWeekJobPerformence(lastWeekJobPerformence);
+        setCompleteAndPendingServicesPercentage(
+          completeAndPendingServicesPercentage,
+        );
+        setCompleteAndPendingJobPercentage(completeAndPendingJobPercentage);
+      } catch (error) {
+        console.error("Dashboard fetch error:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchData();
   }, []);
+
+  // Show full-screen loading overlay while any API is pending
+  if (isLoading) {
+    return <DashboardLoader />;
+  }
 
   return (
     <div className="w-full max-w-7xl px-4 md:px-8 py-4 md:py-8 space-y-8">
@@ -167,9 +259,7 @@ export function DashboardContent() {
             <div className="text-2xl font-bold">
               {ServiceCountAndRate?.jobCount || 0}
             </div>
-
             <p className="text-xs text-muted-foreground">
-              {" "}
               {ServiceCountAndRate?.jobRate || 0}% Success Rate
             </p>
           </CardContent>
@@ -193,7 +283,6 @@ export function DashboardContent() {
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Monthly Service Success */}
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle>Monthly Service Schedule Success</CardTitle>
@@ -222,7 +311,6 @@ export function DashboardContent() {
           </CardContent>
         </Card>
 
-        {/* Monthly Breakdown Success */}
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle>Monthly Breakdown Success</CardTitle>
@@ -259,7 +347,6 @@ export function DashboardContent() {
         </Card>
       </div>
 
-      {/* Technician Summary Graph */}
       {/* Technician Summary Graph */}
       <Card className="bg-card border-border">
         <CardHeader>
@@ -329,7 +416,6 @@ export function DashboardContent() {
 
       {/* Performance & Pending Jobs */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Technician Performance */}
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle>Top Technician Performance</CardTitle>
@@ -365,7 +451,6 @@ export function DashboardContent() {
           </CardContent>
         </Card>
 
-        {/* Pending Jobs Alert */}
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle>Overdue Jobs</CardTitle>
@@ -428,7 +513,6 @@ export function DashboardContent() {
                   <th className="text-left p-2 font-semibold text-foreground">
                     Area
                   </th>
-
                   <th className="text-left p-2 font-semibold text-foreground">
                     NS
                   </th>
@@ -454,24 +538,6 @@ export function DashboardContent() {
                     <td className="p-2 text-foreground">{row.fs}</td>
                     <td className="p-2 text-foreground">{row.ma}</td>
                     <td className="p-2 text-foreground">{row.ex}</td>
-                    {/* <td className="p-2 text-foreground">{row.machineDesc}</td>
-                    <td className="p-2 text-foreground">
-                      {row.machineRefCode}
-                    </td>
-                    <td className="p-2 text-foreground">{row.team}</td>
-                    <td className="p-2">
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${row.cusStatus === "Active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}`}
-                      >
-                        {row.cusStatus}
-                      </span>
-                    </td>
-                    <td className="p-2 text-foreground">{row.tOfficerCode}</td>
-                    <td className="p-2 text-foreground">{row.tOfficerName}</td>
-                    <td className="p-2 text-foreground">{row.maPeriodEnd}</td>
-                    <td className="p-2 text-foreground">
-                      {row.mWarrantyEndDate}
-                    </td> */}
                   </tr>
                 ))}
               </tbody>

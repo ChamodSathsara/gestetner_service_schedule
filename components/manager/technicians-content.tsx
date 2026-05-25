@@ -2,7 +2,16 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Eye, Briefcase, Wrench, Search, Users, Loader2 } from "lucide-react";
+import {
+  Eye,
+  Briefcase,
+  Wrench,
+  Search,
+  Users,
+  Loader2,
+  Phone,
+  ChevronRight,
+} from "lucide-react";
 import { Technician, useApiConfig } from "@/hooks/apiconfig";
 import { Zone } from "@/hooks/apiconfig";
 
@@ -17,47 +26,211 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-function perfColor(pct: number) {
+// Performance colour — returns Tailwind classes for bar + percent text
+function perfColor(pct: number): { bar: string; text: string } {
   if (pct >= 95) return { bar: "bg-emerald-500", text: "text-emerald-600" };
   if (pct >= 88) return { bar: "bg-blue-500", text: "text-blue-600" };
   if (pct >= 80) return { bar: "bg-amber-500", text: "text-amber-600" };
   return { bar: "bg-red-400", text: "text-red-500" };
 }
-const zoneIdentity: Record<Zone, { strip: string; avatar: string; badge: string }> = {
+
+// Zone colors
+const zoneIdentity: Record<
+  Zone,
+  {
+    header: string;
+    avatar: string;
+    badge: string;
+  }
+> = {
   OUTSTATION: {
-    strip: "bg-blue-500",
-    avatar: "bg-blue-600",
-    badge: "bg-blue-50 text-blue-700 border-blue-200",
+    header: "bg-gradient-to-br from-emerald-500 to-emerald-600",
+    avatar: "bg-emerald-700",
+    badge: "bg-white/25 text-white border-white/30 backdrop-blur-sm",
   },
   COLOMBO: {
-    strip: "bg-violet-500",
-    avatar: "bg-violet-600",
-    badge: "bg-violet-50 text-violet-700 border-violet-200",
+    header: "bg-gradient-to-br from-blue-500 to-blue-600",
+    avatar: "bg-blue-700",
+    badge: "bg-white/25 text-white border-white/30 backdrop-blur-sm",
   },
   SUBURBS: {
-    strip: "bg-emerald-500",
-    avatar: "bg-emerald-600",
-    badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    header: "bg-gradient-to-br from-violet-500 to-violet-600",
+    avatar: "bg-violet-700",
+    badge: "bg-white/25 text-white border-white/30 backdrop-blur-sm",
   },
   P2P: {
-    strip: "bg-purple-500",
-    avatar: "bg-purple-600",
-    badge: "bg-purple-50 text-purple-700 border-purple-200",
+    header: "bg-gradient-to-br from-purple-500 to-purple-600",
+    avatar: "bg-purple-700",
+    badge: "bg-white/25 text-white border-white/30 backdrop-blur-sm",
   },
   UNKNOWN: {
-    strip: "bg-slate-500",
-    avatar: "bg-slate-600",
-    badge: "bg-slate-50 text-slate-700 border-slate-200",
+    header: "bg-gradient-to-br from-slate-500 to-slate-600",
+    avatar: "bg-slate-700",
+    badge: "bg-white/25 text-white border-white/30 backdrop-blur-sm",
   },
 };
 
+// ── Sub-components ────────────────────────────────────────────────────────────
+
 function ProgressBar({ value, barClass }: { value: number; barClass: string }) {
   return (
-    <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+    <div className="w-full h-[6px] bg-slate-100 rounded-full overflow-hidden">
       <div
-        className={`h-full rounded-full transition-all duration-300 ${barClass}`}
+        className={`h-full rounded-full transition-all duration-500 ${barClass}`}
         style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
       />
+    </div>
+  );
+}
+
+function StatBox({
+  label,
+  value,
+  pending,
+}: {
+  label: string;
+  value: number;
+  pending: number;
+}) {
+  return (
+    <div className="bg-slate-50 rounded-lg px-3 py-3">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
+        {label}
+      </p>
+      <p className="text-[28px] font-bold text-slate-800 leading-none">
+        {value}
+      </p>
+      <p
+        className={`text-[11px] mt-1.5 font-medium ${
+          pending > 0 ? "text-amber-600" : "text-slate-400"
+        }`}
+      >
+        {pending > 0 ? `${pending} pending` : "All clear"}
+      </p>
+    </div>
+  );
+}
+
+// ── Technician Card ───────────────────────────────────────────────────────────
+
+function TechnicianCard({
+  tech,
+  onView,
+}: {
+  tech: Technician;
+  onView: (id: string) => void;
+}) {
+  const identity = zoneIdentity[tech.zone];
+  const jc = perfColor(tech.jobPerformancePercentage);
+  const sc = perfColor(tech.servicePerformancePercentage);
+  const zoneLabel = tech.zone.charAt(0) + tech.zone.slice(1).toLowerCase();
+
+  return (
+    <div
+      className="relative rounded-2xl overflow-hidden flex flex-col hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 group border border-slate-100 cursor-pointer"
+      onClick={() => onView(tech.id)}
+    >
+      {/* Main Card Content */}
+      <div className="relative z-10 group-hover:opacity-0 transition-opacity duration-300">
+        {/* Colored Header Section */}
+        <div className={`${identity.header} p-5 pb-4`}>
+          {/* Header — avatar + name + zone badge */}
+          <div className="flex items-start gap-3 mb-3">
+            <div
+              className={`w-12 h-12 rounded-xl ${identity.avatar} flex items-center justify-center text-white font-bold text-base shrink-0 shadow-lg`}
+            >
+              {getInitials(tech.name)}
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <p className="font-bold text-white text-base leading-snug truncate drop-shadow-sm">
+                {tech.name}
+              </p>
+              <p className="text-[11px] text-white/80 font-medium mt-0.5">
+                {tech.id}
+              </p>
+            </div>
+
+            <span
+              className={`shrink-0 text-[10px] font-bold px-3 py-1 rounded-full border ${identity.badge}`}
+            >
+              {zoneLabel}
+            </span>
+          </div>
+
+          {/* Phone */}
+          <div className="flex items-center gap-2 text-[13px] text-white/90 font-medium">
+            <Phone className="w-4 h-4 shrink-0 text-white/80" />
+            <span className="truncate">{tech.phone || "—"}</span>
+          </div>
+        </div>
+
+        {/* White Body Section */}
+        <div className="p-5 flex flex-col gap-4 flex-1 bg-white">
+          {/* Stat boxes */}
+          <div className="grid grid-cols-2 gap-3">
+            <StatBox
+              label="Jobs"
+              value={tech.allJobs}
+              pending={tech.pendingJobs}
+            />
+            <StatBox
+              label="Services"
+              value={tech.allServices}
+              pending={tech.pendingServices}
+            />
+          </div>
+
+          {/* Job performance bar */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                <Briefcase className="w-3.5 h-3.5" />
+                Job rate
+              </span>
+              <span className={`text-[14px] font-bold ${jc.text}`}>
+                {tech.jobPerformancePercentage.toFixed(1)}%
+              </span>
+            </div>
+            <ProgressBar
+              value={tech.jobPerformancePercentage}
+              barClass={jc.bar}
+            />
+          </div>
+
+          {/* Service performance bar */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                <Wrench className="w-3.5 h-3.5" />
+                Service rate
+              </span>
+              <span className={`text-[14px] font-bold ${sc.text}`}>
+                {tech.servicePerformancePercentage.toFixed(1)}%
+              </span>
+            </div>
+            <ProgressBar
+              value={tech.servicePerformancePercentage}
+              barClass={sc.bar}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Hover Overlay - White with centered button */}
+      <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-20">
+        <button
+          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-800 text-white text-[14px] font-bold hover:bg-slate-700 transition-colors shadow-lg"
+          onClick={(e) => {
+            e.stopPropagation();
+            onView(tech.id);
+          }}
+        >
+          <Eye className="w-5 h-5" />
+          View details
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -81,16 +254,14 @@ export function TechniciansContent() {
         setLoading(true);
         setError(null);
         const details = await getTechnitianDetails();
-        console.log("Fetched Technician Details:", details);
         setTechnicians(details);
-      } catch (error) {
-        console.error("Error fetching technician details:", error);
+      } catch (err) {
+        console.error("Error fetching technician details:", err);
         setError("Failed to load technician data. Please try again.");
       } finally {
         setLoading(false);
       }
     };
-
     fetchTechnicians();
   }, []);
 
@@ -103,43 +274,33 @@ export function TechniciansContent() {
     return matchSearch && matchZone;
   });
 
-  // Get unique zones from actual data for dynamic tabs
   const availableZones = Array.from(
-    new Set(technicians.map((t) => t.zone))
-  ).filter((zone) => zone !== "UNKNOWN");
+    new Set(technicians.map((t) => t.zone)),
+  ).filter((z) => z !== "UNKNOWN");
 
   const tabs: { key: ZoneFilter; label: string }[] = [
     { key: "ALL", label: "All" },
-    ...availableZones.map((zone) => ({
-      key: zone as ZoneFilter,
-      label: zone.charAt(0) + zone.slice(1).toLowerCase(),
+    ...availableZones.map((z) => ({
+      key: z as ZoneFilter,
+      label: z.charAt(0) + z.slice(1).toLowerCase(),
     })),
   ];
 
-  const getZoneLabel = (zone: Zone): string => {
-    const labels: Record<Zone, string> = {
-      OUTSTATION: "Outstation",
-      COLOMBO: "Colombo",
-      SUBURBS: "Suburbs",
-      P2P: "P2P",
-      UNKNOWN: "Other",
-    };
-    return labels[zone] || zone;
-  };
+  // ── Loading ──────────────────────────────────────────────────────────────
 
-  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 text-slate-400 animate-spin" />
-          <p className="text-sm text-slate-500">Loading technicians...</p>
+          <p className="text-sm text-slate-500">Loading technicians…</p>
         </div>
       </div>
     );
   }
 
-  // Error state
+  // ── Error ────────────────────────────────────────────────────────────────
+
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -160,7 +321,7 @@ export function TechniciansContent() {
             </svg>
           </div>
           <h3 className="text-lg font-semibold text-slate-800 mb-2">
-            Unable to Load Data
+            Unable to load data
           </h3>
           <p className="text-sm text-slate-500 mb-4">{error}</p>
           <button
@@ -174,18 +335,12 @@ export function TechniciansContent() {
     );
   }
 
-  // Empty state
+  // ── Empty state ──────────────────────────────────────────────────────────
+
   if (technicians.length === 0) {
     return (
       <div className="min-h-screen p-6 md:p-10">
-        <div className="mb-8">
-          <p className="text-[11px] font-semibold tracking-[0.22em] uppercase text-slate-400 mb-1">
-            Field Operations
-          </p>
-          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
-            Technicians
-          </h1>
-        </div>
+        <PageHeader />
         <div className="flex flex-col items-center justify-center py-20">
           <Users className="w-16 h-16 text-slate-300 mb-4" />
           <p className="text-slate-500 text-sm">No technicians found</p>
@@ -194,23 +349,15 @@ export function TechniciansContent() {
     );
   }
 
+  // ── Main render ──────────────────────────────────────────────────────────
+
   return (
     <div className="min-h-screen p-6 md:p-10">
-      {/* Page Header */}
-      <div className="mb-8">
-        <p className="text-[11px] font-semibold tracking-[0.22em] uppercase text-slate-400 mb-1">
-          Field Operations
-        </p>
-        <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
-          Technicians
-        </h1>
-        <p className="mt-1.5 text-slate-500 text-sm">
-          Monitor performance and manage field technician records.
-        </p>
-      </div>
+      <PageHeader />
 
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">
+        {/* Search */}
         <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
           <input
@@ -222,6 +369,7 @@ export function TechniciansContent() {
           />
         </div>
 
+        {/* Zone tabs */}
         <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-1 shadow-sm overflow-x-auto">
           {tabs.map((t) => (
             <button
@@ -238,17 +386,20 @@ export function TechniciansContent() {
           ))}
         </div>
 
+        {/* Count */}
         <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium sm:ml-auto">
           <Users className="w-3.5 h-3.5" />
           {filtered.length} technician{filtered.length !== 1 ? "s" : ""}
         </div>
       </div>
 
-      {/* No results state */}
+      {/* No results */}
       {filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20">
           <Search className="w-12 h-12 text-slate-300 mb-3" />
-          <p className="text-slate-500 text-sm">No technicians match your search</p>
+          <p className="text-slate-500 text-sm">
+            No technicians match your search
+          </p>
           <button
             onClick={() => {
               setSearch("");
@@ -261,107 +412,36 @@ export function TechniciansContent() {
         </div>
       )}
 
-      {/* Cards Grid */}
+      {/* Cards grid */}
       {filtered.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-          {filtered.map((tech) => {
-            const identity = zoneIdentity[tech.zone];
-            const jc = perfColor(tech.jobPerformancePercentage);
-            const sc = perfColor(tech.servicePerformancePercentage);
-            const zoneLabel = getZoneLabel(tech.zone);
-
-            return (
-              <div
-                key={tech.id}
-                className="bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col"
-              >
-                <div className={`h-[3px] w-full ${identity.strip}`} />
-                <div className="p-5 flex flex-col gap-4 flex-1">
-                  {/* Avatar + name */}
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-10 h-10 rounded-lg ${identity.avatar} flex items-center justify-center text-white font-bold text-sm shrink-0`}
-                    >
-                      {getInitials(tech.name)}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-slate-800 text-sm truncate leading-snug">
-                        {tech.name}
-                      </p>
-                      <p className="text-[11px] text-slate-400 font-mono">
-                        {tech.id}
-                      </p>
-                    </div>
-                    <span
-                      className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded border ${identity.badge}`}
-                    >
-                      {zoneLabel}
-                    </span>
-                  </div>
-
-                  <div className="h-px bg-slate-100" />
-
-                  {/* Jobs metric */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                        <Briefcase className="w-3 h-3" /> Jobs
-                      </span>
-                      <span className={`text-xs font-bold ${jc.text}`}>
-                        {tech.jobPerformancePercentage.toFixed(1)}%
-                      </span>
-                    </div>
-                    <ProgressBar
-                      value={tech.jobPerformancePercentage}
-                      barClass={jc.bar}
-                    />
-                    <div className="flex justify-between text-[10px] text-slate-400">
-                      <span>{tech.allJobs} total</span>
-                      {tech.pendingJobs > 0 && (
-                        <span className="text-amber-500 font-semibold">
-                          {tech.pendingJobs} pending
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Services metric */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                        <Wrench className="w-3 h-3" /> Services
-                      </span>
-                      <span className={`text-xs font-bold ${sc.text}`}>
-                        {tech.servicePerformancePercentage.toFixed(1)}%
-                      </span>
-                    </div>
-                    <ProgressBar
-                      value={tech.servicePerformancePercentage}
-                      barClass={sc.bar}
-                    />
-                    <div className="flex justify-between text-[10px] text-slate-400">
-                      <span>{tech.allServices} total</span>
-                      {tech.pendingServices > 0 && (
-                        <span className="text-amber-500 font-semibold">
-                          {tech.pendingServices} pending
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* CTA — navigates to /technicians/[techCode] */}
-                  <button
-                    onClick={() => router.push(`/technicians/${tech.id}`)}
-                    className="mt-auto w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600 hover:bg-slate-800 hover:text-white hover:border-slate-800 transition-all duration-200"
-                  >
-                    <Eye className="w-3.5 h-3.5" /> View Details
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+          {filtered.map((tech) => (
+            <TechnicianCard
+              key={tech.id}
+              tech={tech}
+              onView={(id) => router.push(`/technicians/${id}`)}
+            />
+          ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Shared page header ────────────────────────────────────────────────────────
+
+function PageHeader() {
+  return (
+    <div className="mb-8">
+      <p className="text-[11px] font-semibold tracking-[0.22em] uppercase text-slate-400 mb-1">
+        Field Operations
+      </p>
+      <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
+        Technicians
+      </h1>
+      <p className="mt-1.5 text-slate-500 text-sm">
+        Monitor performance and manage field technician records.
+      </p>
     </div>
   );
 }
