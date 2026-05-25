@@ -57,17 +57,17 @@ const reports = [
     accent: "#f59e0b",
     tag: "Daily Jobs",
   },
-  {
-    id: 5,
-    title: "Back Log Report",
-    subtitle: "Uncompleted Jobs & Services",
-    description:
-      "Track all pending and incomplete jobs across technicians. Surface backlogs before they escalate into service failures.",
-    icon: AlertTriangle,
-    route: "/reports/5",
-    accent: "#a855f7",
-    tag: "Backlog",
-  },
+  // {
+  //   id: 5,
+  //   title: "Back Log Report",
+  //   subtitle: "Uncompleted Jobs & Services",
+  //   description:
+  //     "Track all pending and incomplete jobs across technicians. Surface backlogs before they escalate into service failures.",
+  //   icon: AlertTriangle,
+  //   route: "/reports/5",
+  //   accent: "#a855f7",
+  //   tag: "Backlog",
+  // },
 
   // ✅ New Reports
 

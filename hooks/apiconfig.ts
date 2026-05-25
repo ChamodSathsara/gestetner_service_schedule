@@ -1022,6 +1022,24 @@ export const useApiConfig = () => {
         `api/Report/downloadServiceVisitReportPdf?startDate=${startDate}&lastDate=${lastDate}`
       )
       return await response.blob()    
+    },
+    getFeedbackReportData: async (startDate: string, lastDate: string): Promise<any[]> => {
+      console.log("39. Fetching Feedback Report Data...")
+      return await apiCall(`api/Report/getFeedbackReportData?startDate=${startDate}&lastDate=${lastDate}`)
+    },
+    downloadFeedbackReportExcel: async (startDate: string, lastDate: string): Promise<Blob> => {
+      console.log("40. Downloading Feedback Report Excel...")
+      const response = await apiCallRaw(
+        `api/Report/downloadFeedbackReportExcel?startDate=${startDate}&lastDate=${lastDate}`
+      )
+      return await response.blob()
+    },
+    downloadFeedbackReportPdf: async (startDate: string, lastDate: string): Promise<Blob> => {
+      console.log("41. Downloading Feedback Report PDF...")
+      const response = await apiCallRaw(
+        `api/Report/downloadFeedbackReportPdf?startDate=${startDate}&lastDate=${lastDate}`
+      )
+      return await response.blob()
     }
   }
 }
