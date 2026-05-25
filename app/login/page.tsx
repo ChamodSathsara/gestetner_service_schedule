@@ -85,19 +85,31 @@ export default function LoginPage() {
         const data = await response.json();
 
         if (response.ok) {
-          login(data );
+          login(data);
           router.push(`/customer-feedback-machines/${username}`);
         } else {
           setError(data || "Invalid Serial Number");
         }
-      } else {
+      } else if (password === "manager") {
+        // use this temporely until manager login is implemented in the backend
+        console.log("Manager login successful");
+        const user = new Object() as any; // Create a user object with necessary properties
+        user.role = "manager"; // Set role for manager
+        login(user); // Save user & token in context + localStorage
+        router.push(`/dashboard`);
+      } 
+      
+      else {
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_BASE_URL}api/Auth/login`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              tecH_CODE: username,
+              ...(username.length > 5
+                ? { mobileNo: username }
+                : { tecH_CODE: username }),
+
               password: password,
               companyID: selectedCompany.id,
             }),
@@ -106,9 +118,24 @@ export default function LoginPage() {
 
         const data = await response.json();
 
+        console.log(data);
+
         if (response.ok) {
-          login(data, selectedCompany.id);
-          router.push("/technician-dashboard");
+          if (
+            data.useR_ROLE === "tech" ||
+            data.useR_ROLE === "m_tech" ||
+            data.useR_ROLE === "s_tech" ||
+            data.useR_ROLE === "t_leader"
+          ) {
+            console.log("Technician login successful");
+            console.log(data);
+            login(data, selectedCompany.id);
+            router.push("/technician-dashboard");
+          } else {
+            console.log("Manager login successful");
+            login(data, selectedCompany.id);
+            router.push(`/dashboard`);
+          }
         } else {
           setError(data || "Invalid Credentials");
         }
