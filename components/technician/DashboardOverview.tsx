@@ -45,8 +45,15 @@ export function DashboardOverview({
   const [breakdownsExpanded, setBreakdownsExpanded] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>("date-desc");
 
-  // Sort services based on selected option
+  // Helper: puts 'started' jobs first, then falls through to secondary sort
+  const startedFirst = (a: Job, b: Job) =>
+    (b.status.toLowerCase() === "started" ? 1 : 0) -
+    (a.status.toLowerCase() === "started" ? 1 : 0);
+
+  // Sort services: started first → then date/days sort
   const sortedServices = [...recentServices].sort((a, b) => {
+    const s = startedFirst(a, b);
+    if (s !== 0) return s;
     switch (sortBy) {
       case "date-desc":
         return new Date(b.date).getTime() - new Date(a.date).getTime();
@@ -61,20 +68,10 @@ export function DashboardOverview({
     }
   });
 
-  // const sortedRecallServices = [...recallServices].sort((a, b) => {
-  //   switch (sortBy) {
-  //     case "date-desc":
-  //       return new Date(b.date).getTime() - new Date(a.date).getTime();
-  //     case "date-asc":
-  //       return new Date(a.date).getTime() - new Date(b.date).getTime();
-  //     case "days-desc":
-  //       return (b.daysLeft || 0) - (a.daysLeft || 0);
-  //     case "days-asc":
-  //       return (a.daysLeft || 0) - (b.daysLeft || 0);
-  //     default:
-  //       return 0;
-  //   }
-  // });
+  // Sort breakdowns / recall lists: started first, preserve original order otherwise
+  const sortedBreakdowns = [...recentBreakdowns].sort(startedFirst);
+  const sortedRecallJobs = [...recallJobs].sort(startedFirst);
+  const sortedRecallServices = [...recallServices].sort(startedFirst);
 
   const getSortLabel = () => {
     switch (sortBy) {
@@ -139,7 +136,7 @@ export function DashboardOverview({
           </CardContent>
         </Card>
 
-        {/* Monthly Completed Services  */}
+        {/* Monthly All Services */}
         <Card className="bg-gradient-to-br from-green-500 to-green-600 border-none shadow-md hover:shadow-lg transition-all">
           <CardContent className="p-2.5 md:p-3 text-center">
             <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 text-white" />
@@ -152,7 +149,7 @@ export function DashboardOverview({
           </CardContent>
         </Card>
 
-        {/* Today Completed Jobs */}
+        {/* Today All Jobs */}
         <Card className="bg-gradient-to-br from-purple-500 to-purple-600 border-none shadow-md hover:shadow-lg transition-all">
           <CardContent className="p-2.5 md:p-3 text-center">
             <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 text-white" />
@@ -165,8 +162,6 @@ export function DashboardOverview({
           </CardContent>
         </Card>
       </div>
-
-     
 
       {/* Breakdowns Section */}
       <div className="border-2 border-red-200 rounded-lg bg-red-50/30">
@@ -194,19 +189,19 @@ export function DashboardOverview({
         {/* Collapsible Content */}
         {breakdownsExpanded && (
           <div className="p-3 pt-0 space-y-4">
-            {/* Today Breakdown */}
+            {/* All Jobs */}
             <div>
               <div className="flex items-center justify-between mb-2 px-0.5">
                 <h3 className="text-sm md:text-base font-bold text-gray-900 flex items-center gap-1.5">
                   <span>All Jobs</span>
                 </h3>
                 <span className="text-[10px] md:text-xs text-red-700 bg-red-100 px-2.5 py-1 rounded-full font-semibold">
-                  {recentBreakdowns.length}
+                  {sortedBreakdowns.length}
                 </span>
               </div>
               <div className="space-y-2">
-                {recentBreakdowns.length > 0 ? (
-                  recentBreakdowns.map((job) => (
+                {sortedBreakdowns.length > 0 ? (
+                  sortedBreakdowns.map((job) => (
                     <JobCard
                       key={job.id}
                       job={job}
@@ -227,22 +222,19 @@ export function DashboardOverview({
               </div>
             </div>
 
-            {/* All Due Jobs */}
+            {/* Recall Jobs */}
             <div>
               <div className="flex items-center justify-between mb-2 px-0.5">
                 <h3 className="text-sm md:text-base font-bold text-gray-900 flex items-center gap-1.5">
                   <span>Recall Jobs</span>
                 </h3>
                 <span className="text-[10px] md:text-xs text-red-700 bg-red-100 px-2.5 py-1 rounded-full font-semibold">
-                  {recallJobs.length}
-                  {/* {recentBreakdowns.length} */}
+                  {sortedRecallJobs.length}
                 </span>
               </div>
               <div className="space-y-2">
-                {/* {recallJobs.length > 0 ? (
-                  recallJobs.map((job: any) => ( */}
-                {recallJobs.length > 0 ? (
-                  recallJobs.map((job: any, index) => (
+                {sortedRecallJobs.length > 0 ? (
+                  sortedRecallJobs.map((job: any, index: number) => (
                     <JobCard
                       key={index}
                       job={job}
@@ -266,8 +258,7 @@ export function DashboardOverview({
         )}
       </div>
 
-
-       {/* Services Section */}
+      {/* Services Section */}
       <div className="border-2 border-blue-200 rounded-lg bg-blue-50/30">
         {/* Section Header with Collapse */}
         <div
@@ -304,7 +295,7 @@ export function DashboardOverview({
               </button>
             </div>
 
-            {/* Monthly Services */}
+            {/* All Monthly Services */}
             <div>
               <div className="flex items-center justify-between mb-2 px-0.5">
                 <h3 className="text-sm md:text-base font-bold text-gray-900 flex items-center gap-1.5">
@@ -344,13 +335,12 @@ export function DashboardOverview({
                   <span>Recall Services</span>
                 </h3>
                 <span className="text-[10px] md:text-xs text-blue-700 bg-blue-100 px-2.5 py-1 rounded-full font-semibold">
-                  {recallServices.length}
-                  {/* {sortedServices.length} */}
+                  {sortedRecallServices.length}
                 </span>
               </div>
               <div className="space-y-2">
-                {recallServices.length > 0 ? (
-                  recallServices.map((job: any, index: any) => (
+                {sortedRecallServices.length > 0 ? (
+                  sortedRecallServices.map((job: any, index: number) => (
                     <JobCard
                       key={index}
                       job={job}
