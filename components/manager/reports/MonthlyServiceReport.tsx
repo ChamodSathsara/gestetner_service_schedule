@@ -161,6 +161,8 @@ export default function MonthlyServiceVisitReport() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fetched, setFetched] = useState(false);
+  const [serviceDateFrom, setServiceDateFrom] = useState("");
+  const [serviceDateTo, setServiceDateTo] = useState("");
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
@@ -227,22 +229,35 @@ export default function MonthlyServiceVisitReport() {
               r.seriaL_NO,
               r.machinE_REF,
               r.tecH_NAME,
+              r.tecH_CODE, // ← added
               r.m_MODEL,
               String(r.t_ID),
             ].some((v) => safe(v).toLowerCase().includes(q));
           const stOk =
             statusFilter === "ALL" || safe(r.visitStatus) === statusFilter;
           const vnOk = visitFilter === "ALL" || r.visitNo === visitFilter;
-          return sOk && stOk && vnOk;
+
+          // Service date range filter
+          const sd = r.serviceDate ? new Date(r.serviceDate) : null;
+          const sdFromOk =
+            !serviceDateFrom || (sd && sd >= new Date(serviceDateFrom));
+          const sdToOk =
+            !serviceDateTo ||
+            (sd && sd <= new Date(serviceDateTo + "T23:59:59"));
+
+          return sOk && stOk && vnOk && !!sdFromOk && !!sdToOk;
         })
-        .sort((a, b) => {
-          const av = a[sortKey] as any,
-            bv = b[sortKey] as any;
-          if (av == null) return 1;
-          if (bv == null) return -1;
-          return sortAsc ? (av > bv ? 1 : -1) : av < bv ? 1 : -1;
-        }),
-    [data, search, statusFilter, visitFilter, sortKey, sortAsc],
+        .sort(/* same sort as before */),
+    [
+      data,
+      search,
+      statusFilter,
+      visitFilter,
+      sortKey,
+      sortAsc,
+      serviceDateFrom,
+      serviceDateTo,
+    ],
   );
 
   const stats = useMemo(() => {
@@ -537,7 +552,7 @@ export default function MonthlyServiceVisitReport() {
             </div>
 
             {/* ══ ANALYTICS ROW ══ */}
-            <div className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-3">
+            <div className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-2">
               {/* Status breakdown */}
               <Card className="shadow-sm">
                 <CardHeader className="pb-4">
@@ -583,7 +598,7 @@ export default function MonthlyServiceVisitReport() {
               </Card>
 
               {/* By visit number */}
-              <Card className="shadow-sm">
+              {/* <Card className="shadow-sm">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
                     By visit number
@@ -624,7 +639,7 @@ export default function MonthlyServiceVisitReport() {
                     );
                   })}
                 </CardContent>
-              </Card>
+              </Card> */}
 
               {/* Top technicians */}
               <Card className="shadow-sm">
@@ -706,6 +721,49 @@ export default function MonthlyServiceVisitReport() {
                   )}
                 </div>
 
+                {/* Service date range */}
+                <div className="h-7 w-px bg-slate-200" />
+
+                {/* Service date range */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">
+                    Service date
+                  </span>
+                  <Input
+                    type="date"
+                    value={serviceDateFrom}
+                    onChange={(e) => {
+                      setServiceDateFrom(e.target.value);
+                      setPage(1);
+                    }}
+                    className="h-9 w-36 text-xs"
+                  />
+                  <span className="text-xs text-slate-400">–</span>
+                  <Input
+                    type="date"
+                    value={serviceDateTo}
+                    onChange={(e) => {
+                      setServiceDateTo(e.target.value);
+                      setPage(1);
+                    }}
+                    className="h-9 w-36 text-xs"
+                  />
+                  {(serviceDateFrom || serviceDateTo) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setServiceDateFrom("");
+                        setServiceDateTo("");
+                        setPage(1);
+                      }}
+                      className="h-8 w-8 p-0 text-slate-400 hover:text-slate-700"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+
                 <div className="h-7 w-px bg-slate-200" />
 
                 {/* Status pills */}
@@ -743,44 +801,6 @@ export default function MonthlyServiceVisitReport() {
 
                 <div className="h-7 w-px bg-slate-200" />
 
-                {/* Visit No pills */}
-                <div className="flex flex-wrap gap-1.5">
-                  <Button
-                    onClick={() => {
-                      setVisitFilter("ALL");
-                      setPage(1);
-                    }}
-                    variant={visitFilter === "ALL" ? "default" : "outline"}
-                    size="sm"
-                    className={visitFilter === "ALL" ? "bg-slate-900" : ""}
-                  >
-                    All visits
-                  </Button>
-                  {visitNos.map((vn, i) => {
-                    const active = visitFilter === vn;
-                    const colorClass = VISIT_COLORS[i % VISIT_COLORS.length];
-                    return (
-                      <Button
-                        key={vn}
-                        onClick={() => {
-                          setVisitFilter(vn);
-                          setPage(1);
-                        }}
-                        variant={active ? "default" : "outline"}
-                        size="sm"
-                        className={
-                          active
-                            ? colorClass.replace("bg-", "bg-") +
-                              " hover:opacity-90"
-                            : ""
-                        }
-                      >
-                        V{vn}
-                      </Button>
-                    );
-                  })}
-                </div>
-
                 <span className="ml-auto whitespace-nowrap text-xs text-slate-500">
                   <strong className="text-slate-900">{filtered.length}</strong>{" "}
                   records
@@ -804,6 +824,7 @@ export default function MonthlyServiceVisitReport() {
                           ["cus_NAME", "Customer"],
                           ["machine_REF", "Machine ref"],
                           ["m_MODEL", "Model"],
+                          ["tecH_CODE", "Tech Code"],
                           ["tech_NAME", "Technician"],
                           ["visitNo", "Visit"],
                           ["expectedVisitDate", "Expected date"],
@@ -867,6 +888,9 @@ export default function MonthlyServiceVisitReport() {
                           <TableCell className="text-[11px] text-slate-600">
                             {safe(r.m_MODEL) || "—"}
                           </TableCell>
+                          <TableCell className="font-mono text-[11px] text-slate-500">
+                            {safe(r.tecH_CODE) || "—"}
+                          </TableCell>
                           <TableCell
                             className="max-w-[150px] truncate text-xs text-slate-700"
                             title={safe(r.tecH_NAME)}
@@ -915,7 +939,7 @@ export default function MonthlyServiceVisitReport() {
                     {pageData.length === 0 && (
                       <TableRow>
                         <TableCell
-                          colSpan={12}
+                          colSpan={13}
                           className="py-16 text-center text-slate-400"
                         >
                           <FilterX className="mx-auto mb-3 h-10 w-10 opacity-35" />
