@@ -52,6 +52,7 @@ export interface MonthlyServiceReportDto {
   tecH_NAME?: string | null;
   machinE_REF?: string | null;
   m_MODEL?: string | null;
+  area?: string | null; // ← add this
   visitNo: number;
   expectedVisitDate?: string | null;
   serviceDate?: string | null;
@@ -85,6 +86,7 @@ function toCSV(rows: MonthlyServiceReportDto[]): string {
     "Machine Ref",
     "Model",
     "Tech Code",
+    "Area",
     "Technician",
     "Visit No",
     "Expected Date",
@@ -143,6 +145,52 @@ const VISIT_COLORS = [
   "bg-purple-500",
 ];
 
+// ── Area helpers (must be module-level) ──────────────────────────────────────
+
+const AREA_MAP: Record<string, string> = {
+  COL: "Colombo",
+  COLOMBO: "Colombo",
+  "COL 08": "Col",
+  "COLOMBO 15": "Col",
+  OUT: "Out",
+  OTH: "Out",
+  OUTSTATION: "Out",
+  Eastern: "Out",
+  GALLE: "Out",
+  JAFFNA: "Out",
+  KURUNEGALA: "Out",
+  PUTTLAM: "Out",
+  SABRAGAMUWA: "Out",
+  Polonnaruwa: "Out",
+  "TECHNICAL - OUTSTATION": "Out",
+  TRINCO: "Out",
+  SUB: "Sub",
+  AVISSAWELLA: "Sub",
+  P2P: "P2P",
+  "P2P COL": "P2P Col",
+  "P2P OUT": "P2P Out",
+  "P2P SUB": "P2P Sub",
+};
+
+const AREA_DISPLAY_ORDER = [
+  "Colombo",
+  "Col",
+  "Out",
+  "Sub",
+  "P2P",
+  "P2P Col",
+  "P2P Out",
+  "P2P Sub",
+  "Unknown",
+];
+
+function normalizeArea(raw?: string | null): string {
+  if (!raw) return "Unknown";
+  const trimmed = raw.trim();
+  if (!trimmed || trimmed === "-" || trimmed === "0") return "Unknown";
+  return AREA_MAP[trimmed] ?? "Unknown";
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function MonthlyServiceVisitReport() {
@@ -174,6 +222,7 @@ export default function MonthlyServiceVisitReport() {
   const [dlType, setDlType] = useState<"excel" | "pdf" | null>(null);
   const [selectedRow, setSelectedRow] =
     useState<MonthlyServiceReportDto | null>(null);
+  const [areaFilter, setAreaFilter] = useState<string>("ALL");
 
   // ── Fetch ──
   const fetchData = useCallback(async () => {
@@ -219,6 +268,11 @@ export default function MonthlyServiceVisitReport() {
     [data],
   );
 
+  const areaOptions = useMemo(() => {
+    const found = new Set(data.map((r) => normalizeArea(r.area)));
+    return AREA_DISPLAY_ORDER.filter((a) => found.has(a));
+  }, [data]);
+
   const filtered = useMemo(
     () =>
       data
@@ -238,6 +292,8 @@ export default function MonthlyServiceVisitReport() {
           const stOk =
             statusFilter === "ALL" || safe(r.visitStatus) === statusFilter;
           const vnOk = visitFilter === "ALL" || r.visitNo === visitFilter;
+          const aOk =
+            areaFilter === "ALL" || normalizeArea(r.area) === areaFilter;
 
           // Service date range filter
           const sd = r.serviceDate ? new Date(r.serviceDate) : null;
@@ -247,7 +303,7 @@ export default function MonthlyServiceVisitReport() {
             !serviceDateTo ||
             (sd && sd <= new Date(serviceDateTo + "T23:59:59"));
 
-          return sOk && stOk && vnOk && !!sdFromOk && !!sdToOk;
+          return sOk && stOk && vnOk && !!sdFromOk && !!sdToOk && aOk;
         })
         .sort((a, b) => {
           const av = a[sortKey] as any,
@@ -261,6 +317,7 @@ export default function MonthlyServiceVisitReport() {
       search,
       statusFilter,
       visitFilter,
+      areaFilter,
       sortKey,
       sortAsc,
       serviceDateFrom,
@@ -821,6 +878,39 @@ export default function MonthlyServiceVisitReport() {
                   })}
                 </div>
 
+                {/* Area pills */}
+                <div className="flex flex-wrap gap-1.5">
+                  <Button
+                    onClick={() => {
+                      setAreaFilter("ALL");
+                      setPage(1);
+                    }}
+                    variant={areaFilter === "ALL" ? "default" : "outline"}
+                    size="sm"
+                    className={areaFilter === "ALL" ? "bg-slate-900" : ""}
+                  >
+                    All areas
+                  </Button>
+                  {areaOptions.map((area) => (
+                    <Button
+                      key={area}
+                      onClick={() => {
+                        setAreaFilter(area);
+                        setPage(1);
+                      }}
+                      variant={areaFilter === area ? "default" : "outline"}
+                      size="sm"
+                      className={
+                        areaFilter === area
+                          ? "bg-indigo-600 hover:bg-indigo-700"
+                          : ""
+                      }
+                    >
+                      {area}
+                    </Button>
+                  ))}
+                </div>
+
                 <div className="h-7 w-px bg-slate-200" />
 
                 <span className="ml-auto whitespace-nowrap text-xs text-slate-500">
@@ -844,6 +934,7 @@ export default function MonthlyServiceVisitReport() {
                           ["t_ID", "T ID"],
                           ["serial_NO", "Serial No"],
                           ["cus_NAME", "Customer"],
+                          ["area", "Area"],
                           ["machine_REF", "Machine ref"],
                           ["m_MODEL", "Model"],
                           ["tecH_CODE", "Tech Code"],
@@ -898,6 +989,29 @@ export default function MonthlyServiceVisitReport() {
                           </TableCell>
                           <TableCell className="font-mono text-[11px] text-slate-600">
                             {safe(r.seriaL_NO) || "—"}
+                          </TableCell>
+                          <TableCell>
+                            {(() => {
+                              const norm = normalizeArea(r.area);
+                              const colorMap: Record<string, string> = {
+                                Colombo: "bg-sky-100 text-sky-700",
+                                Col: "bg-sky-100 text-sky-700",
+                                Out: "bg-orange-100 text-orange-700",
+                                Sub: "bg-violet-100 text-violet-700",
+                                P2P: "bg-teal-100 text-teal-700",
+                                "P2P Col": "bg-teal-100 text-teal-700",
+                                "P2P Out": "bg-teal-100 text-teal-700",
+                                "P2P Sub": "bg-teal-100 text-teal-700",
+                                Unknown: "bg-slate-100 text-slate-400",
+                              };
+                              return (
+                                <span
+                                  className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold ${colorMap[norm] ?? "bg-slate-100 text-slate-500"}`}
+                                >
+                                  {norm}
+                                </span>
+                              );
+                            })()}
                           </TableCell>
                           <TableCell
                             className="max-w-[180px] truncate text-sm font-semibold text-slate-900"
@@ -962,7 +1076,7 @@ export default function MonthlyServiceVisitReport() {
                     {pageData.length === 0 && (
                       <TableRow>
                         <TableCell
-                          colSpan={13}
+                          colSpan={14}
                           className="py-16 text-center text-slate-400"
                         >
                           <FilterX className="mx-auto mb-3 h-10 w-10 opacity-35" />
@@ -1184,6 +1298,10 @@ export default function MonthlyServiceVisitReport() {
                     <DrawerField
                       label="Meter Reading"
                       value={safe(selectedRow.meterReading) || "—"}
+                    />
+                    <DrawerField
+                      label="Area"
+                      value={normalizeArea(selectedRow.area)}
                     />
                   </div>
                 </div>
