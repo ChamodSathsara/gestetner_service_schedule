@@ -1397,7 +1397,7 @@ export default function TechnicianDetailPage() {
         {/* Performance */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <PerformanceCard
-            title="Job Performance"
+            title="Job Performance | YTD"
             icon={<Briefcase className="w-4 h-4" />}
             pct={tech.jobPerformancePercentage}
             total={tech.allJobs}
@@ -1406,7 +1406,7 @@ export default function TechnicianDetailPage() {
             pending={tech.pendingJobs}
           />
           <PerformanceCard
-            title="Service Performance"
+            title="Service Performance | YTD"
             icon={<Wrench className="w-4 h-4" />}
             pct={tech.servicePerformancePercentage}
             total={tech.allServices}

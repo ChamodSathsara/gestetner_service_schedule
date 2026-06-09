@@ -222,7 +222,9 @@ export function DashboardContent() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Jobs</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Jobs(Breakdowns) | YTD{" "}
+            </CardTitle>
             <CheckCircle2 className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
@@ -230,28 +232,32 @@ export function DashboardContent() {
               {JobCountAndRate?.jobCount || 0}
             </div>
             <p className="text-xs text-muted-foreground">
-              {JobCountAndRate?.jobRate || 0}% Success Rate
+              {JobCountAndRate?.jobRate || 0}% Complete Rate
             </p>
           </CardContent>
         </Card>
 
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Complete Jobs</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Complete Jobs | YTD
+            </CardTitle>
             <AlertCircle className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {JobCountAndRate?.successCount || 0}
             </div>
-            <p className="text-xs text-muted-foreground">Last Year Completed</p>
+            <p className="text-xs text-muted-foreground">
+              Current Year Completed
+            </p>
           </CardContent>
         </Card>
 
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Total Services
+              Total Services | YTD
             </CardTitle>
             <CheckCircle2 className="h-4 w-4 text-green-500" />
           </CardHeader>
@@ -260,7 +266,7 @@ export function DashboardContent() {
               {ServiceCountAndRate?.jobCount || 0}
             </div>
             <p className="text-xs text-muted-foreground">
-              {ServiceCountAndRate?.jobRate || 0}% Success Rate
+              {ServiceCountAndRate?.jobRate || 0}% Complete Rate
             </p>
           </CardContent>
         </Card>
@@ -268,7 +274,7 @@ export function DashboardContent() {
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Success Services
+              Complete Services | YTD
             </CardTitle>
             <AlertCircle className="h-4 w-4 text-amber-500" />
           </CardHeader>
@@ -276,7 +282,9 @@ export function DashboardContent() {
             <div className="text-2xl font-bold">
               {ServiceCountAndRate?.successCount || 0}
             </div>
-            <p className="text-xs text-muted-foreground">Last Year Completed</p>
+            <p className="text-xs text-muted-foreground">
+              Current Year Completed
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -285,36 +293,8 @@ export function DashboardContent() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle>Monthly Service Schedule Success</CardTitle>
-            <CardDescription>Last 30 days completion rate</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={CompleteAndPendingServicesPercentage || []}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, value }) => `${name} ${value}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {CompleteAndPendingServicesPercentage?.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle>Monthly Breakdown Success</CardTitle>
-            <CardDescription>Last 30 days completion rate</CardDescription>
+            <CardTitle>Breakdown Success | YTD</CardTitle>
+            <CardDescription>completion rate</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -341,6 +321,34 @@ export function DashboardContent() {
                     `${value}: ${entry.payload.value}%`
                   }
                 />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle>Service Schedule Success | YTD</CardTitle>
+            <CardDescription>completion rate</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie
+                  data={CompleteAndPendingServicesPercentage || []}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, value }) => `${name} ${value}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {CompleteAndPendingServicesPercentage?.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Pie>
+                <Tooltip />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -419,7 +427,7 @@ export function DashboardContent() {
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle>Top Technician Performance</CardTitle>
-            <CardDescription>Best performers this month</CardDescription>
+            <CardDescription>Best performers Month To Date</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -453,7 +461,7 @@ export function DashboardContent() {
 
         <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle>Overdue Jobs</CardTitle>
+            <CardTitle>Overdue Jobs | YTD</CardTitle>
             <CardDescription>
               Jobs requiring immediate attention
             </CardDescription>
@@ -499,7 +507,7 @@ export function DashboardContent() {
       <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle>
-            Last Year Customer Warranty Details Report Summery
+            Year To Date Customer Warranty Details Report Summery
           </CardTitle>
           <CardDescription>
             Machine warranty information for all customers
