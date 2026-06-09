@@ -172,6 +172,8 @@ export default function MonthlyServiceVisitReport() {
     useState<keyof MonthlyServiceReportDto>("expectedVisitDate");
   const [sortAsc, setSortAsc] = useState(true);
   const [dlType, setDlType] = useState<"excel" | "pdf" | null>(null);
+  const [selectedRow, setSelectedRow] =
+    useState<MonthlyServiceReportDto | null>(null);
 
   // ── Fetch ──
   const fetchData = useCallback(async () => {
@@ -247,7 +249,13 @@ export default function MonthlyServiceVisitReport() {
 
           return sOk && stOk && vnOk && !!sdFromOk && !!sdToOk;
         })
-        .sort(/* same sort as before */),
+        .sort((a, b) => {
+          const av = a[sortKey] as any,
+            bv = b[sortKey] as any;
+          if (av == null) return 1;
+          if (bv == null) return -1;
+          return sortAsc ? (av > bv ? 1 : -1) : av < bv ? 1 : -1;
+        }),
     [
       data,
       search,
@@ -301,6 +309,20 @@ export default function MonthlyServiceVisitReport() {
         .slice(0, 5),
     };
   }, [filtered]);
+
+  function fmtDateTime(d?: string | null): string {
+    if (!d) return "—";
+    const date = new Date(d);
+    if (isNaN(date.getTime())) return "—";
+    return date.toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  }
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -813,7 +835,7 @@ export default function MonthlyServiceVisitReport() {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-slate-50">
+                    <TableRow className="hover:bg-sky-50 ">
                       <TableHead className="w-11 text-xs font-semibold uppercase tracking-wide text-slate-400">
                         #
                       </TableHead>
@@ -865,7 +887,8 @@ export default function MonthlyServiceVisitReport() {
                       return (
                         <TableRow
                           key={`${r.t_ID}-${r.visitNo}-${i}`}
-                          className="hover:bg-sky-50"
+                          onClick={() => setSelectedRow(r)}
+                          className="hover:bg-sky-50 cursor-pointer"
                         >
                           <TableCell className="text-xs font-semibold text-slate-300">
                             {idx}
@@ -1018,7 +1041,232 @@ export default function MonthlyServiceVisitReport() {
             </div>
           </>
         )}
+
+        {/* ══ DETAIL DRAWER ══ */}
+        {/* Backdrop */}
+        {selectedRow && (
+          <div
+            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px]"
+            onClick={() => setSelectedRow(null)}
+          />
+        )}
+
+        {/* Panel */}
+        <div
+          className={`fixed right-0 top-0 z-50 h-full w-[420px] max-w-full overflow-y-auto bg-white shadow-2xl transition-transform duration-300 ease-in-out ${
+            selectedRow ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
+          {selectedRow && (
+            <>
+              {/* Drawer header */}
+              <div className="sticky top-0 z-10 flex items-center justify-between bg-gradient-to-r from-slate-900 to-slate-800 px-5 py-4">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-sky-300">
+                    Service Record
+                  </p>
+                  <p className="mt-0.5 text-lg font-bold text-white">
+                    T-{selectedRow.t_ID}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedRow(null)}
+                  className="h-8 w-8 p-0 text-white/70 hover:bg-white/10 hover:text-white"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+
+              {/* Status badge */}
+              <div className="border-b bg-slate-50 px-5 py-3">
+                {(() => {
+                  const st = safe(selectedRow.visitStatus);
+                  const cfg = STATUS_CONFIG[st] ?? {
+                    variant: "outline" as const,
+                    color: "bg-slate-400",
+                  };
+                  return (
+                    <Badge
+                      variant={cfg.variant}
+                      className="gap-1.5 text-sm px-3 py-1"
+                    >
+                      <span
+                        className={`h-2 w-2 flex-shrink-0 rounded-full ${cfg.color}`}
+                      />
+                      {st || "Unknown"}
+                    </Badge>
+                  );
+                })()}
+              </div>
+
+              <div className="space-y-5 p-5">
+                {/* Dates section */}
+                <div>
+                  <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    Dates & Times
+                  </p>
+                  <div className="space-y-3 rounded-xl border border-slate-100 bg-slate-50 p-4">
+                    {[
+                      {
+                        label: "Expected Visit Date",
+                        value: fmtDate(selectedRow.expectedVisitDate),
+                        icon: Calendar,
+                        highlight: false,
+                      },
+                      {
+                        label: "Service Date & Time",
+                        value: fmtDateTime(selectedRow.serviceDate),
+                        icon: Clock,
+                        highlight: !!selectedRow.serviceDate,
+                      },
+                    ].map(({ label, value, icon: Icon, highlight }) => (
+                      <div key={label} className="flex items-start gap-3">
+                        <div
+                          className={`mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg ${highlight ? "bg-green-100 text-green-600" : "bg-slate-200 text-slate-500"}`}
+                        >
+                          <Icon className="h-3.5 w-3.5" />
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-semibold text-slate-400">
+                            {label}
+                          </p>
+                          <p
+                            className={`text-sm font-semibold ${highlight ? "text-green-600" : "text-slate-700"}`}
+                          >
+                            {value}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Customer section */}
+                <div>
+                  <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    Customer
+                  </p>
+                  <div className="space-y-2 rounded-xl border border-slate-100 bg-slate-50 p-4">
+                    <DrawerField
+                      label="Customer ID"
+                      value={safe(selectedRow.cuS_ID)}
+                    />
+                    <DrawerField
+                      label="Customer Name"
+                      value={safe(selectedRow.cuS_NAME)}
+                      bold
+                    />
+                  </div>
+                </div>
+
+                {/* Machine section */}
+                <div>
+                  <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    Machine
+                  </p>
+                  <div className="space-y-2 rounded-xl border border-slate-100 bg-slate-50 p-4">
+                    <DrawerField
+                      label="Serial No"
+                      value={safe(selectedRow.seriaL_NO)}
+                      mono
+                    />
+                    <DrawerField
+                      label="Machine Ref"
+                      value={safe(selectedRow.machinE_REF)}
+                      accent
+                    />
+                    <DrawerField
+                      label="Model"
+                      value={safe(selectedRow.m_MODEL)}
+                    />
+                    <DrawerField
+                      label="Meter Reading"
+                      value={safe(selectedRow.meterReading) || "—"}
+                    />
+                  </div>
+                </div>
+
+                {/* Technician section */}
+                <div>
+                  <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    Technician
+                  </p>
+                  <div className="space-y-2 rounded-xl border border-slate-100 bg-slate-50 p-4">
+                    <DrawerField
+                      label="Tech Code"
+                      value={safe(selectedRow.tecH_CODE)}
+                      mono
+                    />
+                    <DrawerField
+                      label="Technician Name"
+                      value={safe(selectedRow.tecH_NAME)}
+                      bold
+                    />
+                  </div>
+                </div>
+
+                {/* Visit section */}
+                <div>
+                  <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    Visit Info
+                  </p>
+                  <div className="space-y-2 rounded-xl border border-slate-100 bg-slate-50 p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-slate-500">
+                        Visit Number
+                      </span>
+                      <span
+                        className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold text-white ${VISIT_COLORS[(selectedRow.visitNo - 1) % VISIT_COLORS.length]}`}
+                      >
+                        {selectedRow.visitNo}
+                      </span>
+                    </div>
+                    <DrawerField
+                      label="Company ID"
+                      value={safe(selectedRow.com_ID)}
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
+    </div>
+  );
+}
+
+function DrawerField({
+  label,
+  value,
+  bold,
+  mono,
+  accent,
+}: {
+  label: string;
+  value: string;
+  bold?: boolean;
+  mono?: boolean;
+  accent?: boolean;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <span className="text-xs text-slate-500 flex-shrink-0">{label}</span>
+      <span
+        className={`text-right text-xs break-all ${
+          bold
+            ? "font-semibold text-slate-900"
+            : mono
+              ? "font-mono text-slate-600"
+              : accent
+                ? "font-semibold text-blue-600"
+                : "text-slate-700"
+        }`}
+      >
+        {value || "—"}
+      </span>
     </div>
   );
 }
