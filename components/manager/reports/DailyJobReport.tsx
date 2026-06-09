@@ -4,9 +4,18 @@ import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { useApiConfig } from "@/hooks/apiconfig";
 
 // ─── Current-year defaults ────────────────────────────────────────────────────
-const CURRENT_YEAR = new Date().getFullYear();
-const DEFAULT_START = `${CURRENT_YEAR}-01-01`;
-const DEFAULT_END = `${CURRENT_YEAR}-12-31`;
+
+
+const CURRENT_YEAR  = new Date().getFullYear();
+const CURRENT_MONTH = new Date().getMonth(); // 0-indexed
+
+const DEFAULT_START = new Date(CURRENT_YEAR, CURRENT_MONTH, 1)
+  .toISOString()
+  .split("T")[0];                             // e.g. "2026-06-01"
+
+const DEFAULT_END = new Date(CURRENT_YEAR, CURRENT_MONTH + 1, 0)
+  .toISOString()
+  .split("T")[0];  
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type JobStatus =
