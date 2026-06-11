@@ -33,6 +33,7 @@ interface Service {
   date: string;
   location: string;
   description?: string;
+  serviceDate?: string;
   customerName?: string;
   status: string;
   note?: string;
@@ -183,6 +184,7 @@ export function TechnicianDashboardContent() {
     try {
       setLoading(true);
       const mappedServices = await getMonthlyServiceVisits();
+      
       setRecentServices(mappedServices);
       console.log("mappedServices", mappedServices);
     } catch (error) {

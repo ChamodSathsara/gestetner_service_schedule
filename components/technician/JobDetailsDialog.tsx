@@ -637,7 +637,13 @@ export function JobDetailsDialog({
                       isLoading || (isDueAndPending && !recallReason.trim())
                     }
                   >
-                    {isLoading ? "Starting..." : "Start Job"}
+                    {isDueAndPending
+                      ? isLoading
+                        ? "Recalling..."
+                        : "Recall Job"
+                      : isLoading
+                        ? "Starting..."
+                        : "Start Job"}
                   </Button>
                 </div>
               </div>

@@ -68,6 +68,7 @@ export interface ServiceVisit {
   id: string
   jobId: string
   customerName: string
+  serviceDate?: string
   date: string
   location: string
   daysLeft: number
@@ -102,6 +103,7 @@ interface ApiServiceVisit {
   machineLocation02: string
   machineLocation03: string
   machineModel: string
+  serviceDate?: string
 }
 
 // Breakdown update payload
@@ -585,6 +587,7 @@ const mapServiceVisit = (visit: ApiServiceVisit): ServiceVisit => {
     daysLeft: calculateDaysLeft(visit.expectedVisitDate),
     status: mapServiceStatus(visit.visitStatus),
     phone_number: visit.customerTelephone,
+    serviceDate: visit.serviceDate,
     expected_visit_no: mapExpectedVisitNo(visit.expectedVisitNo),
     machineRefNo: visit.machineRefNo,
     model: visit.machineModel,
@@ -695,6 +698,7 @@ export const useApiConfig = () => {
     // 3. Monthly Service Visits
     getMonthlyServiceVisits: async (): Promise<ServiceVisit[]> => {
       const data = await apiCall(`api/Service/getmonthlyservicevisits?techCode=${user?.tecH_CODE}`)
+      
       return mapServiceVisits(data)
     },
 

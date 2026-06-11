@@ -8,6 +8,7 @@ import UnauthorizedDialog from "./UnauthorizedDialog";
 interface Job {
   id: string;
   jobId: string;
+  serviceDate?: string;
   date: string;
   location: string;
   description?: string;
@@ -56,6 +57,7 @@ export function JobCard({
       console.error("Error fetching previous services:", error);
     }
   };
+
 
   // Helper function to get badge color based on days left
   const getDaysLeftBadgeColor = (daysLeft: number) => {
@@ -155,14 +157,18 @@ export function JobCard({
                 />
                 <span>Visit {Number(job.expected_visit_no)}</span>
               </div>
+
               {job.daysLeft !== undefined && (
                 <span className="text-gray-400">•</span>
               )}
+
               {job.daysLeft !== undefined && (
                 <span
                   className={`text-[10px] font-medium px-2 py-1 rounded ${getDaysLeftBadgeColor(job.daysLeft)}`}
                 >
-                  {job.daysLeft} days left
+                  {isCompleted
+                    ? `${job.serviceDate}`
+                    : `${job.daysLeft} days left`}
                 </span>
               )}
             </div>

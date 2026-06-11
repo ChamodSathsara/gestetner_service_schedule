@@ -14,6 +14,7 @@ interface Job {
   id: string;
   jobId: string;
   date: string;
+  serviceDate?: string;
   location: string;
   description?: string;
   customerName?: string;
@@ -99,6 +100,7 @@ export function DashboardOverview({
     const nextIndex = (currentIndex + 1) % options.length;
     setSortBy(options[nextIndex]);
   };
+
 
   return (
     <div className="space-y-3 md:space-y-5">
