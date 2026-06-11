@@ -31,6 +31,7 @@ interface Service {
   id: string;
   jobId: string;
   customerName: string;
+  serviceDate?: string;
   phone_number: string;
   location: string;
   machineRefNo: string;
@@ -140,7 +141,11 @@ function ServiceCard({ service, onClick }: ServiceCardProps) {
             <Calendar className="w-4 h-4 text-gray-400" />
             <span>Visit {service.expected_visit_no}</span>
             <span className="text-gray-400">•</span>
-            <span>{service.daysLeft} days left</span>
+            <span>
+              {service.status === "completed"
+                ? `${service.serviceDate}`
+                : `${service.daysLeft} days left`}
+            </span>
           </div>
 
           <span
@@ -255,13 +260,26 @@ function DueCard({ due, onRecall }: DueCardProps) {
             <Phone className="w-4 h-4 text-gray-400" />
             <span>{due.contactPerson}</span>
           </div>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Calendar className="w-4 h-4 text-gray-400" />
+            <span>
+              {new Date(due.expectedVisitDate).toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Hash className="w-4 h-4 text-gray-400" />
+            <span>Visit No. {due.expectedVisitNo}</span>
+          </div>
         </div>
 
         <div className="flex items-center justify-between pt-3 border-t border-red-200">
           <div className="text-xs text-red-700 font-medium">
             Overdue by {getOverdueDays(due.expectedVisitDate)} days
           </div>
-
           <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-red-100 text-red-700">
             Overdue
           </span>
@@ -432,6 +450,8 @@ export default function ServiceJobManagement() {
   const [servicesList, setServicesList] = useState<Service[] | any>([]);
   const [duesList, setDuesList] = useState<Due[] | any>([]);
   const [duesSearch, setDuesSearch] = useState<string>("");
+  const [servicesSearch, setServicesSearch] = useState<string>("");
+  const [jobsSearch, setJobsSearch] = useState<string>("");
 
   const fetchBreakdownsList = async () => {
     try {
@@ -540,6 +560,7 @@ export default function ServiceJobManagement() {
       />
       {/* Tabs */}
       <div className="flex gap-2 border-b border-gray-200">
+        {/* last month services*/}
         <Button
           variant="ghost"
           onClick={() => setActiveTab("services")}
@@ -551,6 +572,8 @@ export default function ServiceJobManagement() {
         >
           All Services
         </Button>
+
+        {/* last month jobs */}
         <Button
           variant="ghost"
           onClick={() => setActiveTab("jobs")}
@@ -562,6 +585,8 @@ export default function ServiceJobManagement() {
         >
           All Jobs
         </Button>
+
+        {/* all dues */}
         <Button
           variant="ghost"
           onClick={() => setActiveTab("dues")}
@@ -579,25 +604,327 @@ export default function ServiceJobManagement() {
       <div className="space-y-3">
         {activeTab === "services" && (
           <>
-            {servicesList.map((service: Service, idx: number) => (
-              <ServiceCard
-                key={`${service.id}-${idx}`}
-                service={service}
-                onClick={() => handleViewDetails(service, "service")}
+            {/* Header */}
+            <div className="flex items-center justify-between mb-1">
+              <div>
+                <h2 className="text-base font-semibold text-gray-800">
+                  All Services
+                </h2>
+                <p className="text-xs text-gray-400">
+                  Last month's service records
+                </p>
+              </div>
+              <span className="text-xs font-medium bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">
+                {
+                  servicesList.filter((s: Service) =>
+                    servicesSearch.trim()
+                      ? s.machineRefNo
+                          .toLowerCase()
+                          .includes(servicesSearch.toLowerCase())
+                      : true,
+                  ).length
+                }{" "}
+                records
+              </span>
+            </div>
+
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                value={servicesSearch}
+                onChange={(e) => setServicesSearch(e.target.value)}
+                placeholder="Search by machine ref no..."
+                className="w-full pl-9 pr-9 py-2 text-sm rounded-lg border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent placeholder:text-gray-400"
               />
-            ))}
+              {servicesSearch && (
+                <button
+                  onClick={() => setServicesSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Result hint */}
+            {servicesSearch.trim() && (
+              <p className="text-xs text-gray-500 px-1">
+                {
+                  servicesList.filter((s: Service) =>
+                    s.machineRefNo
+                      .toLowerCase()
+                      .includes(servicesSearch.toLowerCase()),
+                  ).length
+                }{" "}
+                result(s) for{" "}
+                <span className="font-semibold text-gray-700">
+                  "{servicesSearch}"
+                </span>
+              </p>
+            )}
+
+            {/* Stats Summary Bar */}
+            {(() => {
+              const total = servicesList.length;
+              const completed = servicesList.filter(
+                (s: Service) => s.status === "completed",
+              ).length;
+              const pending = servicesList.filter(
+                (s: Service) => s.status === "pending",
+              ).length;
+              const completedPct = total
+                ? Math.round((completed / total) * 100)
+                : 0;
+              const pendingPct = total
+                ? Math.round((pending / total) * 100)
+                : 0;
+
+              return (
+                <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm space-y-3">
+                  {/* Numbers Row */}
+                  <div className="grid grid-cols-3 divide-x divide-gray-100 text-center">
+                    <div className="pr-3">
+                      <p className="text-xl font-bold text-gray-800">{total}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">Total</p>
+                    </div>
+                    <div className="px-3">
+                      <p className="text-xl font-bold text-green-600">
+                        {completed}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">Completed</p>
+                    </div>
+                    <div className="pl-3">
+                      <p className="text-xl font-bold text-blue-500">
+                        {pending}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">Pending</p>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div>
+                    <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+                      <span>
+                        Completed{" "}
+                        <span className="font-semibold text-green-600">
+                          {completedPct}%
+                        </span>
+                      </span>
+                      <span>
+                        Pending{" "}
+                        <span className="font-semibold text-blue-500">
+                          {pendingPct}%
+                        </span>
+                      </span>
+                    </div>
+                    <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden flex">
+                      <div
+                        className="h-full bg-green-400 transition-all duration-500"
+                        style={{ width: `${completedPct}%` }}
+                      />
+                      <div
+                        className="h-full bg-blue-400 transition-all duration-500"
+                        style={{ width: `${pendingPct}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Service Cards */}
+            {servicesList
+              .filter((service: Service) =>
+                servicesSearch.trim()
+                  ? service.machineRefNo
+                      .toLowerCase()
+                      .includes(servicesSearch.toLowerCase())
+                  : true,
+              )
+              .map((service: Service, idx: number) => (
+                <ServiceCard
+                  key={`${service.id}-${idx}`}
+                  service={service}
+                  onClick={() => handleViewDetails(service, "service")}
+                />
+              ))}
           </>
         )}
 
         {activeTab === "jobs" && (
           <>
-            {breakdownsList.map((job: Job, idx: number) => (
-              <JobCard
-                key={`${job.id}-${idx}`}
-                job={job}
-                onClick={() => handleViewDetails(job, "job")}
+            {/* Header */}
+            <div className="flex items-center justify-between mb-1">
+              <div>
+                <h2 className="text-base font-semibold text-gray-800">
+                  All Jobs
+                </h2>
+                <p className="text-xs text-gray-400">
+                  Last Month Breakdown / repair records
+                </p>
+              </div>
+              <span className="text-xs font-medium bg-orange-50 text-orange-600 px-2.5 py-1 rounded-full">
+                {
+                  breakdownsList.filter((j: Job) =>
+                    jobsSearch.trim()
+                      ? j.machineRefNo
+                          .toLowerCase()
+                          .includes(jobsSearch.toLowerCase())
+                      : true,
+                  ).length
+                }{" "}
+                records
+              </span>
+            </div>
+
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                value={jobsSearch}
+                onChange={(e) => setJobsSearch(e.target.value)}
+                placeholder="Search by machine ref no..."
+                className="w-full pl-9 pr-9 py-2 text-sm rounded-lg border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent placeholder:text-gray-400"
               />
-            ))}
+              {jobsSearch && (
+                <button
+                  onClick={() => setJobsSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Result hint */}
+            {jobsSearch.trim() && (
+              <p className="text-xs text-gray-500 px-1">
+                {
+                  breakdownsList.filter((j: Job) =>
+                    j.machineRefNo
+                      .toLowerCase()
+                      .includes(jobsSearch.toLowerCase()),
+                  ).length
+                }{" "}
+                result(s) for{" "}
+                <span className="font-semibold text-gray-700">
+                  "{jobsSearch}"
+                </span>
+              </p>
+            )}
+
+            {/* Stats Summary Bar */}
+            {(() => {
+              const total = breakdownsList.length;
+              const completed = breakdownsList.filter(
+                (j: Job) => j.status === "completed",
+              ).length;
+              const pending = breakdownsList.filter(
+                (j: Job) => j.status === "pending",
+              ).length;
+              const inProgress = breakdownsList.filter(
+                (j: Job) => j.status === "in-progress",
+              ).length;
+              const completedPct = total
+                ? Math.round((completed / total) * 100)
+                : 0;
+              const pendingPct = total
+                ? Math.round((pending / total) * 100)
+                : 0;
+              const inProgressPct = total
+                ? Math.round((inProgress / total) * 100)
+                : 0;
+
+              return (
+                <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm space-y-3">
+                  {/* Numbers Row */}
+                  <div className="grid grid-cols-4 divide-x divide-gray-100 text-center">
+                    <div className="pr-3">
+                      <p className="text-xl font-bold text-gray-800">{total}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">Total</p>
+                    </div>
+                    <div className="px-3">
+                      <p className="text-xl font-bold text-green-600">
+                        {completed}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">Completed</p>
+                    </div>
+                    <div className="px-3">
+                      <p className="text-xl font-bold text-orange-500">
+                        {pending}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">Pending</p>
+                    </div>
+                    <div className="pl-3">
+                      <p className="text-xl font-bold text-yellow-500">
+                        {inProgress}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        In Progress
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div>
+                    <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+                      <span>
+                        Completed{" "}
+                        <span className="font-semibold text-green-600">
+                          {completedPct}%
+                        </span>
+                      </span>
+                      <span>
+                        In Progress{" "}
+                        <span className="font-semibold text-yellow-500">
+                          {inProgressPct}%
+                        </span>
+                      </span>
+                      <span>
+                        Pending{" "}
+                        <span className="font-semibold text-orange-500">
+                          {pendingPct}%
+                        </span>
+                      </span>
+                    </div>
+                    <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden flex">
+                      <div
+                        className="h-full bg-green-400 transition-all duration-500"
+                        style={{ width: `${completedPct}%` }}
+                      />
+                      <div
+                        className="h-full bg-yellow-400 transition-all duration-500"
+                        style={{ width: `${inProgressPct}%` }}
+                      />
+                      <div
+                        className="h-full bg-orange-400 transition-all duration-500"
+                        style={{ width: `${pendingPct}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Job Cards */}
+            {breakdownsList
+              .filter((job: Job) =>
+                jobsSearch.trim()
+                  ? job.machineRefNo
+                      .toLowerCase()
+                      .includes(jobsSearch.toLowerCase())
+                  : true,
+              )
+              .map((job: Job, idx: number) => (
+                <JobCard
+                  key={`${job.id}-${idx}`}
+                  job={job}
+                  onClick={() => handleViewDetails(job, "job")}
+                />
+              ))}
           </>
         )}
 
